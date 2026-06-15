@@ -1,10 +1,8 @@
 package io.github.hiwepy.hermes.util;
 
 import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import lombok.extern.slf4j.Slf4j;
 
 import java.util.Map;
 import java.util.regex.Matcher;
@@ -19,11 +17,10 @@ import java.util.regex.Pattern;
  * 3. 回退到正则匹配裸 JSON 对象
  * </p>
  */
+@Slf4j
 public class HermesJsonParser {
 
-    private static final Logger log = LoggerFactory.getLogger(HermesJsonParser.class);
-    private static final ObjectMapper MAPPER = new ObjectMapper()
-            .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+    private static final ObjectMapper MAPPER = HermesObjectMapper.INSTANCE;
 
     /**
      * 匹配 ```json ... ``` 代码块中的 JSON。

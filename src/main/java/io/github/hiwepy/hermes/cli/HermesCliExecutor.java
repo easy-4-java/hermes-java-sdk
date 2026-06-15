@@ -1,34 +1,33 @@
 package io.github.hiwepy.hermes.cli;
 
 import io.github.hiwepy.hermes.HermesClientConfig;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.exec.CommandLine;
 import org.apache.commons.exec.DefaultExecuteResultHandler;
 import org.apache.commons.exec.DefaultExecutor;
 import org.apache.commons.exec.ExecuteWatchdog;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.util.Objects;
 
 /**
  * 本地 {@code hermes} CLI 子进程执行器。
  */
+@Slf4j
 public class HermesCliExecutor {
-
-    private static final Logger log = LoggerFactory.getLogger(HermesCliExecutor.class);
 
     private final HermesClientConfig config;
 
     public HermesCliExecutor(HermesClientConfig config) {
-        this.config = config;
+        this.config = Objects.requireNonNull(config, "config");
     }
 
     /**
      * 同步执行 CLI 命令，返回执行结果。
      */
     public HermesCliResult execute(String... args) {
-        CommandLine cmd = CommandLine.parse(config.getLocalExecutable());
+        CommandLine cmd = new CommandLine(config.getLocalExecutable());
         for (String arg : args) {
             cmd.addArgument(arg);
         }
@@ -49,6 +48,7 @@ public class HermesCliExecutor {
             log.debug("hermes CLI executed: exitCode={}, stdout={}, stderr={}", exitCode, out, err);
             return new HermesCliResult(exitCode, out, err);
         } catch (IOException e) {
+            log.warn("CLI execution failed", e);
             return new HermesCliResult(-1, "", e.getMessage());
         }
     }

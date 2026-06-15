@@ -1,63 +1,71 @@
 package io.github.hiwepy.hermes.api;
 
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.github.hiwepy.hermes.HermesClientConfig;
+import static io.github.hiwepy.hermes.api.HermesApiConstants.*;
 import io.github.hiwepy.hermes.api.model.*;
 import io.github.hiwepy.hermes.exception.HermesHttpException;
-import kong.unirest.core.*;
-import kong.unirest.modules.jackson.JacksonObjectMapper;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import lombok.extern.slf4j.Slf4j;
+import okhttp3.*;
 
+import java.io.IOException;
 import java.util.*;
+import java.util.concurrent.TimeUnit;
 
 /**
  * Hermes Server HTTP 客户端，封装 REST API。
+ * <p>基于 OkHttp，支持外部传入 {@link OkHttpClient}（复用别的插件实例）。</p>
  */
+@Slf4j
 public class HermesHttpClient implements AutoCloseable {
 
-    private static final Logger log = LoggerFactory.getLogger(HermesHttpClient.class);
+    private static final MediaType JSON = MediaType.get("application/json; charset=utf-8");
 
     private final HermesClientConfig config;
-    private final UnirestInstance unirest;
+    private final ObjectMapper objectMapper;
+    private final OkHttpClient httpClient;
 
     public HermesHttpClient(HermesClientConfig config) {
-        this.config = Objects.requireNonNull(config, "config");
-        ObjectMapper mapper = new ObjectMapper()
-                .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
-        this.unirest = new UnirestInstance(new Config()
-                .connectTimeout(config.getConnectTimeoutMillis())
-                .requestTimeout(config.getReadTimeoutMillis())
-                .verifySsl(config.isVerifySsl())
-                .setObjectMapper(new JacksonObjectMapper(mapper)));
+        this(config, null, null);
+    }
 
-        String apiKey = config.resolveApiKey();
-        if (!apiKey.isEmpty()) {
-            this.unirest.config().setDefaultHeader("Authorization", "Bearer " + apiKey);
+    public HermesHttpClient(HermesClientConfig config, ObjectMapper objectMapper, OkHttpClient httpClient) {
+        this.config = Objects.requireNonNull(config, "config");
+        this.objectMapper = Objects.isNull(objectMapper) ? new ObjectMapper()
+                .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false) : objectMapper;
+        this.httpClient = Objects.isNull(httpClient) ? buildOkHttpClient(config) : httpClient;
+    }
+
+    private static OkHttpClient buildOkHttpClient(HermesClientConfig config) {
+        OkHttpClient.Builder builder = new OkHttpClient.Builder()
+                .connectTimeout(config.getConnectTimeoutMillis(), TimeUnit.MILLISECONDS)
+                .readTimeout(config.getReadTimeoutMillis(), TimeUnit.MILLISECONDS);
+        if (!config.isVerifySsl()) {
+            builder.hostnameVerifier((hostname, session) -> true);
         }
+        return builder.build();
     }
 
     // ============================================================
     // Global / Health
     // ============================================================
 
-    public HealthStatus health() { return get("/health", HealthStatus.class); }
-
-    public HealthStatus healthDetailed() { return get("/health/detailed", HealthStatus.class); }
-
-    public HealthStatus healthV1() { return get("/v1/health", HealthStatus.class); }
+    public HealthStatus health() { return get(PATH_HEALTH, HealthStatus.class); }
+    public HealthStatus healthDetailed() { return get(PATH_HEALTH_DETAILED, HealthStatus.class); }
+    public HealthStatus healthV1() { return get(PATH_V1_HEALTH, HealthStatus.class); }
 
     // ============================================================
     // Chat Completion
     // ============================================================
 
-    public ChatCompletionResponse chatCompletion(ChatCompletionRequest request) {
-        return post("/v1/chat/completions", request, ChatCompletionResponse.class);
+    public ChatResponse chatCompletion(ChatRequest request) {
+        return post(PATH_CHAT_COMPLETIONS, request, ChatResponse.class);
     }
 
-    public ChatCompletionResponse chatCompletion(ChatCompletionRequest request, Map<String, String> headers) {
-        return post("/v1/chat/completions", request, ChatCompletionResponse.class, headers);
+    public ChatResponse chatCompletion(ChatRequest request, Map<String, String> headers) {
+        return post(PATH_CHAT_COMPLETIONS, request, ChatResponse.class, headers);
     }
 
     // ============================================================
@@ -65,11 +73,11 @@ public class HermesHttpClient implements AutoCloseable {
     // ============================================================
 
     public ResponseResult createResponse(ResponseRequest request) {
-        return post("/v1/responses", request, ResponseResult.class);
+        return post(PATH_RESPONSES, request, ResponseResult.class);
     }
 
     public ResponseResult createResponse(ResponseRequest request, Map<String, String> headers) {
-        return post("/v1/responses", request, ResponseResult.class, headers);
+        return post(PATH_RESPONSES, request, ResponseResult.class, headers);
     }
 
     public ResponseResult getResponse(String responseId) {
@@ -77,32 +85,32 @@ public class HermesHttpClient implements AutoCloseable {
     }
 
     public boolean deleteResponse(String responseId) {
-        HttpResponse<String> resp = unirest.delete(url("/v1/responses/" + responseId)).asString();
-        return resp.isSuccess();
+        return deleteBoolean(PATH_RESPONSES + "/" + responseId);
     }
 
     // ============================================================
     // Models & Capabilities
     // ============================================================
 
-    public ModelsResponse listModels() {
-        return get("/v1/models", ModelsResponse.class);
+    public ModelsResponse listModels() { return get(PATH_MODELS, ModelsResponse.class); }
+
+    public ModelsResponse.ModelData getModel(String modelId) {
+        return get(PATH_MODELS + "/" + java.net.URLEncoder.encode(modelId, java.nio.charset.StandardCharsets.UTF_8),
+                ModelsResponse.ModelData.class);
     }
 
-    public CapabilityInfo getCapabilities() { return get("/v1/capabilities", CapabilityInfo.class); }
+    public CapabilityInfo getCapabilities() { return get(PATH_CAPABILITIES, CapabilityInfo.class); }
 
     // ============================================================
     // Skills & Toolsets
     // ============================================================
 
-    @SuppressWarnings("unchecked")
     public List<Map<String, Object>> listSkills() {
-        return getList("/v1/skills", new GenericType<List<Map<String, Object>>>() {});
+        return getList(PATH_SKILLS, new TypeReference<List<Map<String, Object>>>() {});
     }
 
-    @SuppressWarnings("unchecked")
     public List<Map<String, Object>> listToolsets() {
-        return getList("/v1/toolsets", new GenericType<List<Map<String, Object>>>() {});
+        return getList(PATH_TOOLSETS, new TypeReference<List<Map<String, Object>>>() {});
     }
 
     // ============================================================
@@ -110,18 +118,27 @@ public class HermesHttpClient implements AutoCloseable {
     // ============================================================
 
     public RunStatus createRun(RunCreateRequest request) {
-        return post("/v1/runs", request, RunStatus.class);
+        return post(PATH_RUNS, request, RunStatus.class);
     }
 
     public RunStatus getRun(String runId) { return get("/v1/runs/" + runId, RunStatus.class); }
 
     public void stopRun(String runId) {
-        HttpResponse<String> resp = unirest.post(url("/v1/runs/" + runId + "/stop")).asString();
-        if (!resp.isSuccess()) throw new HermesHttpException(resp.getStatus(), resp.getBody() != null ? resp.getBody() : "");
+        Request request = authedRequest(url(PATH_RUNS + "/" + runId + "/stop"))
+                .post(RequestBody.create(new byte[0], null)).build();
+        try (Response response = httpClient.newCall(request).execute()) {
+            if (!response.isSuccessful()) {
+                String body = response.body() != null ? response.body().string() : "";
+                throw new HermesHttpException(response.code(), body);
+            }
+        } catch (IOException e) {
+            throw new HermesHttpException("stopRun failed: " + e.getMessage(), e);
+        }
     }
 
+    @SuppressWarnings("unchecked")
     public Map<String, Object> approveRun(String runId, Map<String, Object> decision) {
-        return postMap("/v1/runs/" + runId + "/approval", decision);
+        return postMap(PATH_RUNS + "/" + runId + "/approval", decision);
     }
 
     // ============================================================
@@ -129,86 +146,143 @@ public class HermesHttpClient implements AutoCloseable {
     // ============================================================
 
     public Session createSession(String title) {
-        Map<String, Object> body = title != null ? Map.of("title", title) : Map.of();
-        return post("/api/sessions", body, Session.class);
+        Map<String, Object> body = title != null ? Collections.singletonMap("title", title) : Collections.emptyMap();
+        return post(PATH_SESSIONS, body, Session.class);
     }
 
     public List<Session> listSessions() {
-        return getList("/api/sessions", new GenericType<List<Session>>() {});
+        return getList(PATH_SESSIONS, new TypeReference<List<Session>>() {});
     }
 
-    public Session getSession(String id) { return get("/api/sessions/" + id, Session.class); }
+    @SuppressWarnings("unchecked")
+    public List<Session> listSessions(Integer limit, Integer offset, String source, Boolean includeChildren) {
+        HttpUrl.Builder urlBuilder = HttpUrl.get(url(PATH_SESSIONS)).newBuilder();
+        if (limit != null) urlBuilder.addQueryParameter("limit", String.valueOf(limit));
+        if (offset != null) urlBuilder.addQueryParameter("offset", String.valueOf(offset));
+        if (source != null) urlBuilder.addQueryParameter("source", source);
+        if (includeChildren != null) urlBuilder.addQueryParameter("include_children", String.valueOf(includeChildren));
+        Request request = authedRequest(urlBuilder.build().toString()).get().build();
+        return executeList(request, new TypeReference<List<Session>>() {});
+    }
+
+    public Session getSession(String id) { return get(PATH_SESSIONS + "/" + id, Session.class); }
 
     @SuppressWarnings("unchecked")
     public List<Map<String, Object>> getSessionMessages(String id) {
-        return getList("/api/sessions/" + id + "/messages",
-                new GenericType<List<Map<String, Object>>>() {});
+        return getList(PATH_SESSIONS + "/" + id + "/messages",
+                new TypeReference<List<Map<String, Object>>>() {});
     }
 
     public Session forkSession(String id, String title) {
         Map<String, Object> body = new LinkedHashMap<>();
         if (title != null) body.put("title", title);
-        return post("/api/sessions/" + id + "/fork", body, Session.class);
+        return post(PATH_SESSIONS + "/" + id + "/fork", body, Session.class);
     }
 
     public boolean deleteSession(String id) {
-        HttpResponse<String> resp = unirest.delete(url("/api/sessions/" + id)).asString();
-        return resp.isSuccess();
+        return deleteBoolean(PATH_SESSIONS + "/" + id);
     }
 
-    public ChatCompletionResponse sessionChat(String id, String input) {
-        return post("/api/sessions/" + id + "/chat", Map.of("input", input), ChatCompletionResponse.class);
+    @SuppressWarnings("unchecked")
+    public Session updateSession(String id, Map<String, Object> patch) {
+        Request request = authedRequest(url(PATH_SESSIONS + "/" + id))
+                .patch(RequestBody.create(toJson(patch), JSON)).build();
+        return execute(request, Session.class);
+    }
+
+    public ChatResponse sessionChat(String id, String input) {
+        return post(PATH_SESSIONS + "/" + id + "/chat", Collections.singletonMap("input", input), ChatResponse.class);
     }
 
     // ============================================================
     // Jobs
     // ============================================================
 
-    @SuppressWarnings("unchecked")
     public List<Map<String, Object>> listJobs() {
-        return getList("/api/jobs", new GenericType<List<Map<String, Object>>>() {});
+        return getList(PATH_JOBS, new TypeReference<List<Map<String, Object>>>() {});
     }
 
     public Map<String, Object> createJob(Map<String, Object> job) {
-        return postMap("/api/jobs", job);
+        return postMap(PATH_JOBS, job);
     }
 
+    @SuppressWarnings("unchecked")
     public Map<String, Object> getJob(String jobId) {
-        return get("/api/jobs/" + jobId, (Class<Map<String, Object>>) (Class<?>) Map.class);
+        Request request = authedRequest(url(PATH_JOBS + "/" + jobId)).get().build();
+        try (Response response = httpClient.newCall(request).execute()) {
+            String body = response.body() != null ? response.body().string() : "";
+            if (!response.isSuccessful()) {
+                throw new HermesHttpException(response.code(), body);
+            }
+            return objectMapper.readValue(body, new TypeReference<Map<String, Object>>() {});
+        } catch (IOException e) {
+            throw new HermesHttpException("getJob failed: " + e.getMessage(), e);
+        }
     }
 
+    @SuppressWarnings("unchecked")
     public Map<String, Object> updateJob(String jobId, Map<String, Object> patch) {
-        return postMap("/api/jobs/" + jobId, patch); // uses PATCH via POST compat
+        Request request = authedRequest(url(PATH_JOBS + "/" + jobId))
+                .patch(RequestBody.create(toJson(patch), JSON)).build();
+        try (Response response = httpClient.newCall(request).execute()) {
+            String body = response.body() != null ? response.body().string() : "";
+            if (!response.isSuccessful()) {
+                throw new HermesHttpException(response.code(), body);
+            }
+            return objectMapper.readValue(body, new TypeReference<Map<String, Object>>() {});
+        } catch (IOException e) {
+            throw new HermesHttpException("updateJob failed: " + e.getMessage(), e);
+        }
     }
 
     public boolean deleteJob(String jobId) {
-        HttpResponse<String> resp = unirest.delete(url("/api/jobs/" + jobId)).asString();
-        return resp.isSuccess();
+        Request request = authedRequest(url(PATH_JOBS + "/" + jobId)).delete().build();
+        try (Response response = httpClient.newCall(request).execute()) {
+            if (!response.isSuccessful() && response.code() != 404) {
+                log.warn("deleteJob {} failed: {}", jobId, response.code());
+            }
+            return response.isSuccessful();
+        } catch (IOException e) {
+            throw new HermesHttpException("deleteJob failed: " + e.getMessage(), e);
+        }
     }
 
     public Map<String, Object> pauseJob(String jobId) {
-        return postMap("/api/jobs/" + jobId + "/pause", Map.of());
+        return postMap("/api/jobs/" + jobId + "/pause", Collections.emptyMap());
     }
 
     public Map<String, Object> resumeJob(String jobId) {
-        return postMap("/api/jobs/" + jobId + "/resume", Map.of());
+        return postMap("/api/jobs/" + jobId + "/resume", Collections.emptyMap());
     }
 
     public Map<String, Object> runJobNow(String jobId) {
-        return postMap("/api/jobs/" + jobId + "/run", Map.of());
+        return postMap("/api/jobs/" + jobId + "/run", Collections.emptyMap());
     }
 
     // ============================================================
     // Hermes-specific headers
     // ============================================================
 
-    /** Build Hermes-specific request headers. */
     public static Map<String, String> hermesHeaders(String sessionKey, String sessionId, String messageChannel) {
         Map<String, String> h = new LinkedHashMap<>();
-        if (sessionKey != null) h.put("X-Hermes-Session-Key", sessionKey);
-        if (sessionId != null) h.put("X-Hermes-Session-Id", sessionId);
-        if (messageChannel != null) h.put("X-Hermes-Message-Channel", messageChannel);
-        return h.isEmpty() ? null : h;
+        if (sessionKey != null) h.put(HEADER_SESSION_KEY, sessionKey);
+        if (sessionId != null) h.put(HEADER_SESSION_ID, sessionId);
+        if (messageChannel != null) h.put(HEADER_MESSAGE_CHANNEL, messageChannel);
+        return h;
+    }
+
+    /**
+     * 暴露 OkHttpClient 供 SSE 客户端复用。
+     */
+    public OkHttpClient getOkHttpClient() {
+        return httpClient;
+    }
+
+    /**
+     * 暴露 ObjectMapper 供外部复用。
+     */
+    public ObjectMapper getObjectMapper() {
+        return objectMapper;
     }
 
     // ============================================================
@@ -219,50 +293,98 @@ public class HermesHttpClient implements AutoCloseable {
         return config.getServerUrl() + path;
     }
 
-    private <T> T get(String path, Class<T> type) {
-        HttpResponse<T> resp = unirest.get(url(path)).asObject(type);
-        checkResponse(resp);
-        return resp.getBody();
+    private Request.Builder authedRequest(String url) {
+        Request.Builder builder = new Request.Builder().url(url);
+        String apiKey = config.resolveApiKey();
+        if (!apiKey.isEmpty()) {
+            builder.header("Authorization", "Bearer " + apiKey);
+        }
+        return builder;
     }
 
-    @SuppressWarnings("unchecked")
-    private <T> T getList(String path, GenericType<T> genericType) {
-        HttpResponse<T> resp = unirest.get(url(path)).asObject(genericType);
-        checkResponse(resp);
-        return resp.getBody();
+    private <T> T get(String path, Class<T> type) {
+        Request request = authedRequest(url(path)).get().build();
+        return execute(request, type);
+    }
+
+    private <T> T getList(String path, TypeReference<T> typeRef) {
+        Request request = authedRequest(url(path)).get().build();
+        return executeList(request, typeRef);
     }
 
     private <T> T post(String path, Object body, Class<T> type) {
-        HttpResponse<T> resp = unirest.post(url(path))
-                .header("Content-Type", "application/json").body(body).asObject(type);
-        checkResponse(resp);
-        return resp.getBody();
+        Request request = authedRequest(url(path))
+                .post(RequestBody.create(toJson(body), JSON)).build();
+        return execute(request, type);
     }
 
     private <T> T post(String path, Object body, Class<T> type, Map<String, String> headers) {
-        HttpRequestWithBody req = unirest.post(url(path))
-                .header("Content-Type", "application/json");
-        if (headers != null) headers.forEach((k, v) -> { if (v != null) req.header(k, v); });
-        HttpResponse<T> resp = req.body(body).asObject(type);
-        checkResponse(resp);
-        return resp.getBody();
+        Request.Builder builder = authedRequest(url(path));
+        if (headers != null) {
+            headers.forEach((k, v) -> { if (k != null && v != null) builder.header(k, v); });
+        }
+        Request request = builder.post(RequestBody.create(toJson(body), JSON)).build();
+        return execute(request, type);
     }
 
     @SuppressWarnings("unchecked")
     private Map<String, Object> postMap(String path, Object body) {
-        HttpResponse<Map> resp = unirest.post(url(path))
-                .header("Content-Type", "application/json").body(body).asObject(Map.class);
-        checkResponse(resp);
-        return resp.getBody();
+        Request request = authedRequest(url(path))
+                .post(RequestBody.create(toJson(body), JSON)).build();
+        try (Response response = httpClient.newCall(request).execute()) {
+            String respBody = response.body() != null ? response.body().string() : "";
+            if (!response.isSuccessful()) {
+                throw new HermesHttpException(response.code(), respBody);
+            }
+            return objectMapper.readValue(respBody, new TypeReference<Map<String, Object>>() {});
+        } catch (IOException e) {
+            throw new HermesHttpException("postMap failed: " + e.getMessage(), e);
+        }
     }
 
-    private <T> void checkResponse(HttpResponse<T> resp) {
-        if (!resp.isSuccess()) {
-            throw new HermesHttpException(resp.getStatus(),
-                    resp.getBody() != null ? resp.getBody().toString() : "");
+    private boolean deleteBoolean(String path) {
+        Request request = authedRequest(url(path)).delete().build();
+        try (Response response = httpClient.newCall(request).execute()) {
+            return response.isSuccessful();
+        } catch (IOException e) {
+            throw new HermesHttpException("DELETE failed: " + e.getMessage(), e);
+        }
+    }
+
+    private <T> T execute(Request request, Class<T> type) {
+        try (Response response = httpClient.newCall(request).execute()) {
+            String respBody = response.body() != null ? response.body().string() : "";
+            if (!response.isSuccessful()) {
+                throw new HermesHttpException(response.code(), respBody);
+            }
+            return objectMapper.readValue(respBody, type);
+        } catch (IOException e) {
+            throw new HermesHttpException("HTTP request failed: " + e.getMessage(), e);
+        }
+    }
+
+    private <T> T executeList(Request request, TypeReference<T> typeRef) {
+        try (Response response = httpClient.newCall(request).execute()) {
+            String respBody = response.body() != null ? response.body().string() : "";
+            if (!response.isSuccessful()) {
+                throw new HermesHttpException(response.code(), respBody);
+            }
+            return objectMapper.readValue(respBody, typeRef);
+        } catch (IOException e) {
+            throw new HermesHttpException("HTTP request failed: " + e.getMessage(), e);
+        }
+    }
+
+    private String toJson(Object body) {
+        try {
+            return objectMapper.writeValueAsString(body);
+        } catch (IOException e) {
+            throw new HermesHttpException("Failed to serialize request body: " + e.getMessage(), e);
         }
     }
 
     @Override
-    public void close() { unirest.close(); }
+    public void close() {
+        // 外部传入的 OkHttpClient 不关闭；自建的也不主动关闭（OkHttpClient 内部管理连接池）
+    }
 }

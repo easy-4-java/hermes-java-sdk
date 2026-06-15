@@ -12,4 +12,10 @@ public class HermesHttpException extends HermesException {
         this.statusCode = statusCode;
         this.responseBody = responseBody;
     }
+
+    public HermesHttpException(String message, Throwable cause) {
+        super(message, cause);
+        this.statusCode = -1;
+        this.responseBody = null;
+    }
 }

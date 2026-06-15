@@ -21,5 +21,8 @@ public class Session {
     @JsonProperty("updated_at")
     private String updatedAt;
 
+    @JsonProperty("end_reason")
+    private String endReason;
+
     private Map<String, Object> metadata;
 }
