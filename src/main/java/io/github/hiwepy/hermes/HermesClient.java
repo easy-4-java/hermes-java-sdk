@@ -1,11 +1,13 @@
 package io.github.hiwepy.hermes;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import io.github.hiwepy.hermes.api.model.*;
 import io.github.hiwepy.hermes.cli.HermesCli;
 import io.github.hiwepy.hermes.cli.HermesCliExecutor;
 import io.github.hiwepy.hermes.api.HermesHttpClient;
 import io.github.hiwepy.hermes.api.HermesSseClient;
 import io.github.hiwepy.hermes.api.model.ChatStreamingResponse;
+import okhttp3.OkHttpClient;
 
 import java.util.List;
 import java.util.Map;
@@ -22,9 +24,13 @@ public class HermesClient implements AutoCloseable {
     private final HermesCli cli;
 
     public HermesClient(HermesClientConfig config) {
+        this(config, null, null);
+    }
+
+    public HermesClient(HermesClientConfig config, ObjectMapper objectMapper, OkHttpClient httpClient) {
         this.config = Objects.requireNonNull(config, "config");
-        this.httpClient = new HermesHttpClient(config);
-        this.sseClient = new HermesSseClient(config);
+        this.httpClient = new HermesHttpClient(config, objectMapper, httpClient);
+        this.sseClient = new HermesSseClient(config, objectMapper, httpClient != null ? httpClient : this.httpClient.getOkHttpClient());
         this.cli = new HermesCli(new HermesCliExecutor(config));
     }
 
