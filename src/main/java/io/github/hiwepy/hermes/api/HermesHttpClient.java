@@ -146,7 +146,7 @@ public class HermesHttpClient implements AutoCloseable {
     // ============================================================
 
     public Session createSession(String title) {
-        Map<String, Object> body = title != null ? Map.of("title", title) : Map.of();
+        Map<String, Object> body = title != null ? Collections.singletonMap("title", title) : Collections.emptyMap();
         return post(PATH_SESSIONS, body, Session.class);
     }
 
@@ -191,7 +191,7 @@ public class HermesHttpClient implements AutoCloseable {
     }
 
     public ChatResponse sessionChat(String id, String input) {
-        return post(PATH_SESSIONS + "/" + id + "/chat", Map.of("input", input), ChatResponse.class);
+        return post(PATH_SESSIONS + "/" + id + "/chat", Collections.singletonMap("input", input), ChatResponse.class);
     }
 
     // ============================================================
@@ -248,15 +248,15 @@ public class HermesHttpClient implements AutoCloseable {
     }
 
     public Map<String, Object> pauseJob(String jobId) {
-        return postMap("/api/jobs/" + jobId + "/pause", Map.of());
+        return postMap("/api/jobs/" + jobId + "/pause", Collections.emptyMap());
     }
 
     public Map<String, Object> resumeJob(String jobId) {
-        return postMap("/api/jobs/" + jobId + "/resume", Map.of());
+        return postMap("/api/jobs/" + jobId + "/resume", Collections.emptyMap());
     }
 
     public Map<String, Object> runJobNow(String jobId) {
-        return postMap("/api/jobs/" + jobId + "/run", Map.of());
+        return postMap("/api/jobs/" + jobId + "/run", Collections.emptyMap());
     }
 
     // ============================================================

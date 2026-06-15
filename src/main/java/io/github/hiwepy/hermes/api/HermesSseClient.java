@@ -11,6 +11,7 @@ import lombok.extern.slf4j.Slf4j;
 import okhttp3.*;
 
 import java.io.IOException;
+import java.util.Collections;
 import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.BlockingQueue;
@@ -145,7 +146,7 @@ public class HermesSseClient implements AutoCloseable {
         while (sub.running) {
             try {
                 String url = config.getServerUrl() + PATH_SESSIONS + "/" + sessionId + "/chat/stream";
-                Request request = buildPostSseRequest(url, Map.of("input", input), null);
+                Request request = buildPostSseRequest(url, Collections.singletonMap("input", input), null);
                 sub.callRef.set(httpClient.newCall(request));
                 try (Response response = httpClient.newCall(request).execute()) {
                     if (!response.isSuccessful()) {
