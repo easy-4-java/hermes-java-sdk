@@ -2,7 +2,7 @@ package io.github.hiwepy.hermes.api;
 
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import io.github.hiwepy.hermes.HermesClientConfig;
+import io.github.hiwepy.hermes.HermesHttpClientConfig;
 import static io.github.hiwepy.hermes.api.HermesApiConstants.*;
 import io.github.hiwepy.hermes.api.model.ChatRequest;
 import io.github.hiwepy.hermes.api.model.SseEvent;
@@ -32,19 +32,19 @@ public class HermesSseClient implements AutoCloseable {
 
     private static final MediaType JSON = MediaType.get("application/json; charset=utf-8");
 
-    private final HermesClientConfig config;
+    private final HermesHttpClientConfig config;
     private final ObjectMapper mapper;
     private final OkHttpClient httpClient;
     private final AtomicReference<Subscription> activeSubscription = new AtomicReference<>();
 
-    public HermesSseClient(HermesClientConfig config, ObjectMapper objectMapper, OkHttpClient httpClient) {
+    public HermesSseClient(HermesHttpClientConfig config, ObjectMapper objectMapper, OkHttpClient httpClient) {
         this.config = Objects.requireNonNull(config, "config");
         this.mapper = Objects.isNull(objectMapper) ? new ObjectMapper()
                 .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false) : objectMapper;
         this.httpClient = Objects.isNull(httpClient) ? buildSseOkHttpClient(config) : httpClient;
     }
 
-    private static OkHttpClient buildSseOkHttpClient(HermesClientConfig config) {
+    private static OkHttpClient buildSseOkHttpClient(HermesHttpClientConfig config) {
         OkHttpClient.Builder builder = new OkHttpClient.Builder()
                 .connectTimeout(config.getConnectTimeoutMillis(), TimeUnit.MILLISECONDS)
                 .readTimeout(0, TimeUnit.MILLISECONDS); // SSE 无读超时

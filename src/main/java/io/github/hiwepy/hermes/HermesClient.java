@@ -23,17 +23,60 @@ public class HermesClient implements AutoCloseable {
     private final HermesSseClient sseClient;
     private final HermesCli cli;
 
+    /**
+     * 使用 HTTP 与 CLI 独立配置构造客户端。
+     */
+    public HermesClient(HermesHttpClientConfig httpConfig, HermesCliConfig cliConfig) {
+        this(httpConfig, cliConfig, null, null);
+    }
+
+    /**
+     * 使用 HTTP 与 CLI 独立配置构造客户端，可注入共享 OkHttp 与 ObjectMapper。
+     */
+    public HermesClient(HermesHttpClientConfig httpConfig, HermesCliConfig cliConfig,
+                        ObjectMapper objectMapper, OkHttpClient httpClient) {
+        Objects.requireNonNull(httpConfig, "httpConfig");
+        Objects.requireNonNull(cliConfig, "cliConfig");
+        this.config = new HermesClientConfig();
+        this.config.getHttp().setServerUrl(httpConfig.getServerUrl());
+        this.config.getHttp().setApiKey(httpConfig.getApiKey());
+        this.config.getHttp().setConnectTimeoutMillis(httpConfig.getConnectTimeoutMillis());
+        this.config.getHttp().setReadTimeoutMillis(httpConfig.getReadTimeoutMillis());
+        this.config.getHttp().setVerifySsl(httpConfig.isVerifySsl());
+        this.config.getHttp().setDefaultModel(httpConfig.getDefaultModel());
+        this.config.getHttp().setDefaultInstructions(httpConfig.getDefaultInstructions());
+        this.config.getHttp().setDefaultProvider(httpConfig.getDefaultProvider());
+        this.config.getCli().setExecutable(cliConfig.getExecutable());
+        this.config.getCli().setTimeout(cliConfig.getTimeout());
+        this.config.getCli().setProbeTimeoutSeconds(cliConfig.getProbeTimeoutSeconds());
+        this.config.getCli().setWorkingDirectory(cliConfig.getWorkingDirectory());
+        this.config.getCli().setMaxConcurrentExecutions(cliConfig.getMaxConcurrentExecutions());
+        this.httpClient = new HermesHttpClient(httpConfig, objectMapper, httpClient);
+        this.sseClient = new HermesSseClient(httpConfig, objectMapper,
+                httpClient != null ? httpClient : this.httpClient.getOkHttpClient());
+        this.cli = new HermesCli(new HermesCliExecutor(cliConfig));
+    }
+
+    /**
+     * 使用组合配置构造客户端。
+     */
     public HermesClient(HermesClientConfig config) {
         this(config, null, null);
     }
 
+    /**
+     * 使用组合配置构造客户端，可注入共享 OkHttp 与 ObjectMapper。
+     */
     public HermesClient(HermesClientConfig config, ObjectMapper objectMapper, OkHttpClient httpClient) {
-        this.config = Objects.requireNonNull(config, "config");
-        this.httpClient = new HermesHttpClient(config, objectMapper, httpClient);
-        this.sseClient = new HermesSseClient(config, objectMapper, httpClient != null ? httpClient : this.httpClient.getOkHttpClient());
-        this.cli = new HermesCli(new HermesCliExecutor(config));
+        this(Objects.requireNonNull(config, "config").getHttp(),
+                config.getCli(),
+                objectMapper,
+                httpClient);
     }
 
+    /**
+     * 全量注入构造，供测试或高级定制使用。
+     */
     public HermesClient(HermesClientConfig config, HermesHttpClient httpClient,
                         HermesSseClient sseClient, HermesCli cli) {
         this.config = Objects.requireNonNull(config, "config");

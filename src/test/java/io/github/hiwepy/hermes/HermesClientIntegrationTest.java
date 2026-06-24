@@ -31,11 +31,11 @@ class HermesClientIntegrationTest {
 
     @BeforeAll
     static void setUp() {
-        HermesClientConfig config = new HermesClientConfig();
-        config.setServerUrl(BASE_URL);
-        config.setApiKey(API_KEY);
-        config.setDefaultModel("mimo-v2-pro");
-        client = new HermesClient(config);
+        HermesHttpClientConfig httpConfig = new HermesHttpClientConfig();
+        httpConfig.setServerUrl(BASE_URL);
+        httpConfig.setApiKey(API_KEY);
+        httpConfig.setDefaultModel("mimo-v2-pro");
+        client = new HermesClient(httpConfig, new HermesCliConfig());
     }
 
     @AfterAll
@@ -121,7 +121,7 @@ class HermesClientIntegrationTest {
     @Test @Order(20)
     void chatCompletion() {
         ChatRequest req = new ChatRequest();
-        req.setModel(client.getConfig().getDefaultModel());
+        req.setModel(client.getConfig().getHttp().getDefaultModel());
         req.setMessages(java.util.Arrays.asList(msg("user", "Reply with exactly: OK")));
         req.setMaxTokens(10);
         req.setTemperature(0.0);
@@ -144,7 +144,7 @@ class HermesClientIntegrationTest {
     @Test @Order(21)
     void chatCompletionWithHeaders() {
         ChatRequest req = new ChatRequest();
-        req.setModel(client.getConfig().getDefaultModel());
+        req.setModel(client.getConfig().getHttp().getDefaultModel());
         req.setMessages(java.util.Arrays.asList(msg("user", "Reply with: OK")));
         req.setMaxTokens(10);
 
@@ -163,7 +163,7 @@ class HermesClientIntegrationTest {
     @Test @Order(22)
     void chatCompletionWithSession() {
         ChatRequest req = new ChatRequest();
-        req.setModel(client.getConfig().getDefaultModel());
+        req.setModel(client.getConfig().getHttp().getDefaultModel());
         req.setMessages(java.util.Arrays.asList(msg("user", "Reply with: OK")));
         req.setMaxTokens(10);
 
@@ -208,7 +208,7 @@ class HermesClientIntegrationTest {
     @Test @Order(30)
     void createResponse() {
         ResponseRequest req = new ResponseRequest();
-        req.setModel(client.getConfig().getDefaultModel());
+        req.setModel(client.getConfig().getHttp().getDefaultModel());
         req.setInput("Reply with exactly: OK");
         req.setMaxOutputTokens(10);
 
@@ -226,13 +226,13 @@ class HermesClientIntegrationTest {
     @Test @Order(31)
     void createResponse_conservation() {
         ResponseRequest req1 = new ResponseRequest();
-        req1.setModel(client.getConfig().getDefaultModel());
+        req1.setModel(client.getConfig().getHttp().getDefaultModel());
         req1.setInput("My name is TestBot");
         req1.setStore(true);
         req1.setConversation("test-conversation");
 
         ResponseRequest req2 = new ResponseRequest();
-        req2.setModel(client.getConfig().getDefaultModel());
+        req2.setModel(client.getConfig().getHttp().getDefaultModel());
         req2.setInput("What is my name?");
         try {
             ResponseResult resp1 = client.createResponse(req1);
@@ -252,7 +252,7 @@ class HermesClientIntegrationTest {
     @Test @Order(32)
     void getResponse() {
         ResponseRequest req = new ResponseRequest();
-        req.setModel(client.getConfig().getDefaultModel());
+        req.setModel(client.getConfig().getHttp().getDefaultModel());
         req.setInput("OK");
         req.setMaxOutputTokens(5);
         ResponseResult created;
@@ -273,7 +273,7 @@ class HermesClientIntegrationTest {
     @Test @Order(33)
     void deleteResponse() {
         ResponseRequest req = new ResponseRequest();
-        req.setModel(client.getConfig().getDefaultModel());
+        req.setModel(client.getConfig().getHttp().getDefaultModel());
         req.setInput("OK");
         req.setMaxOutputTokens(5);
         ResponseResult created;
@@ -296,7 +296,7 @@ class HermesClientIntegrationTest {
     @Test @Order(40)
     void chatCompletionStream() throws Exception {
         ChatRequest req = new ChatRequest();
-        req.setModel(client.getConfig().getDefaultModel());
+        req.setModel(client.getConfig().getHttp().getDefaultModel());
         req.setMessages(java.util.Arrays.asList(msg("user", "Count from 1 to 3")));
         req.setMaxTokens(50);
 
@@ -456,11 +456,11 @@ class HermesClientIntegrationTest {
     @Test @Order(80)
     void configDefaults() {
         HermesClientConfig config = client.getConfig();
-        assertEquals(BASE_URL, config.getServerUrl());
-        assertEquals(API_KEY, config.getApiKey());
-        assertEquals(HermesApiConstants.DEFAULT_CONNECT_TIMEOUT_MS, config.getConnectTimeoutMillis());
-        assertEquals(HermesApiConstants.DEFAULT_READ_TIMEOUT_MS, config.getReadTimeoutMillis());
-        assertEquals(HermesApiConstants.DEFAULT_EXECUTABLE, config.getLocalExecutable());
+        assertEquals(BASE_URL, config.getHttp().getServerUrl());
+        assertEquals(API_KEY, config.getHttp().getApiKey());
+        assertEquals(HermesApiConstants.DEFAULT_CONNECT_TIMEOUT_MS, config.getHttp().getConnectTimeoutMillis());
+        assertEquals(HermesApiConstants.DEFAULT_READ_TIMEOUT_MS, config.getHttp().getReadTimeoutMillis());
+        assertEquals(HermesApiConstants.DEFAULT_EXECUTABLE, config.getCli().getExecutable());
     }
 
     // ============================================================

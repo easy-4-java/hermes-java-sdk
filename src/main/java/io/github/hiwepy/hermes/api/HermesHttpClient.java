@@ -3,7 +3,7 @@ package io.github.hiwepy.hermes.api;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import io.github.hiwepy.hermes.HermesClientConfig;
+import io.github.hiwepy.hermes.HermesHttpClientConfig;
 import static io.github.hiwepy.hermes.api.HermesApiConstants.*;
 import io.github.hiwepy.hermes.api.model.*;
 import io.github.hiwepy.hermes.exception.HermesHttpException;
@@ -23,22 +23,22 @@ public class HermesHttpClient implements AutoCloseable {
 
     private static final MediaType JSON = MediaType.get("application/json; charset=utf-8");
 
-    private final HermesClientConfig config;
+    private final HermesHttpClientConfig config;
     private final ObjectMapper objectMapper;
     private final OkHttpClient httpClient;
 
-    public HermesHttpClient(HermesClientConfig config) {
+    public HermesHttpClient(HermesHttpClientConfig config) {
         this(config, null, null);
     }
 
-    public HermesHttpClient(HermesClientConfig config, ObjectMapper objectMapper, OkHttpClient httpClient) {
+    public HermesHttpClient(HermesHttpClientConfig config, ObjectMapper objectMapper, OkHttpClient httpClient) {
         this.config = Objects.requireNonNull(config, "config");
         this.objectMapper = Objects.isNull(objectMapper) ? new ObjectMapper()
                 .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false) : objectMapper;
         this.httpClient = Objects.isNull(httpClient) ? buildOkHttpClient(config) : httpClient;
     }
 
-    private static OkHttpClient buildOkHttpClient(HermesClientConfig config) {
+    private static OkHttpClient buildOkHttpClient(HermesHttpClientConfig config) {
         OkHttpClient.Builder builder = new OkHttpClient.Builder()
                 .connectTimeout(config.getConnectTimeoutMillis(), TimeUnit.MILLISECONDS)
                 .readTimeout(config.getReadTimeoutMillis(), TimeUnit.MILLISECONDS);
