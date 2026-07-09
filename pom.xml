@@ -6,7 +6,7 @@
 	<groupId>io.github.hiwepy</groupId>
 	<artifactId>hermes-java-sdk</artifactId>
 	<description>Hermes Agent Java SDK (HTTP API Server + SSE + local CLI) — Spring Boot 2.7.x line (JDK 8)</description>
-	<version>2.7.x.20260624-SNAPSHOT</version>
+	<version>1.0.x.20260630-SNAPSHOT</version>
 	<name>${project.groupId}:${project.artifactId}</name>
 	<url>https://github.com/hiwepy/${project.artifactId}</url>
 	<packaging>jar</packaging>
