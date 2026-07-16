@@ -5,7 +5,7 @@
 
 	<groupId>io.github.hiwepy</groupId>
 	<artifactId>hermes-java-sdk</artifactId>
-	<description>Hermes Agent Java SDK (HTTP API Server + SSE + local CLI) — Spring Boot 2.7.x line (JDK 8)</description>
+	<description>Hermes Agent Java SDK (HTTP API Server + SSE + local CLI) — JDK 17 line</description>
 	<version>2.0.x.20260630-SNAPSHOT</version>
 	<name>${project.groupId}:${project.artifactId}</name>
 	<url>https://github.com/hiwepy/${project.artifactId}</url>
@@ -19,9 +19,9 @@
 	</licenses>
 
 	<scm>
-		<connection>scm:git:https:github.com/hiwepy/${project.artifactId}.git</connection>
-		<developerConnection>scm:git:https:github.com/hiwepy/${project.artifactId}.git</developerConnection>
-		<url>https:github.com/hiwepy/${project.artifactId}</url>
+		<connection>scm:git:https://github.com/hiwepy/${project.artifactId}.git</connection>
+		<developerConnection>scm:git:https://github.com/hiwepy/${project.artifactId}.git</developerConnection>
+		<url>https://github.com/hiwepy/${project.artifactId}</url>
 		<tag>${project.artifactId}</tag>
 	</scm>
 
@@ -69,8 +69,7 @@
 					<artifactId>maven-compiler-plugin</artifactId>
 					<version>${maven-compiler-plugin.version}</version>
 					<configuration>
-						<source>${java.version}</source>
-						<target>${java.version}</target>
+						<release>${java.version}</release>
 						<encoding>${project.build.sourceEncoding}</encoding>
 						<maxmem>512M</maxmem>
 					</configuration>
@@ -371,9 +370,10 @@
 	<properties>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 		<java.version>17</java.version>
+		<maven.compiler.release>${java.version}</maven.compiler.release>
 		<maven.version>3.0</maven.version>
 		<slf4j.version>2.0.18</slf4j.version>
-		<okhttp3.version>4.12.0</okhttp3.version>
+		<okhttp3.version>5.4.0</okhttp3.version>
 		<jackson.version>2.22.0</jackson.version>
 		<junit.version>5.8.2</junit.version>
 		<lombok.version>1.18.46</lombok.version>
