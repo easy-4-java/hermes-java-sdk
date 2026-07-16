@@ -94,8 +94,16 @@ public class HermesHttpClient implements AutoCloseable {
 
     public ModelsResponse listModels() { return get(PATH_MODELS, ModelsResponse.class); }
 
+    private static String encodePathSegment(String value) {
+        try {
+            return java.net.URLEncoder.encode(value, "UTF-8");
+        } catch (java.io.UnsupportedEncodingException e) {
+            throw new IllegalStateException("UTF-8 is not supported", e);
+        }
+    }
+
     public ModelsResponse.ModelData getModel(String modelId) {
-        return get(PATH_MODELS + "/" + java.net.URLEncoder.encode(modelId, java.nio.charset.StandardCharsets.UTF_8.name()),
+        return get(PATH_MODELS + "/" + encodePathSegment(modelId),
                 ModelsResponse.ModelData.class);
     }
 
