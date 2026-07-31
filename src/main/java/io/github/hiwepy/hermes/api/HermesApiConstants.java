@@ -1,4 +1,4 @@
-package io.github.hiwepy.hermes.api;
+package io.github.easy4j.hermes.api;
 
 /**
  * Hermes API Server constants — paths, header names, defaults.

@@ -1,4 +1,4 @@
-package io.github.hiwepy.hermes;
+package io.github.easy4j.hermes;
 
 import lombok.Data;
 

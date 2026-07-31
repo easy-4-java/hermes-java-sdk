@@ -1,4 +1,4 @@
-package io.github.hiwepy.hermes.cli;
+package io.github.easy4j.hermes.cli;
 
 import lombok.extern.slf4j.Slf4j;
 

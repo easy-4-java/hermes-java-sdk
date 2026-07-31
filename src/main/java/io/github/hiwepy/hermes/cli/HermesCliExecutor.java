@@ -1,6 +1,6 @@
-package io.github.hiwepy.hermes.cli;
+package io.github.easy4j.hermes.cli;
 
-import io.github.hiwepy.hermes.HermesCliConfig;
+import io.github.easy4j.hermes.HermesCliConfig;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.exec.CommandLine;
 import org.apache.commons.exec.DefaultExecutor;

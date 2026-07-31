@@ -1,9 +1,9 @@
-package io.github.hiwepy.hermes.cli.availability;
+package io.github.easy4j.hermes.cli.availability;
 
-import io.github.hiwepy.hermes.HermesCliConfig;
-import io.github.hiwepy.hermes.cli.HermesCli;
-import io.github.hiwepy.hermes.cli.HermesCliExecutor;
-import io.github.hiwepy.hermes.cli.HermesCliResult;
+import io.github.easy4j.hermes.HermesCliConfig;
+import io.github.easy4j.hermes.cli.HermesCli;
+import io.github.easy4j.hermes.cli.HermesCliExecutor;
+import io.github.easy4j.hermes.cli.HermesCliResult;
 
 import java.io.File;
 import java.util.Objects;

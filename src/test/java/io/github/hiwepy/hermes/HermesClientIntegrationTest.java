@@ -1,11 +1,11 @@
-package io.github.hiwepy.hermes;
+package io.github.easy4j.hermes;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import io.github.hiwepy.hermes.api.HermesApiConstants;
-import io.github.hiwepy.hermes.api.HermesHttpClient;
-import io.github.hiwepy.hermes.api.model.ChatStreamingResponse;
-import io.github.hiwepy.hermes.api.model.*;
-import io.github.hiwepy.hermes.cli.HermesCliResult;
+import io.github.easy4j.hermes.api.HermesApiConstants;
+import io.github.easy4j.hermes.api.HermesHttpClient;
+import io.github.easy4j.hermes.api.model.ChatStreamingResponse;
+import io.github.easy4j.hermes.api.model.*;
+import io.github.easy4j.hermes.cli.HermesCliResult;
 import org.junit.jupiter.api.*;
 import static org.junit.jupiter.api.Assertions.*;
 
