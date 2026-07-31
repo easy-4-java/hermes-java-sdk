@@ -1,6 +1,6 @@
-package io.github.hiwepy.hermes.cli.availability;
+package io.github.easy4j.hermes.cli.availability;
 
-import io.github.hiwepy.hermes.cli.HermesCliResult;
+import io.github.easy4j.hermes.cli.HermesCliResult;
 import lombok.Builder;
 import lombok.Getter;
 
