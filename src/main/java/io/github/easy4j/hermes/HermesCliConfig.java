@@ -21,7 +21,7 @@ public class HermesCliConfig {
     /**
      * 启动时是否探测 CLI 可用性。
      */
-    private boolean startupCheckEnabled = true;
+    private boolean startupCheckEnabled = false;
 
     /**
      * CLI 不可用时是否快速失败。
