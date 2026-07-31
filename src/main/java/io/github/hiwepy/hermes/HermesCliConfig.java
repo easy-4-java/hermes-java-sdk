@@ -13,6 +13,22 @@ import lombok.Data;
 public class HermesCliConfig {
 
     /**
+     * 是否启用本地 CLI 功能。
+     * <p>为 false 时跳过 CLI 相关初始化和检查。</p>
+     */
+    private boolean enabled = true;
+
+    /**
+     * 启动时是否探测 CLI 可用性。
+     */
+    private boolean startupCheckEnabled = true;
+
+    /**
+     * CLI 不可用时是否快速失败。
+     */
+    private boolean failFastOnUnavailable = false;
+
+    /**
      * 本地可执行文件名或绝对路径。
      */
     private String executable = HermesApiConstants.DEFAULT_EXECUTABLE;

@@ -15,6 +15,22 @@ import java.util.Objects;
 public class HermesHttpClientConfig {
 
     /**
+     * 是否启用 HTTP API 功能。
+     * <p>为 false 时跳过 HTTP 客户端初始化和检查。</p>
+     */
+    private boolean enabled = true;
+
+    /**
+     * 启动时是否探测 HTTP 服务可用性。
+     */
+    private boolean startupCheckEnabled = true;
+
+    /**
+     * HTTP 服务不可用时是否快速失败。
+     */
+    private boolean failFastOnUnavailable = false;
+
+    /**
      * Hermes API Server 根地址，例如 {@code http://localhost:8642}。
      */
     private String serverUrl = HermesApiConstants.DEFAULT_SERVER_URL;
