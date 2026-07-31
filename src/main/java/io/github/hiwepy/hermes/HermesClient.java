@@ -171,39 +171,27 @@ public class HermesClient implements AutoCloseable {
     public boolean isHttpEnabled() { return httpClient != null; }
     public boolean isCliEnabled() { return cli != null; }
 
-    private void checkHttpEnabled() {
-        if (httpClient == null) {
-            throw new IllegalStateException("HTTP client is disabled. Set HermesClientConfig.httpEnabled=true to enable.");
-        }
-    }
-
-    private void checkCliEnabled() {
-        if (cli == null) {
-            throw new IllegalStateException("CLI client is disabled. Set HermesClientConfig.cliEnabled=true to enable.");
-        }
-    }
-
     // ============================================================
     // Health
     // ============================================================
 
-    public HealthStatus health() { checkHttpEnabled(); return httpClient.health(); }
-    public HealthStatus healthDetailed() { checkHttpEnabled(); return httpClient.healthDetailed(); }
-    public HealthStatus healthV1() { checkHttpEnabled(); return httpClient.healthV1(); }
+    public HealthStatus health() { return httpClient.health(); }
+    public HealthStatus healthDetailed() { return httpClient.healthDetailed(); }
+    public HealthStatus healthV1() { return httpClient.healthV1(); }
 
     // ============================================================
     // Chat Completions
     // ============================================================
 
     public ChatResponse chatCompletion(ChatRequest request) {
-        checkHttpEnabled();
+       
         return httpClient.chatCompletion(request);
     }
 
     /** Chat completion with Hermes custom headers. */
     public ChatResponse chatCompletion(ChatRequest request,
                                        Map<String, String> headers) {
-        checkHttpEnabled();
+       
         return httpClient.chatCompletion(request, headers);
     }
 
@@ -211,7 +199,7 @@ public class HermesClient implements AutoCloseable {
     public ChatResponse chatCompletionWithSession(ChatRequest request,
                                                   String sessionKey,
                                                   String sessionId) {
-        checkHttpEnabled();
+       
         return httpClient.chatCompletion(request,
                 HermesHttpClient.hermesHeaders(sessionKey, sessionId, null));
     }
@@ -233,36 +221,36 @@ public class HermesClient implements AutoCloseable {
     // ============================================================
 
     public ResponseResult createResponse(ResponseRequest request) {
-        checkHttpEnabled();
+       
         return httpClient.createResponse(request);
     }
 
     public ResponseResult createResponse(ResponseRequest request, Map<String, String> headers) {
-        checkHttpEnabled();
+       
         return httpClient.createResponse(request, headers);
     }
 
-    public ResponseResult getResponse(String responseId) { checkHttpEnabled(); return httpClient.getResponse(responseId); }
-    public boolean deleteResponse(String responseId) { checkHttpEnabled(); return httpClient.deleteResponse(responseId); }
+    public ResponseResult getResponse(String responseId) { return httpClient.getResponse(responseId); }
+    public boolean deleteResponse(String responseId) { return httpClient.deleteResponse(responseId); }
 
     // ============================================================
     // Models & Capabilities & Skills
     // ============================================================
 
-    public ModelsResponse listModels() { checkHttpEnabled(); return httpClient.listModels(); }
-    public CapabilityInfo getCapabilities() { checkHttpEnabled(); return httpClient.getCapabilities(); }
-    public List<Map<String, Object>> listSkills() { checkHttpEnabled(); return httpClient.listSkills(); }
-    public List<Map<String, Object>> listToolsets() { checkHttpEnabled(); return httpClient.listToolsets(); }
+    public ModelsResponse listModels() { return httpClient.listModels(); }
+    public CapabilityInfo getCapabilities() { return httpClient.getCapabilities(); }
+    public List<Map<String, Object>> listSkills() { return httpClient.listSkills(); }
+    public List<Map<String, Object>> listToolsets() { return httpClient.listToolsets(); }
 
     // ============================================================
     // Run
     // ============================================================
 
-    public RunStatus createRun(RunCreateRequest request) { checkHttpEnabled(); return httpClient.createRun(request); }
-    public RunStatus getRun(String runId) { checkHttpEnabled(); return httpClient.getRun(runId); }
-    public void stopRun(String runId) { checkHttpEnabled(); httpClient.stopRun(runId); }
+    public RunStatus createRun(RunCreateRequest request) { return httpClient.createRun(request); }
+    public RunStatus getRun(String runId) { return httpClient.getRun(runId); }
+    public void stopRun(String runId) { httpClient.stopRun(runId); }
     public Map<String, Object> approveRun(String runId, Map<String, Object> decision) {
-        checkHttpEnabled();
+       
         return httpClient.approveRun(runId, decision);
     }
 
@@ -281,7 +269,7 @@ public class HermesClient implements AutoCloseable {
     /** Streaming chat completion with Hermes custom headers. */
     public ChatStreamingResponse chatCompletionStream(ChatRequest request,
                                                       Map<String, String> headers) {
-        checkHttpEnabled();
+       
         request.setStream(true);
         ChatStreamingResponse stream = new ChatStreamingResponse();
         sseClient.subscribeChat(request, headers, stream::accept, stream::finish, stream::fail);
@@ -305,19 +293,19 @@ public class HermesClient implements AutoCloseable {
     // Session
     // ============================================================
 
-    public Session createSession(String title) { checkHttpEnabled(); return httpClient.createSession(title); }
-    public List<Session> listSessions() { checkHttpEnabled(); return httpClient.listSessions(); }
+    public Session createSession(String title) { return httpClient.createSession(title); }
+    public List<Session> listSessions() { return httpClient.listSessions(); }
     /** 分页列出 sessions。 */
     public List<Session> listSessions(Integer limit, Integer offset, String source, Boolean includeChildren) {
-        checkHttpEnabled();
+       
         return httpClient.listSessions(limit, offset, source, includeChildren);
     }
-    public Session getSession(String sessionId) { checkHttpEnabled(); return httpClient.getSession(sessionId); }
-    public List<Map<String, Object>> getSessionMessages(String id) { checkHttpEnabled(); return httpClient.getSessionMessages(id); }
-    public Session forkSession(String id, String title) { checkHttpEnabled(); return httpClient.forkSession(id, title); }
-    public boolean deleteSession(String sessionId) { checkHttpEnabled(); return httpClient.deleteSession(sessionId); }
+    public Session getSession(String sessionId) { return httpClient.getSession(sessionId); }
+    public List<Map<String, Object>> getSessionMessages(String id) { return httpClient.getSessionMessages(id); }
+    public Session forkSession(String id, String title) { return httpClient.forkSession(id, title); }
+    public boolean deleteSession(String sessionId) { return httpClient.deleteSession(sessionId); }
     public ChatResponse sessionChat(String sessionId, String input) {
-        checkHttpEnabled();
+       
         return httpClient.sessionChat(sessionId, input);
     }
 
@@ -325,27 +313,27 @@ public class HermesClient implements AutoCloseable {
     // Jobs
     // ============================================================
 
-    public List<Map<String, Object>> listJobs() { checkHttpEnabled(); return httpClient.listJobs(); }
-    public Map<String, Object> createJob(Map<String, Object> job) { checkHttpEnabled(); return httpClient.createJob(job); }
-    public Map<String, Object> getJob(String jobId) { checkHttpEnabled(); return httpClient.getJob(jobId); }
-    public Map<String, Object> updateJob(String jobId, Map<String, Object> patch) { checkHttpEnabled(); return httpClient.updateJob(jobId, patch); }
-    public boolean deleteJob(String jobId) { checkHttpEnabled(); return httpClient.deleteJob(jobId); }
-    public Map<String, Object> pauseJob(String jobId) { checkHttpEnabled(); return httpClient.pauseJob(jobId); }
-    public Map<String, Object> resumeJob(String jobId) { checkHttpEnabled(); return httpClient.resumeJob(jobId); }
-    public Map<String, Object> runJobNow(String jobId) { checkHttpEnabled(); return httpClient.runJobNow(jobId); }
+    public List<Map<String, Object>> listJobs() { return httpClient.listJobs(); }
+    public Map<String, Object> createJob(Map<String, Object> job) { return httpClient.createJob(job); }
+    public Map<String, Object> getJob(String jobId) { return httpClient.getJob(jobId); }
+    public Map<String, Object> updateJob(String jobId, Map<String, Object> patch) { return httpClient.updateJob(jobId, patch); }
+    public boolean deleteJob(String jobId) { return httpClient.deleteJob(jobId); }
+    public Map<String, Object> pauseJob(String jobId) { return httpClient.pauseJob(jobId); }
+    public Map<String, Object> resumeJob(String jobId) { return httpClient.resumeJob(jobId); }
+    public Map<String, Object> runJobNow(String jobId) { return httpClient.runJobNow(jobId); }
 
     // ============================================================
     // SSE (raw access)
     // ============================================================
 
-    public HermesSseClient sse() { checkHttpEnabled(); return sseClient; }
+    public HermesSseClient sse() { return sseClient; }
 
     // ============================================================
     // CLI
     // ============================================================
 
     public HermesCli cli() {
-        checkCliEnabled();
+       
         return cli;
     }
 
