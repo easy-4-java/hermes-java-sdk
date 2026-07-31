@@ -5,7 +5,13 @@ import io.github.hiwepy.hermes.cli.HermesCli;
 import io.github.hiwepy.hermes.cli.HermesCliExecutor;
 import io.github.hiwepy.hermes.api.HermesHttpClient;
 import io.github.hiwepy.hermes.api.HermesSseClient;
+<<<<<<< HEAD
 import io.github.hiwepy.hermes.api.StreamingResponse;
+=======
+import io.github.hiwepy.hermes.api.model.ChatStreamingResponse;
+import lombok.extern.slf4j.Slf4j;
+import okhttp3.OkHttpClient;
+>>>>>>> ec61105 (feat: add startup check with httpEnabled/httpStartupCheckEnabled/httpFailFastOnUnavailable and cliEnabled/cliStartupCheckEnabled/cliFailFastOnUnavailable config)
 
 import java.util.List;
 import java.util.Map;
@@ -14,6 +20,7 @@ import java.util.Objects;
 /**
  * Hermes 客户端门面：HTTP REST + SSE 事件流 + 本地 CLI。
  */
+@Slf4j
 public class HermesClient implements AutoCloseable {
 
     private final HermesClientConfig config;
@@ -21,13 +28,77 @@ public class HermesClient implements AutoCloseable {
     private final HermesSseClient sseClient;
     private final HermesCli cli;
 
+    /**
+     * 使用配置构造客户端（推荐方式）。
+     * <p>使用默认的 ObjectMapper 和 OkHttpClient。</p>
+     *
+     * @param config 配置，不得为 null
+     */
     public HermesClient(HermesClientConfig config) {
+<<<<<<< HEAD
         this.config = Objects.requireNonNull(config, "config");
         this.httpClient = new HermesHttpClient(config);
         this.sseClient = new HermesSseClient(config);
         this.cli = new HermesCli(new HermesCliExecutor(config));
+=======
+        this(config, new ObjectMapper(), new OkHttpClient());
     }
 
+    /**
+     * 使用配置构造客户端。
+     *
+     * @param config        配置，不得为 null
+     * @param objectMapper 共享 ObjectMapper，不得为 null
+     * @param httpClient   共享 OkHttpClient，不得为 null
+     */
+    public HermesClient(HermesClientConfig config, ObjectMapper objectMapper, OkHttpClient httpClient) {
+        this.config = Objects.requireNonNull(config, "config");
+        Objects.requireNonNull(objectMapper, "objectMapper");
+        Objects.requireNonNull(httpClient, "httpClient");
+
+        // HTTP 客户端初始化
+        if (config.isHttpEnabled()) {
+            this.httpClient = new HermesHttpClient(config, objectMapper, httpClient);
+            this.sseClient = new HermesSseClient(config, objectMapper, httpClient);
+            // HTTP 启动检查
+            if (config.isHttpStartupCheckEnabled()) {
+                try {
+                    HealthStatus status = this.httpClient.health();
+                    if (!"ok".equals(status.getStatus())) {
+                        handleHttpCheckFailed(config, "Health check failed: " + status.getStatus());
+                    }
+                } catch (Exception e) {
+                    handleHttpCheckFailed(config, "Health check failed: " + e.getMessage());
+                }
+            }
+        } else {
+            this.httpClient = null;
+            this.sseClient = null;
+        }
+
+        // CLI 初始化
+        if (config.isCliEnabled()) {
+            HermesCliExecutor executor = new HermesCliExecutor(config);
+            boolean cliAvailable = !config.isCliStartupCheckEnabled() || executor.probe();
+            if (!cliAvailable) {
+                handleCliCheckFailed(config);
+            }
+            this.cli = new HermesCli(executor);
+        } else {
+            this.cli = null;
+        }
+>>>>>>> ec61105 (feat: add startup check with httpEnabled/httpStartupCheckEnabled/httpFailFastOnUnavailable and cliEnabled/cliStartupCheckEnabled/cliFailFastOnUnavailable config)
+    }
+
+    /**
+     * 全量注入构造，供测试或高级定制使用。
+     * <p>使用此构造方法不会执行任何启动检查。</p>
+     *
+     * @param config    配置，不得为 null
+     * @param httpClient HTTP 客户端实例，不得为 null
+     * @param sseClient SSE 客户端实例，不得为 null
+     * @param cli       CLI 实例，不得为 null
+     */
     public HermesClient(HermesClientConfig config, HermesHttpClient httpClient,
                         HermesSseClient sseClient, HermesCli cli) {
         this.config = Objects.requireNonNull(config, "config");
@@ -36,31 +107,84 @@ public class HermesClient implements AutoCloseable {
         this.cli = Objects.requireNonNull(cli, "cli");
     }
 
+    private void handleHttpCheckFailed(HermesClientConfig config, String message) {
+        if (config.isHttpFailFastOnUnavailable()) {
+            throw new IllegalStateException("Hermes HTTP service is not available: " + message
+                    + ". Set httpEnabled=false or httpStartupCheckEnabled=false to disable.");
+        }
+        log.warn("Hermes HTTP service is not available: {} (continuing without HTTP support)", message);
+    }
+
+    private void handleCliCheckFailed(HermesClientConfig config) {
+        if (config.isCliFailFastOnUnavailable()) {
+            throw new IllegalStateException("Hermes CLI is not available: " + config.getLocalExecutable()
+                    + ". Set cliEnabled=false or cliStartupCheckEnabled=false to disable.");
+        }
+        log.warn("Hermes CLI is not available: {} (continuing without CLI support)", config.getLocalExecutable());
+    }
+
+    // ============================================================
+    // Status checks
+    // ============================================================
+
+    public boolean isHttpEnabled() { return httpClient != null; }
+    public boolean isCliEnabled() { return cli != null; }
+
+    private void checkHttpEnabled() {
+        if (httpClient == null) {
+            throw new IllegalStateException("HTTP client is disabled. Set HermesClientConfig.httpEnabled=true to enable.");
+        }
+    }
+
+    private void checkCliEnabled() {
+        if (cli == null) {
+            throw new IllegalStateException("CLI client is disabled. Set HermesClientConfig.cliEnabled=true to enable.");
+        }
+    }
+
     // ============================================================
     // Health
     // ============================================================
 
-    public HealthStatus health() { return httpClient.health(); }
-    public HealthStatus healthDetailed() { return httpClient.healthDetailed(); }
-    public HealthStatus healthV1() { return httpClient.healthV1(); }
+    public HealthStatus health() { checkHttpEnabled(); return httpClient.health(); }
+    public HealthStatus healthDetailed() { checkHttpEnabled(); return httpClient.healthDetailed(); }
+    public HealthStatus healthV1() { checkHttpEnabled(); return httpClient.healthV1(); }
 
     // ============================================================
     // Chat Completions
     // ============================================================
 
+<<<<<<< HEAD
     public ChatCompletionResponse chatCompletion(ChatCompletionRequest request) {
+=======
+    public ChatResponse chatCompletion(ChatRequest request) {
+        checkHttpEnabled();
+>>>>>>> ec61105 (feat: add startup check with httpEnabled/httpStartupCheckEnabled/httpFailFastOnUnavailable and cliEnabled/cliStartupCheckEnabled/cliFailFastOnUnavailable config)
         return httpClient.chatCompletion(request);
     }
 
     /** Chat completion with Hermes custom headers. */
+<<<<<<< HEAD
     public ChatCompletionResponse chatCompletion(ChatCompletionRequest request,
                                                   Map<String, String> headers) {
+=======
+    public ChatResponse chatCompletion(ChatRequest request,
+                                       Map<String, String> headers) {
+        checkHttpEnabled();
+>>>>>>> ec61105 (feat: add startup check with httpEnabled/httpStartupCheckEnabled/httpFailFastOnUnavailable and cliEnabled/cliStartupCheckEnabled/cliFailFastOnUnavailable config)
         return httpClient.chatCompletion(request, headers);
     }
 
     /** Convenience: chat with session key. */
+<<<<<<< HEAD
     public ChatCompletionResponse chatCompletionWithSession(
             ChatCompletionRequest request, String sessionKey, String sessionId) {
+=======
+    public ChatResponse chatCompletionWithSession(ChatRequest request,
+                                                  String sessionKey,
+                                                  String sessionId) {
+        checkHttpEnabled();
+>>>>>>> ec61105 (feat: add startup check with httpEnabled/httpStartupCheckEnabled/httpFailFastOnUnavailable and cliEnabled/cliStartupCheckEnabled/cliFailFastOnUnavailable config)
         return httpClient.chatCompletion(request,
                 HermesHttpClient.hermesHeaders(sessionKey, sessionId, null));
     }
@@ -70,33 +194,36 @@ public class HermesClient implements AutoCloseable {
     // ============================================================
 
     public ResponseResult createResponse(ResponseRequest request) {
+        checkHttpEnabled();
         return httpClient.createResponse(request);
     }
 
     public ResponseResult createResponse(ResponseRequest request, Map<String, String> headers) {
+        checkHttpEnabled();
         return httpClient.createResponse(request, headers);
     }
 
-    public ResponseResult getResponse(String responseId) { return httpClient.getResponse(responseId); }
-    public boolean deleteResponse(String responseId) { return httpClient.deleteResponse(responseId); }
+    public ResponseResult getResponse(String responseId) { checkHttpEnabled(); return httpClient.getResponse(responseId); }
+    public boolean deleteResponse(String responseId) { checkHttpEnabled(); return httpClient.deleteResponse(responseId); }
 
     // ============================================================
     // Models & Capabilities & Skills
     // ============================================================
 
-    public ModelsResponse listModels() { return httpClient.listModels(); }
-    public CapabilityInfo getCapabilities() { return httpClient.getCapabilities(); }
-    public List<Map<String, Object>> listSkills() { return httpClient.listSkills(); }
-    public List<Map<String, Object>> listToolsets() { return httpClient.listToolsets(); }
+    public ModelsResponse listModels() { checkHttpEnabled(); return httpClient.listModels(); }
+    public CapabilityInfo getCapabilities() { checkHttpEnabled(); return httpClient.getCapabilities(); }
+    public List<Map<String, Object>> listSkills() { checkHttpEnabled(); return httpClient.listSkills(); }
+    public List<Map<String, Object>> listToolsets() { checkHttpEnabled(); return httpClient.listToolsets(); }
 
     // ============================================================
     // Run
     // ============================================================
 
-    public RunStatus createRun(RunCreateRequest request) { return httpClient.createRun(request); }
-    public RunStatus getRun(String runId) { return httpClient.getRun(runId); }
-    public void stopRun(String runId) { httpClient.stopRun(runId); }
+    public RunStatus createRun(RunCreateRequest request) { checkHttpEnabled(); return httpClient.createRun(request); }
+    public RunStatus getRun(String runId) { checkHttpEnabled(); return httpClient.getRun(runId); }
+    public void stopRun(String runId) { checkHttpEnabled(); httpClient.stopRun(runId); }
     public Map<String, Object> approveRun(String runId, Map<String, Object> decision) {
+        checkHttpEnabled();
         return httpClient.approveRun(runId, decision);
     }
 
@@ -108,7 +235,18 @@ public class HermesClient implements AutoCloseable {
      * Streaming chat completion returning a {@link StreamingResponse} that accumulates
      * delta text and completes when the stream ends.
      */
+<<<<<<< HEAD
     public StreamingResponse chatCompletionStream(ChatCompletionRequest request) {
+=======
+    public ChatStreamingResponse chatCompletionStream(ChatRequest request) {
+        return chatCompletionStream(request, (Map<String, String>) null);
+    }
+
+    /** Streaming chat completion with Hermes custom headers. */
+    public ChatStreamingResponse chatCompletionStream(ChatRequest request,
+                                                      Map<String, String> headers) {
+        checkHttpEnabled();
+>>>>>>> ec61105 (feat: add startup check with httpEnabled/httpStartupCheckEnabled/httpFailFastOnUnavailable and cliEnabled/cliStartupCheckEnabled/cliFailFastOnUnavailable config)
         request.setStream(true);
         StreamingResponse stream = new StreamingResponse();
         sseClient.subscribeChat(request, event -> stream.accept(event),
@@ -120,6 +258,7 @@ public class HermesClient implements AutoCloseable {
     // Session
     // ============================================================
 
+<<<<<<< HEAD
     public Session createSession(String title) { return httpClient.createSession(title); }
     public List<Session> listSessions() { return httpClient.listSessions(); }
     public Session getSession(String sessionId) { return httpClient.getSession(sessionId); }
@@ -127,6 +266,21 @@ public class HermesClient implements AutoCloseable {
     public Session forkSession(String id, String title) { return httpClient.forkSession(id, title); }
     public boolean deleteSession(String sessionId) { return httpClient.deleteSession(sessionId); }
     public ChatCompletionResponse sessionChat(String sessionId, String input) {
+=======
+    public Session createSession(String title) { checkHttpEnabled(); return httpClient.createSession(title); }
+    public List<Session> listSessions() { checkHttpEnabled(); return httpClient.listSessions(); }
+    /** 分页列出 sessions。 */
+    public List<Session> listSessions(Integer limit, Integer offset, String source, Boolean includeChildren) {
+        checkHttpEnabled();
+        return httpClient.listSessions(limit, offset, source, includeChildren);
+    }
+    public Session getSession(String sessionId) { checkHttpEnabled(); return httpClient.getSession(sessionId); }
+    public List<Map<String, Object>> getSessionMessages(String id) { checkHttpEnabled(); return httpClient.getSessionMessages(id); }
+    public Session forkSession(String id, String title) { checkHttpEnabled(); return httpClient.forkSession(id, title); }
+    public boolean deleteSession(String sessionId) { checkHttpEnabled(); return httpClient.deleteSession(sessionId); }
+    public ChatResponse sessionChat(String sessionId, String input) {
+        checkHttpEnabled();
+>>>>>>> ec61105 (feat: add startup check with httpEnabled/httpStartupCheckEnabled/httpFailFastOnUnavailable and cliEnabled/cliStartupCheckEnabled/cliFailFastOnUnavailable config)
         return httpClient.sessionChat(sessionId, input);
     }
 
@@ -134,26 +288,29 @@ public class HermesClient implements AutoCloseable {
     // Jobs
     // ============================================================
 
-    public List<Map<String, Object>> listJobs() { return httpClient.listJobs(); }
-    public Map<String, Object> createJob(Map<String, Object> job) { return httpClient.createJob(job); }
-    public Map<String, Object> getJob(String jobId) { return httpClient.getJob(jobId); }
-    public Map<String, Object> updateJob(String jobId, Map<String, Object> patch) { return httpClient.updateJob(jobId, patch); }
-    public boolean deleteJob(String jobId) { return httpClient.deleteJob(jobId); }
-    public Map<String, Object> pauseJob(String jobId) { return httpClient.pauseJob(jobId); }
-    public Map<String, Object> resumeJob(String jobId) { return httpClient.resumeJob(jobId); }
-    public Map<String, Object> runJobNow(String jobId) { return httpClient.runJobNow(jobId); }
+    public List<Map<String, Object>> listJobs() { checkHttpEnabled(); return httpClient.listJobs(); }
+    public Map<String, Object> createJob(Map<String, Object> job) { checkHttpEnabled(); return httpClient.createJob(job); }
+    public Map<String, Object> getJob(String jobId) { checkHttpEnabled(); return httpClient.getJob(jobId); }
+    public Map<String, Object> updateJob(String jobId, Map<String, Object> patch) { checkHttpEnabled(); return httpClient.updateJob(jobId, patch); }
+    public boolean deleteJob(String jobId) { checkHttpEnabled(); return httpClient.deleteJob(jobId); }
+    public Map<String, Object> pauseJob(String jobId) { checkHttpEnabled(); return httpClient.pauseJob(jobId); }
+    public Map<String, Object> resumeJob(String jobId) { checkHttpEnabled(); return httpClient.resumeJob(jobId); }
+    public Map<String, Object> runJobNow(String jobId) { checkHttpEnabled(); return httpClient.runJobNow(jobId); }
 
     // ============================================================
     // SSE (raw access)
     // ============================================================
 
-    public HermesSseClient sse() { return sseClient; }
+    public HermesSseClient sse() { checkHttpEnabled(); return sseClient; }
 
     // ============================================================
     // CLI
     // ============================================================
 
-    public HermesCli cli() { return cli; }
+    public HermesCli cli() {
+        checkCliEnabled();
+        return cli;
+    }
 
     // ============================================================
     // Config & lifecycle
@@ -162,5 +319,10 @@ public class HermesClient implements AutoCloseable {
     public HermesClientConfig getConfig() { return config; }
 
     @Override
+    public void close() {
+        if (httpClient != null) httpClient.close();
+        if (sseClient != null) sseClient.close();
+    }
+}
     public void close() { httpClient.close(); sseClient.close(); }
 }
