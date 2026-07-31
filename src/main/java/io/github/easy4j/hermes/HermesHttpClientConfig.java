@@ -23,7 +23,7 @@ public class HermesHttpClientConfig {
     /**
      * 启动时是否探测 HTTP 服务可用性。
      */
-    private boolean startupCheckEnabled = true;
+    private boolean startupCheckEnabled = false;
 
     /**
      * HTTP 服务不可用时是否快速失败。
