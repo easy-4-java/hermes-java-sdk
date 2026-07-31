@@ -72,6 +72,13 @@
 						<release>${java.version}</release>
 						<encoding>${project.build.sourceEncoding}</encoding>
 						<maxmem>512M</maxmem>
+						<annotationProcessorPaths>
+							<path>
+								<groupId>org.projectlombok</groupId>
+								<artifactId>lombok</artifactId>
+								<version>${lombok.version}</version>
+							</path>
+						</annotationProcessorPaths>
 					</configuration>
 				</plugin>
 				<!-- https://mvnrepository.com/artifact/org.apache.maven.plugins/maven-deploy-plugin -->
@@ -374,7 +381,7 @@
 		<maven.version>3.0</maven.version>
 		<slf4j.version>2.0.18</slf4j.version>
 		<okhttp3.version>5.4.0</okhttp3.version>
-		<jackson.version>2.22.1</jackson.version>
+		<jackson.version>2.22.0</jackson.version>
 		<junit.version>5.8.2</junit.version>
 		<lombok.version>1.18.46</lombok.version>
 		<commons-exec.version>1.4.0</commons-exec.version>
