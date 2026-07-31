@@ -1,4 +1,4 @@
-package io.github.hiwepy.hermes.exception;
+package io.github.easy4j.hermes.exception;
 
 import lombok.Getter;
 

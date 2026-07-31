@@ -1,4 +1,4 @@
-package io.github.hiwepy.hermes.api.model;
+package io.github.easy4j.hermes.api.model;
 
 import lombok.Getter;
 

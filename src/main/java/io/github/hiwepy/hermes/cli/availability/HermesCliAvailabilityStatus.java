@@ -1,4 +1,4 @@
-package io.github.hiwepy.hermes.cli.availability;
+package io.github.easy4j.hermes.cli.availability;
 
 /**
  * Hermes CLI 可用性探测结论分类。

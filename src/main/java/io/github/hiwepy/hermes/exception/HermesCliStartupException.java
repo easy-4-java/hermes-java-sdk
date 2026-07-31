@@ -1,6 +1,6 @@
-package io.github.hiwepy.hermes.exception;
+package io.github.easy4j.hermes.exception;
 
-import io.github.hiwepy.hermes.cli.availability.HermesCliAvailabilityReport;
+import io.github.easy4j.hermes.cli.availability.HermesCliAvailabilityReport;
 import lombok.Getter;
 
 /**

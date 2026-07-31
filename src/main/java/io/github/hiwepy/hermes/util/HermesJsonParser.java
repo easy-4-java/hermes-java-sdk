@@ -1,4 +1,4 @@
-package io.github.hiwepy.hermes.util;
+package io.github.easy4j.hermes.util;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;

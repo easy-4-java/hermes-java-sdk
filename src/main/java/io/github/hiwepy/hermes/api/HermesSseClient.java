@@ -1,12 +1,12 @@
-package io.github.hiwepy.hermes.api;
+package io.github.easy4j.hermes.api;
 
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import io.github.hiwepy.hermes.HermesHttpClientConfig;
-import static io.github.hiwepy.hermes.api.HermesApiConstants.*;
-import io.github.hiwepy.hermes.api.model.ChatRequest;
-import io.github.hiwepy.hermes.api.model.SseEvent;
-import io.github.hiwepy.hermes.exception.HermesHttpException;
+import io.github.easy4j.hermes.HermesHttpClientConfig;
+import static io.github.easy4j.hermes.api.HermesApiConstants.*;
+import io.github.easy4j.hermes.api.model.ChatRequest;
+import io.github.easy4j.hermes.api.model.SseEvent;
+import io.github.easy4j.hermes.exception.HermesHttpException;
 import lombok.extern.slf4j.Slf4j;
 import okhttp3.*;
 

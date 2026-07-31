@@ -1,6 +1,6 @@
-package io.github.hiwepy.hermes;
+package io.github.easy4j.hermes;
 
-import io.github.hiwepy.hermes.api.HermesApiConstants;
+import io.github.easy4j.hermes.api.HermesApiConstants;
 import lombok.Data;
 
 /**
