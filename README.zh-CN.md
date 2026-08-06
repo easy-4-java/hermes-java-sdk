@@ -2,14 +2,11 @@
 
 [English](./README.md) | [简体中文](./README.zh-CN.md)
 
-![Java](https://img.shields.io/badge/Java-8-orange) ![License](https://img.shields.io/badge/License-Apache%202.0-blue)
-
 [Hermes Agent](https://github.com/easy-4-java/hermes) 的纯 Java SDK — HTTP API Server + SSE 流式 + 本地 CLI 集成。无 Spring 依赖，JDK 8 基线。
 
-<a id="1-project-overview"></a>
 ## 目录
 
-- [1. 项目概览](#1-project-overview)
+- [1. 项目概览](#1-项目概览)
 - [2. 功能与状态](#2-features--status)
 - [3. 环境要求与兼容性](#3-requirements--compatibility)
 - [4. 架构与模块](#4-architecture--modules)
