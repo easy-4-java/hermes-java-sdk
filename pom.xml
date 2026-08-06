@@ -355,7 +355,7 @@
 		<slf4j.version>2.0.18</slf4j.version>
 		<lombok.version>1.18.46</lombok.version>
 		<jackson.version>2.22.0</jackson.version>
-		<junit-jupiter.version>6.1.0</junit-jupiter.version>
+		<junit-jupiter.version>5.11.4</junit-jupiter.version>
 		<commons-lang.version>2.6</commons-lang.version></properties>
         </profile>
         <!-- 发布到 Maven Central Portal：mvn -Prelease deploy（GPG 签名 + 源码 + Javadoc + Central 发布插件） -->
