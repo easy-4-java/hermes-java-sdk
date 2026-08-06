@@ -1,39 +1,136 @@
 # hermes-java-sdk
 
-> Pure Java SDK for Hermes Agent — HTTP API Server + SSE streaming + local CLI integration.
+[English](./README.md) | [简体中文](./README.zh-CN.md)
 
-[English](README.md) | [中文](README.zh_CN.md)
+![Java](https://img.shields.io/badge/Java-8-orange) ![License](https://img.shields.io/badge/License-Apache%202.0-blue)
 
-## Overview
+A pure Java SDK for [Hermes Agent](https://github.com/easy-4-java/hermes) — HTTP API Server + SSE streaming + local CLI integration. Spring-free, JDK 8 baseline.
 
-`hermes-java-sdk` is a pure Java SDK (no Spring dependency) for integrating with [Hermes Agent](https://github.com/easy-4-java/hermes). It provides three independent communication channels:
+## Table of Contents
 
-| Channel | Description | Entry Point |
-|---------|-------------|-------------|
-| **HTTP** | REST API for Runs, Chat Completions, Sessions, Models | `HermesHttpClient` |
-| **SSE** | Server-Sent Events streaming | `HermesSseClient` |
-| **CLI** | Local `hermes` command execution | `HermesCli` |
+- [1. Project Overview](#1-project-overview)
+- [2. Features & Status](#2-features--status)
+- [3. Requirements & Compatibility](#3-requirements--compatibility)
+- [4. Architecture & Modules](#4-architecture--modules)
+- [5. Installation](#5-installation)
+- [6. Quick Start](#6-quick-start)
+- [7. Configuration](#7-configuration)
+- [8. Core Usage / API](#8-core-usage--api)
+- [9. Testing & Build](#9-testing--build)
+- [10. Versioning & Branches](#10-versioning--branches)
+- [11. Contributing & License](#11-contributing--license)
 
-For Spring Boot applications, use [hermes-spring-boot-starter](../hermes-spring-boot-starter).
+## 1. Project Overview
 
-## Features
+`hermes-java-sdk` is a pure Java SDK (no Spring dependency) for integrating with Hermes Agent, an agent service with an HTTP API server. The SDK provides three independent communication channels behind a single facade:
 
-- **Unified Client Facade** — `HermesClient` provides a single entry point for all three channels
-- **Chat Completions** — Synchronous chat completion API
-- **Runs** — Create, query, stop agent runs
-- **Sessions** — Create, list, get, delete sessions; chat within sessions
-- **Models & Capabilities** — List available models and system capabilities
-- **SSE Streaming** — Subscribe to real-time Server-Sent Events
-- **Local CLI** — Execute local `hermes` commands with structured output parsing
-- **Health Checks** — Server health endpoint integration
-- **Startup Probes** — Configurable startup availability checks for HTTP and CLI
+| Channel | Description | Entry point |
+|:---|:---|:---|
+| **HTTP** | REST API for health, chat completions, responses, runs, sessions, models, capabilities, skills, toolsets and jobs | `HermesHttpClient` |
+| **SSE** | Server-Sent Events streaming (chat, run events, session streams) | `HermesSseClient` |
+| **CLI** | Local `hermes` command execution with structured output parsing | `HermesCli` |
 
-## Requirements
+| What it is | What it is not |
+|:---|:---|
+| A unified client for a Hermes Agent server | A Spring Boot starter (no auto-configuration) |
+| Typed request/response models for the agent API | An agent implementation itself |
+| Local CLI wrapper + startup probes | A UI |
 
-- Java 8+ (JDK 8 for 1.0.x, JDK 17 for 2.0.x+)
-- Hermes Agent server running (default: `http://localhost:8642`)
+Typical use cases:
 
-## Installation
+| Use case | Notes |
+|:---|:---|
+| Health checks before traffic | `health()`, `healthDetailed()`, `healthV1()` |
+| Chat completions | `chatCompletion(ChatRequest)`, `chatCompletionWithSession(...)` |
+| Streaming chat | `chatCompletionStream(ChatRequest)` -> `ChatStreamingResponse` |
+| Agent runs | `createRun(RunCreateRequest)`, `getRun`, `stopRun`, `approveRun` |
+| Sessions | `createSession(title)`, `listSessions()`, `sessionChat(sessionId, input)`, `forkSession`, `deleteSession` |
+| Responses API | `createResponse(ResponseRequest)`, `getResponse`, `deleteResponse` |
+| Local CLI | `cli().chatOneShot(query)`, `cli().worktreeOneShot(query)`, `cli().version()` |
+| Jobs | `listJobs()`, `createJob`, `getJob`, `updateJob`, `pauseJob`, `resumeJob`, `runJobNow` |
+
+**Project status:** active development.
+
+## 2. Features & Status
+
+| Feature | Status | Notes |
+|:---|:---|:---|
+| Unified `HermesClient` facade | Available | Single entry point for HTTP + SSE + CLI channels (`AutoCloseable`) |
+| Chat completions (sync) | Available | `chatCompletion(ChatRequest[, headers])`, with-session variants |
+| SSE streaming | Available | `chatCompletionStream(ChatRequest)`, `sse().subscribeChat(...)`, `subscribeQueue(runId)` |
+| Runs | Available | `createRun` / `getRun` / `stopRun` / `approveRun` |
+| Sessions | Available | Create / list / get / messages / fork / delete / `sessionChat` |
+| Responses API | Available | `createResponse` / `getResponse` / `deleteResponse` |
+| Models & capabilities | Available | `listModels()`, `getModel(modelId)`, `getCapabilities()`, `listSkills()`, `listToolsets()` |
+| Jobs | Available | List / create / get / update / delete / pause / resume / run-now |
+| Local CLI | Available | `HermesCli` + `HermesCliExecutor.execute(...)`, `probe()` |
+| Startup probes | Available | HTTP and CLI availability checkers; `failFastOnUnavailable` flags |
+| Health endpoints | Available | `/health`, `/health/detailed`, `/v1/health` |
+| Integration test | Available | `HermesClientIntegrationTest` (test sources) |
+| CI pipeline | Not configured | No CI workflow files in the repository |
+
+## 3. Requirements & Compatibility
+
+| Requirement | Version |
+|:---|:---|
+| JDK | 8 |
+| Maven | 3.0+ |
+| Hermes Agent server | Running instance (default `http://localhost:8642`) |
+| OkHttp | 4.12.0 |
+| Jackson | 2.22.0 (`jackson-databind`) |
+
+### Version lines
+
+| Branch | JDK | Version pattern |
+|:---|:---|:---|
+| `feature/1.0.x` | JDK 8 | `1.0.x.*` |
+| `feature/2.0.x` | JDK 17 | `2.0.x.*` |
+| `feature/3.0.x` | JDK 21 | `3.0.x.*` |
+
+### Server API endpoints (as declared in `HermesApiConstants`)
+
+| Path | Purpose |
+|:---|:---|
+| `/health`, `/health/detailed`, `/v1/health` | Health |
+| `/v1/chat/completions` | Chat completions |
+| `/v1/responses` | Responses API |
+| `/v1/models`, `/v1/capabilities`, `/v1/skills`, `/v1/toolsets` | Models / capabilities / skills / toolsets |
+| `/v1/runs` | Agent runs |
+| `/api/sessions` | Sessions |
+| `/api/jobs` | Jobs |
+
+## 4. Architecture & Modules
+
+```text
+  Your code                    hermes-java-sdk                    Hermes Agent
+  ---------                    --------------                    ------------
+  Request models  ->  HermesClient (facade)
+                          |         |          \
+                          |         |           \
+                    HermesHttpClient   HermesSseClient     HermesCli
+                    (OkHttp 3 +         (SSE events,          (local `hermes`
+                     Jackson)            queue/consumer)       subprocess)
+                          |                |                    |
+                          +----- HTTP -----+                    +---- subprocess
+                                |                                       |
+                    /v1/* REST endpoints                      local CLI
+                    (serverUrl default                       (executable
+                     http://localhost:8642)                   `hermes`)
+```
+
+Single module, jar packaging:
+
+| Package | Responsibility |
+|:---|:---|
+| `io.github.easy4j.hermes` | `HermesClient`, configs (`HermesClientConfig`, `HermesHttpClientConfig`, `HermesCliConfig`) |
+| `io.github.easy4j.hermes.api` | `HermesHttpClient`, `HermesSseClient`, `HermesApiConstants` |
+| `io.github.easy4j.hermes.api.model` | Typed models (`ChatRequest`, `ChatResponse`, `Session`, `RunStatus`, `HealthStatus`, `SseEvent`, ...) |
+| `io.github.easy4j.hermes.cli` | `HermesCli`, `HermesCliExecutor`, `HermesCliResult` |
+| `io.github.easy4j.hermes.cli.availability` | CLI startup probe |
+| `io.github.easy4j.hermes.exception` | Typed exceptions (`HermesException`, `HermesHttpException`, `HermesCliStartupException`) |
+| `io.github.easy4j.hermes.util` | `HermesObjectMapper`, `HermesJsonParser` |
+
+## 5. Installation
 
 ### Maven
 
@@ -41,276 +138,152 @@ For Spring Boot applications, use [hermes-spring-boot-starter](../hermes-spring-
 <dependency>
     <groupId>io.github.easy4j</groupId>
     <artifactId>hermes-java-sdk</artifactId>
-    <version>${hermes.version}</version>
+    <version>1.0.x.20260630-SNAPSHOT</version>
 </dependency>
 ```
 
 ### Gradle
 
 ```groovy
-implementation 'io.github.easy4j:hermes-java-sdk:${hermes.version}'
+implementation 'io.github.easy4j:hermes-java-sdk:1.0.x.20260630-SNAPSHOT'
 ```
 
-## Quick Start
+**Availability:** the artifact is published to the Aliyun private Maven repository and distributed through GitHub Releases; it has not yet been published to Maven Central.
 
-### 1. Create Configuration
+## 6. Quick Start
 
 ```java
-import io.github.hiwepy.hermes.HermesClientConfig;
+import io.github.easy4j.hermes.HermesClient;
+import io.github.easy4j.hermes.HermesClientConfig;
+import io.github.easy4j.hermes.api.model.ChatRequest;
+import io.github.easy4j.hermes.api.model.ChatResponse;
+import io.github.easy4j.hermes.api.model.HealthStatus;
+import io.github.easy4j.hermes.api.model.Message;
 
 HermesClientConfig config = new HermesClientConfig();
-config.setServerUrl("http://localhost:8642");
-config.setApiKey("your-api-key");  // Optional
-config.setDefaultModel("hermes-agent");
-```
-
-### 2. Initialize Client
-
-```java
-import io.github.hiwepy.hermes.HermesClient;
+config.getHttp().setServerUrl("http://localhost:8642");   // Hermes Agent server
+config.getHttp().setApiKey("optional-api-key");           // optional
 
 try (HermesClient client = new HermesClient(config)) {
-    // Use client
+
+    HealthStatus health = client.health();
+    System.out.println("status=" + health.getStatus());
+
+    Message message = new Message();
+    message.setRole("user");
+    message.setContent("Hello, Hermes!");
+
+    ChatRequest request = new ChatRequest();
+    request.setModel("hermes-agent");
+    request.setMessages(java.util.Collections.singletonList(message));
+
+    ChatResponse response = client.chatCompletion(request);
+    System.out.println(response.getChoices().get(0).getMessage().getContent());
 }
 ```
 
-### 3. Health Check
+Expected result: the health status is printed, and the assistant reply content is printed from the typed `ChatResponse`.
+
+## 7. Configuration
+
+Configuration is grouped in `HermesClientConfig`, which holds an `HermesHttpClientConfig` (`getHttp()`) and an `HermesCliConfig` (`getCli()`).
+
+`HermesHttpClientConfig`:
+
+| Property | Default | Description |
+|:---|:---|:---|
+| `enabled` | `true` | Enable the HTTP channel |
+| `startupCheckEnabled` | `false` | Run a startup probe for the HTTP channel |
+| `failFastOnUnavailable` | `false` | Fail fast when the probe reports unavailable |
+| `serverUrl` | `http://localhost:8642` | Hermes Agent server base URL |
+| `apiKey` | — | Optional API key header |
+| `connectTimeoutMillis` | `15000` | Connect timeout |
+| `readTimeoutMillis` | `300000` | Read timeout |
+| `verifySsl` | `true` | TLS verification |
+| `defaultModel` | `hermes-agent` | Default model name |
+| `defaultInstructions` / `defaultProvider` | — | Optional defaults |
+
+`HermesCliConfig`:
+
+| Property | Default | Description |
+|:---|:---|:---|
+| `enabled` | `true` | Enable the CLI channel |
+| `startupCheckEnabled` | `false` | Run a startup probe for the CLI |
+| `failFastOnUnavailable` | `false` | Fail fast when the CLI is unavailable |
+| `executable` | `hermes` | Local `hermes` executable name or path |
+| `timeout` | `300` | Command timeout (seconds) |
+| `probeTimeoutSeconds` | `5` | Probe timeout (seconds) |
+| `workingDirectory` | — | Working directory |
+| `maxConcurrentExecutions` | `0` | Max concurrent child processes (`<=0`: max(CPU cores, 2)) |
+
+## 8. Core Usage / API
+
+### 8.1 Chat with a session
 
 ```java
-HealthStatus health = client.health();
-System.out.println("Status: " + health.getStatus());
-```
-
-### 4. Chat Completion
-
-```java
-import io.github.hiwepy.hermes.model.ChatCompletionRequest;
-import io.github.hiwepy.hermes.model.ChatCompletionResponse;
-
-ChatCompletionRequest request = new ChatCompletionRequest();
-request.setModel("hermes-agent");
-request.addMessage("user", "Hello, Hermes!");
-
-ChatCompletionResponse response = client.chatCompletion(request);
-System.out.println(response.getChoices().get(0).getMessage().getContent());
-```
-
-### 5. Create Session and Chat
-
-```java
-// Create session
 Session session = client.createSession("My Session");
-String sessionId = session.getId();
-
-// Chat within session
-ChatCompletionResponse response = client.sessionChat(sessionId, "Tell me a joke");
+ChatResponse reply = client.sessionChat(session.getId(), "Tell me a joke");
 ```
 
-### 6. Create and Monitor Run
+### 8.2 Create and monitor a run
 
 ```java
-import io.github.hiwepy.hermes.model.RunCreateRequest;
-import io.github.hiwepy.hermes.model.RunStatus;
+RunCreateRequest runRequest = new RunCreateRequest();
+runRequest.setSessionId(session.getId());
+runRequest.setInput("Analyze this data...");
 
-RunCreateRequest request = new RunCreateRequest();
-request.setSessionId(sessionId);
-request.addMessage("user", "Analyze this data...");
-
-RunStatus run = client.createRun(request);
+RunStatus run = client.createRun(runRequest);
 String runId = run.getId();
-
-// Poll for completion
-RunStatus status;
-do {
-    Thread.sleep(1000);
-    status = client.getRun(runId);
-} while ("in_progress".equals(status.getStatus()));
+RunStatus current = client.getRun(runId);
+client.stopRun(runId);
 ```
 
-### 7. SSE Streaming
+### 8.3 SSE streaming
 
 ```java
-import io.github.hiwepy.hermes.http.HermesSseClient;
-
-HermesSseClient sse = client.sse();
-sse.subscribe("/events", event -> {
-    System.out.println("Event: " + event.getData());
+ChatStreamingResponse stream = client.chatCompletionStream(request);
+// or raw access:
+client.sse().subscribeChat(request, sseEvent -> {
+    System.out.println(sseEvent.getType() + ": " + sseEvent.getData());
 });
 ```
 
-### 8. Local CLI
+### 8.4 Local CLI
 
 ```java
-import io.github.hiwepy.hermes.cli.HermesCli;
-
-HermesCli cli = client.cli();
-String version = cli.version();
+HermesCliResult oneShot = client.cli().chatOneShot("hello");  // hermes -z hello
+HermesCliResult version = client.cli().version();             // hermes --version
 ```
 
-## Configuration Reference
+### 8.5 HTTP vs CLI channel selection
 
-### `HermesClientConfig`
+`HermesClient.isHttpEnabled()` / `isCliEnabled()` report which channels are active. When both are enabled, high-level methods such as `chatCompletion` route through the HTTP channel; CLI calls are explicit through `cli()`.
 
-| Property | Type | Default | Description |
-|----------|------|---------|-------------|
-| `serverUrl` | `String` | `http://localhost:8642` | Hermes API Server root URL |
-| `apiKey` | `String` | `null` | Bearer token for authentication |
-| `connectTimeoutMillis` | `int` | `15000` | Connection timeout (ms) |
-| `readTimeoutMillis` | `int` | `300000` | Read timeout (ms) — runs may take longer |
-| `verifySsl` | `boolean` | `true` | Verify HTTPS certificates |
-| `localExecutable` | `String` | `hermes` | Local CLI executable path |
-| `localTimeoutSeconds` | `int` | `300` | CLI command timeout (seconds) |
-| `localProbeTimeoutSeconds` | `int` | `5` | CLI startup probe timeout (seconds) |
-| `defaultModel` | `String` | `hermes-agent` | Default model name |
-| `defaultInstructions` | `String` | `null` | Default system prompt |
-| `defaultProvider` | `String` | `null` | Default provider name |
-
-## Startup Check Configuration
-
-The SDK supports automatic startup availability checks:
-
-### HTTP Startup Check
-
-```java
-HermesHttpClientConfig httpConfig = new HermesHttpClientConfig();
-httpConfig.setEnabled(true);                    // Enable HTTP client
-httpConfig.setStartupCheckEnabled(true);        // Check at startup
-httpConfig.setFailFastOnUnavailable(false);     // Don't fail if unavailable
-```
-
-### CLI Startup Check
-
-```java
-HermesCliConfig cliConfig = new HermesCliConfig();
-cliConfig.setEnabled(true);                     // Enable CLI
-cliConfig.setStartupCheckEnabled(true);         // Check at startup
-cliConfig.setFailFastOnUnavailable(false);      // Don't fail if unavailable
-```
-
-### Unified Configuration
-
-```java
-HermesClientConfig config = new HermesClientConfig();
-// HTTP settings
-config.setHttp(httpConfig);
-// CLI settings
-config.setCli(cliConfig);
-```
-
-## API Reference
-
-### HermesClient
-
-| Method | Description |
-|--------|-------------|
-| `health()` | Health check |
-| `chatCompletion(request)` | Synchronous chat completion |
-| `createRun(request)` | Create a new agent run |
-| `getRun(runId)` | Get run status |
-| `stopRun(runId)` | Stop a running run |
-| `createSession(title)` | Create a new session |
-| `listSessions()` | List all sessions |
-| `getSession(sessionId)` | Get session details |
-| `deleteSession(sessionId)` | Delete a session |
-| `sessionChat(sessionId, input)` | Chat within a session |
-| `listModels()` | List available models |
-| `getCapabilities()` | Get system capabilities |
-| `sse()` | Get SSE client |
-| `cli()` | Get CLI client |
-
-### Models
-
-| Class | Description |
-|-------|-------------|
-| `ChatCompletionRequest` | Chat completion request |
-| `ChatCompletionResponse` | Chat completion response |
-| `RunCreateRequest` | Run creation request |
-| `RunStatus` | Run status |
-| `Session` | Session object |
-| `ModelInfo` | Model information |
-| `CapabilityInfo` | System capabilities |
-| `HealthStatus` | Health status |
-| `Message` | Chat message |
-| `SseEvent` | SSE event |
-
-## Project Structure
-
-```
-io.github.hiwepy.hermes
-├── HermesClient              # Unified client facade
-├── HermesClientConfig        # Configuration POJO
-├── http
-│   ├── HermesHttpClient      # HTTP REST client
-│   └── HermesSseClient       # SSE streaming client
-├── cli
-│   ├── HermesCli             # CLI wrapper
-│   ├── HermesCliExecutor     # CLI command executor
-│   └── HermesCliResult       # CLI result wrapper
-├── model                     # Data models
-│   ├── ChatCompletionRequest/Response
-│   ├── RunCreateRequest/RunStatus
-│   ├── Session
-│   ├── Message
-│   └── ...
-├── exception                 # Exception hierarchy
-└── util                      # Utilities
-```
-
-## Examples
-
-### Full Example
-
-```java
-import io.github.hiwepy.hermes.HermesClient;
-import io.github.hiwepy.hermes.HermesClientConfig;
-import io.github.hiwepy.hermes.model.*;
-
-public class HermesExample {
-    public static void main(String[] args) {
-        // Configure
-        HermesClientConfig config = new HermesClientConfig();
-        config.setServerUrl("http://localhost:8642");
-        config.setApiKey(System.getenv("HERMES_API_KEY"));
-        
-        // Initialize
-        try (HermesClient client = new HermesClient(config)) {
-            // Health check
-            HealthStatus health = client.health();
-            System.out.println("Server status: " + health.getStatus());
-            
-            // Chat
-            ChatCompletionRequest request = new ChatCompletionRequest();
-            request.setModel("hermes-agent");
-            request.addMessage("user", "What is Java?");
-            
-            ChatCompletionResponse response = client.chatCompletion(request);
-            System.out.println(response.getChoices().get(0).getMessage().getContent());
-            
-            // Session
-            Session session = client.createSession("Demo Session");
-            System.out.println("Session created: " + session.getId());
-        }
-    }
-}
-```
-
-## Building
+## 9. Testing & Build
 
 ```bash
-mvn clean install
+./mvnw clean verify        # compile, run tests, generate coverage report
+./mvnw clean install       # install into the local repository
 ```
 
-## Testing
+- An integration test (`HermesClientIntegrationTest`) exists in the test sources.
+- Coverage is measured with the JaCoCo Maven plugin (target: 90% line coverage, `haltOnFailure=false`).
+- The `release` profile assembles GPG signing + sources + Javadoc + deployment (`./mvnw -Prelease clean deploy`).
 
-```bash
-mvn test
-```
+## 10. Versioning & Branches
 
-## License
+Three parallel version lines are maintained:
 
-Apache License 2.0
+| Branch | JDK | Version pattern |
+|:---|:---|:---|
+| `feature/1.0.x` | JDK 8 | `1.0.x.*` |
+| `feature/2.0.x` | JDK 17 | `2.0.x.*` |
+| `feature/3.0.x` | JDK 21 | `3.0.x.*` |
 
-## Related Projects
+Maintenance strategy: the 1.0.x line receives bug fixes while JDK 8 remains the baseline; feature development primarily targets the 2.0.x / 3.0.x lines.
 
-- [hermes-spring-boot-starter](../hermes-spring-boot-starter) — Spring Boot auto-configuration
-- [Hermes Agent](https://github.com/easy-4-java/hermes) — Hermes Agent server
+## 11. Contributing & License
+
+Contributions are welcome — open an issue or submit a pull request against the matching version-line branch (`feature/1.0.x` for JDK 8 changes).
+
+This project is licensed under the [Apache License, Version 2.0](https://www.apache.org/licenses/LICENSE-2.0). See the `LICENSE` file in the repository root for details.
