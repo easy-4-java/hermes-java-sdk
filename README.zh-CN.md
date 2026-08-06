@@ -2,6 +2,8 @@
 
 [English](./README.md) | [简体中文](./README.zh-CN.md)
 
+[![Java](https://img.shields.io/badge/Java-21-orange)](https://github.com/easy-4-java/hermes-java-sdk) [![License](https://img.shields.io/badge/license-Apache%202.0-green)](./LICENSE)
+
 [Hermes Agent](https://github.com/easy-4-java/hermes) 的纯 Java SDK — HTTP API Server + SSE 流式 + 本地 CLI 集成。无 Spring 依赖，JDK 8 基线。
 
 ## 目录
