@@ -349,7 +349,13 @@
                 <central-publishing-maven-plugin.version>0.11.0</central-publishing-maven-plugin.version>
                 <additionalparam>-Xdoclint:none</additionalparam>
                 <jacoco-maven-plugin.version>0.8.15</jacoco-maven-plugin.version>
-            </properties>
+            
+		<junit.version>4.13.2</junit.version>
+		<slf4j.version>2.0.18</slf4j.version>
+		<lombok.version>1.18.46</lombok.version>
+		<jackson.version>2.22.0</jackson.version>
+		<junit-jupiter.version>6.1.0</junit-jupiter.version>
+		<commons-lang.version>2.6</commons-lang.version></properties>
         </profile>
         <!-- 发布到 Maven Central Portal：mvn -Prelease deploy（GPG 签名 + 源码 + Javadoc + Central 发布插件） -->
 
@@ -558,7 +564,7 @@
             <dependency>
                 <groupId>org.junit.jupiter</groupId>
                 <artifactId>junit-jupiter</artifactId>
-                <version>${junit.version}</version>
+                <version>${junit-jupiter.version}</version>
                 <scope>test</scope>
             </dependency>
         </dependencies>
