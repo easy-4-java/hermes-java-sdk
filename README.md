@@ -2,6 +2,8 @@
 
 [English](./README.md) | [简体中文](./README.zh-CN.md)
 
+[![Java](https://img.shields.io/badge/Java-17-orange)](https://github.com/easy-4-java/hermes-java-sdk) [![License](https://img.shields.io/badge/license-Apache%202.0-green)](./LICENSE)
+
 A pure Java SDK for [Hermes Agent](https://github.com/easy-4-java/hermes) — HTTP API Server + SSE streaming + local CLI integration. Spring-free, JDK 8 baseline.
 
 ## Table of Contents
