@@ -499,7 +499,7 @@
         <maven.version>3.0</maven.version>
         <slf4j.version>2.0.18</slf4j.version>
         <okhttp3.version>5.4.0</okhttp3.version>
-        <jackson.version>2.17.2</jackson.version>
+        <jackson.version>2.18.9</jackson.version>
         <junit.version>5.11.4</junit.version>
         <lombok.version>1.18.46</lombok.version>
         <commons-exec.version>1.4.0</commons-exec.version>
