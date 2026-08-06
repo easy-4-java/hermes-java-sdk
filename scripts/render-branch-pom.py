@@ -77,7 +77,7 @@ COMMON_DEPS_J17 = """        <jackson.version>2.17.2</jackson.version>
         <junit.version>5.11.4</junit.version>
         <lombok.version>1.18.36</lombok.version>"""
 
-COMMON_DEPS_J8 = """        <jackson.version>2.13.5</jackson.version>
+COMMON_DEPS_J8 = """        <jackson.version>2.18.8</jackson.version>
         <junit.version>5.8.2</junit.version>
         <lombok.version>1.18.30</lombok.version>"""
 
