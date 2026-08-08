@@ -57,12 +57,12 @@ public class HermesSseClient implements AutoCloseable {
     }
 
     private static ExecutorService createStreamExecutor(HermesHttpClientConfig config) {
-        int corePoolSize = Math.max(1, config.getSseCorePoolSize());
-        int maxPoolSize = Math.max(corePoolSize, config.getSseMaxPoolSize());
+        int corePoolSize = Math.max(1, config.getStreamCorePoolSize());
+        int maxPoolSize = Math.max(corePoolSize, config.getStreamMaxPoolSize());
         AtomicInteger threadIndex = new AtomicInteger();
         return new ThreadPoolExecutor(corePoolSize, maxPoolSize,
-                Math.max(1L, config.getSseKeepAliveMillis()), TimeUnit.MILLISECONDS,
-                new LinkedBlockingQueue<>(Math.max(1, config.getSseQueueCapacity())), runnable -> {
+                Math.max(1L, config.getStreamKeepAliveMillis()), TimeUnit.MILLISECONDS,
+                new LinkedBlockingQueue<>(Math.max(1, config.getStreamQueueCapacity())), runnable -> {
                     Thread thread = new Thread(runnable,
                             "hermes-sse-consumer-" + threadIndex.incrementAndGet());
                     thread.setDaemon(true);
@@ -104,7 +104,7 @@ public class HermesSseClient implements AutoCloseable {
 
     public BlockingQueue<SseEvent> subscribeQueue(String runId) {
         BlockingQueue<SseEvent> queue = new ArrayBlockingQueue<>(
-                Math.max(1, config.getSseEventQueueCapacity()));
+                Math.max(1, config.getStreamEventQueueCapacity()));
         subscribe(runId, event -> offerLatest(queue, event));
         return queue;
     }
