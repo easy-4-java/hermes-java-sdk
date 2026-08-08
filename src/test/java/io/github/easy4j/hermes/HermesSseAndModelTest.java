@@ -2,9 +2,9 @@ package io.github.easy4j.hermes;
 
 import io.github.easy4j.hermes.api.HermesSseClient;
 import io.github.easy4j.hermes.api.model.ChatRequest;
-import io.github.easy4j.hermes.api.model.ChatStreamingResponse;
+import io.github.easy4j.hermes.api.sse.StreamingChatResponse;
 import io.github.easy4j.hermes.api.model.ResponseRequest;
-import io.github.easy4j.hermes.api.model.SseEvent;
+import io.github.easy4j.hermes.api.sse.SseEvent;
 import io.github.easy4j.hermes.util.HermesJsonParser;
 import io.github.easy4j.hermes.util.HermesObjectMapper;
 import okhttp3.MediaType;
@@ -55,7 +55,7 @@ class HermesSseAndModelTest {
         assertNull(invalid.getDataAsNode());
 
         StringBuilder deltas = new StringBuilder();
-        ChatStreamingResponse stream = new ChatStreamingResponse().onDelta(deltas::append);
+        StreamingChatResponse stream = new StreamingChatResponse().onDelta(deltas::append);
         stream.accept(chat);
         stream.accept(direct);
         stream.accept(event("{}"));
@@ -65,7 +65,7 @@ class HermesSseAndModelTest {
         assertEquals("hello world", stream.get(1, TimeUnit.SECONDS));
         assertEquals("hello world", deltas.toString());
 
-        ChatStreamingResponse failed = new ChatStreamingResponse();
+        StreamingChatResponse failed = new StreamingChatResponse();
         failed.fail(new IOException("stream failed"));
         assertThrows(Exception.class, failed::get);
     }

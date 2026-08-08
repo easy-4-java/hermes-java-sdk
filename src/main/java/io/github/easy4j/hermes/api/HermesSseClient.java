@@ -6,7 +6,7 @@ import io.github.easy4j.hermes.HermesHttpClientConfig;
 import io.github.easy4j.hermes.HermesOkHttpClientFactory;
 import static io.github.easy4j.hermes.api.HermesApiConstants.*;
 import io.github.easy4j.hermes.api.model.ChatRequest;
-import io.github.easy4j.hermes.api.model.SseEvent;
+import io.github.easy4j.hermes.api.sse.SseEvent;
 import io.github.easy4j.hermes.exception.HermesHttpException;
 import lombok.extern.slf4j.Slf4j;
 import okhttp3.*;
@@ -88,7 +88,7 @@ public class HermesSseClient implements AutoCloseable {
                               Consumer<Throwable> onError) {
         Subscription sub = new Subscription();
         activeSubscriptions.add(sub);
-        startSubscription(sub, () -> doSubscribePost(config.getServerUrl() + PATH_CHAT_COMPLETIONS,
+        startSubscription(sub, () -> doSubscribePost(config.getBaseUrl() + PATH_CHAT_COMPLETIONS,
                 request, headers, consumer, onComplete, onError, sub));
     }
 
@@ -187,7 +187,7 @@ public class HermesSseClient implements AutoCloseable {
                                           Consumer<SseEvent> consumer, Subscription sub) {
         while (sub.running) {
             try {
-                String url = config.getServerUrl() + PATH_SESSIONS + "/" + sessionId + "/chat/stream";
+                String url = config.getBaseUrl() + PATH_SESSIONS + "/" + sessionId + "/chat/stream";
                 Request request = buildPostSseRequest(url, Collections.singletonMap("input", input), null);
                 Call call = httpClient.newCall(request);
                 sub.callRef.set(call);
@@ -219,7 +219,7 @@ public class HermesSseClient implements AutoCloseable {
     private void doSubscribeRun(String runId, Consumer<SseEvent> consumer, Subscription sub) {
         while (sub.running) {
             try {
-                String url = config.getServerUrl() + PATH_RUNS + "/" + runId + "/events";
+                String url = config.getBaseUrl() + PATH_RUNS + "/" + runId + "/events";
                 Request request = buildGetSseRequest(url);
                 Call call = httpClient.newCall(request);
                 sub.callRef.set(call);

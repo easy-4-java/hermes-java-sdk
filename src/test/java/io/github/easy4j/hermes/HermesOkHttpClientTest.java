@@ -2,7 +2,7 @@ package io.github.easy4j.hermes;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.github.easy4j.hermes.api.model.ChatRequest;
-import io.github.easy4j.hermes.api.model.ChatStreamingResponse;
+import io.github.easy4j.hermes.api.sse.StreamingChatResponse;
 import okhttp3.ConnectionPool;
 import okhttp3.Dispatcher;
 import okhttp3.MediaType;
@@ -51,7 +51,7 @@ class HermesOkHttpClientTest {
                 })
                 .build();
         HermesHttpClientConfig httpConfig = new HermesHttpClientConfig();
-        httpConfig.setServerUrl("http://127.0.0.1:8642/");
+        httpConfig.setBaseUrl("http://127.0.0.1:8642/");
         HermesCliConfig cliConfig = new HermesCliConfig();
         cliConfig.setEnabled(false);
 
@@ -165,8 +165,8 @@ class HermesOkHttpClientTest {
 
         try (HermesClient client = new HermesClient(httpConfig, cliConfig, new ObjectMapper(), external)) {
             long startedAt = System.nanoTime();
-            ChatStreamingResponse first = client.chatCompletionStream(request);
-            ChatStreamingResponse second = client.chatCompletionStream(request);
+            StreamingChatResponse first = client.chatCompletionStream(request);
+            StreamingChatResponse second = client.chatCompletionStream(request);
             long returnMillis = TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - startedAt);
 
             assertTrue(returnMillis < 200L, "streaming calls blocked for " + returnMillis + "ms");
@@ -224,14 +224,14 @@ class HermesOkHttpClientTest {
         request.setMessages(list(new ChatRequest.Message("user", "ping")));
 
         try (HermesClient client = new HermesClient(httpConfig, cliConfig, new ObjectMapper(), external)) {
-            List<ChatStreamingResponse> streams = new ArrayList<>(concurrency);
+            List<StreamingChatResponse> streams = new ArrayList<>(concurrency);
             for (int index = 0; index < concurrency; index++) {
                 streams.add(client.chatCompletionStream(request));
             }
             assertTrue(allStarted.await(2, TimeUnit.SECONDS));
             assertEquals(concurrency, maxActiveCalls.get());
             releaseResponses.countDown();
-            for (ChatStreamingResponse stream : streams) {
+            for (StreamingChatResponse stream : streams) {
                 assertEquals("", stream.get(2, TimeUnit.SECONDS));
             }
         } finally {
