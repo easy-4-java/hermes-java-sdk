@@ -3,7 +3,7 @@ package io.github.easy4j.hermes;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.github.easy4j.hermes.api.HermesApiConstants;
 import io.github.easy4j.hermes.api.HermesHttpClient;
-import io.github.easy4j.hermes.api.model.ChatStreamingResponse;
+import io.github.easy4j.hermes.api.sse.StreamingChatResponse;
 import io.github.easy4j.hermes.api.model.*;
 import io.github.easy4j.hermes.cli.HermesCliResult;
 import org.junit.jupiter.api.*;
@@ -32,7 +32,7 @@ class HermesClientIntegrationTest {
     @BeforeAll
     static void setUp() {
         HermesHttpClientConfig httpConfig = new HermesHttpClientConfig();
-        httpConfig.setServerUrl(BASE_URL);
+        httpConfig.setBaseUrl(BASE_URL);
         httpConfig.setApiKey(API_KEY);
         httpConfig.setDefaultModel("mimo-v2-pro");
         client = new HermesClient(httpConfig, new HermesCliConfig());
@@ -301,7 +301,7 @@ class HermesClientIntegrationTest {
         req.setMaxTokens(50);
 
         try {
-            ChatStreamingResponse stream = client.chatCompletionStream(req);
+            StreamingChatResponse stream = client.chatCompletionStream(req);
             String full = stream.get();
             assertNotNull(full);
             // Content may be empty if model auth fails, but stream plumbing works
@@ -456,7 +456,7 @@ class HermesClientIntegrationTest {
     @Test @Order(80)
     void configDefaults() {
         HermesClientConfig config = client.getConfig();
-        assertEquals(BASE_URL, config.getHttp().getServerUrl());
+        assertEquals(BASE_URL, config.getHttp().getBaseUrl());
         assertEquals(API_KEY, config.getHttp().getApiKey());
         assertEquals(HermesApiConstants.DEFAULT_CONNECT_TIMEOUT_MS, config.getHttp().getConnectTimeoutMillis());
         assertEquals(HermesApiConstants.DEFAULT_READ_TIMEOUT_MS, config.getHttp().getReadTimeoutMillis());

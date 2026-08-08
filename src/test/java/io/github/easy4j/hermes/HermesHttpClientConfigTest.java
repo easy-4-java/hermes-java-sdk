@@ -11,17 +11,17 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 class HermesHttpClientConfigTest {
 
     @Test
-    void shouldExposeUnifiedStreamPropertiesAndLegacyAliases() {
+    void shouldExposeUnifiedHttpProperties() {
         HermesHttpClientConfig config = new HermesHttpClientConfig();
         assertEquals(HttpResponseMode.BLOCKING, config.getMode());
-        config.setServerUrl("http://legacy-hermes");
-        assertEquals("http://legacy-hermes", config.getBaseUrl());
+        config.setBaseUrl("http://hermes");
+        assertEquals("http://hermes", config.getBaseUrl());
 
-        config.setSseCorePoolSize(7);
-        config.setSseMaxPoolSize(9);
-        config.setSseQueueCapacity(11);
-        config.setSseKeepAliveMillis(13L);
-        config.setSseEventQueueCapacity(15);
+        config.setStreamCorePoolSize(7);
+        config.setStreamMaxPoolSize(9);
+        config.setStreamQueueCapacity(11);
+        config.setStreamKeepAliveMillis(13L);
+        config.setStreamEventQueueCapacity(15);
 
         assertEquals(7, config.getStreamCorePoolSize());
         assertEquals(9, config.getStreamMaxPoolSize());
