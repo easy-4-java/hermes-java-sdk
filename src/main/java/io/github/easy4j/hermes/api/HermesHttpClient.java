@@ -4,6 +4,7 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.github.easy4j.hermes.HermesHttpClientConfig;
+import io.github.easy4j.hermes.HttpCallCancellation;
 import io.github.easy4j.hermes.HermesOkHttpClientFactory;
 import static io.github.easy4j.hermes.api.HermesApiConstants.*;
 import io.github.easy4j.hermes.api.model.*;
@@ -65,6 +66,11 @@ public class HermesHttpClient implements AutoCloseable {
 
     public ChatResponse chatCompletion(ChatRequest request, Map<String, String> headers) {
         return post(PATH_CHAT_COMPLETIONS, request, ChatResponse.class, headers);
+    }
+
+    public ChatResponse chatCompletion(ChatRequest request, Map<String, String> headers,
+                                       HttpCallCancellation cancellation) {
+        return post(PATH_CHAT_COMPLETIONS, request, ChatResponse.class, headers, cancellation);
     }
 
     // ============================================================
@@ -326,12 +332,17 @@ public class HermesHttpClient implements AutoCloseable {
     }
 
     private <T> T post(String path, Object body, Class<T> type, Map<String, String> headers) {
+        return post(path, body, type, headers, null);
+    }
+
+    private <T> T post(String path, Object body, Class<T> type, Map<String, String> headers,
+                       HttpCallCancellation cancellation) {
         Request.Builder builder = authedRequest(url(path));
         if (headers != null) {
             headers.forEach((k, v) -> { if (k != null && v != null) builder.header(k, v); });
         }
         Request request = builder.post(RequestBody.create(toJson(body), JSON)).build();
-        return execute(request, type);
+        return execute(request, type, cancellation);
     }
 
     @SuppressWarnings("unchecked")
@@ -359,7 +370,13 @@ public class HermesHttpClient implements AutoCloseable {
     }
 
     private <T> T execute(Request request, Class<T> type) {
-        try (Response response = httpClient.newCall(request).execute()) {
+        return execute(request, type, null);
+    }
+
+    private <T> T execute(Request request, Class<T> type, HttpCallCancellation cancellation) {
+        Call call = httpClient.newCall(request);
+        AutoCloseable registration = cancellation != null ? cancellation.onCancel(call::cancel) : null;
+        try (Response response = call.execute()) {
             String respBody = response.body() != null ? response.body().string() : "";
             if (!response.isSuccessful()) {
                 throw new HermesHttpException(response.code(), respBody);
@@ -367,6 +384,19 @@ public class HermesHttpClient implements AutoCloseable {
             return objectMapper.readValue(respBody, type);
         } catch (IOException e) {
             throw new HermesHttpException("HTTP request failed: " + e.getMessage(), e);
+        } finally {
+            closeRegistration(registration);
+        }
+    }
+
+    private void closeRegistration(AutoCloseable registration) {
+        if (registration == null) {
+            return;
+        }
+        try {
+            registration.close();
+        } catch (Exception error) {
+            log.debug("Failed to unregister HTTP cancellation callback: {}", error.getMessage());
         }
     }
 

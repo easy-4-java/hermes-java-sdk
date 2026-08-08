@@ -4,7 +4,7 @@ import lombok.Getter;
 
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.ArrayBlockingQueue;
 import java.util.function.Consumer;
 
 /**
@@ -22,7 +22,15 @@ public class ChatStreamingResponse extends CompletableFuture<String> {
     private final StringBuilder content = new StringBuilder();
     private Consumer<String> deltaConsumer;
     @Getter
-    private final BlockingQueue<SseEvent> eventQueue = new LinkedBlockingQueue<>();
+    private final BlockingQueue<SseEvent> eventQueue;
+
+    public ChatStreamingResponse() {
+        this(1_024);
+    }
+
+    public ChatStreamingResponse(int eventQueueCapacity) {
+        this.eventQueue = new ArrayBlockingQueue<>(Math.max(1, eventQueueCapacity));
+    }
 
     public ChatStreamingResponse onDelta(Consumer<String> deltaConsumer) {
         this.deltaConsumer = deltaConsumer;
@@ -31,7 +39,10 @@ public class ChatStreamingResponse extends CompletableFuture<String> {
 
     /** Feed an SSE event into this stream. */
     public void accept(SseEvent event) {
-        eventQueue.add(event);
+        if (!eventQueue.offer(event)) {
+            eventQueue.poll();
+            eventQueue.offer(event);
+        }
         String delta = event.deltaText();
         if (delta != null) {
             content.append(delta);
