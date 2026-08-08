@@ -14,8 +14,8 @@ public final class HermesApiConstants {
     public static final String DEFAULT_SERVER_URL = "http://localhost:8642";
     public static final String DEFAULT_MODEL = "hermes-agent";
     public static final String DEFAULT_EXECUTABLE = "hermes";
-    public static final int DEFAULT_CONNECT_TIMEOUT_MS = 15_000;
-    public static final int DEFAULT_READ_TIMEOUT_MS = 300_000;
+    public static final int DEFAULT_CONNECT_TIMEOUT_MS = 2_000;
+    public static final int DEFAULT_READ_TIMEOUT_MS = 120_000;
     public static final int DEFAULT_LOCAL_TIMEOUT_SECONDS = 300;
     public static final int DEFAULT_PROBE_TIMEOUT_SECONDS = 5;
 

@@ -194,7 +194,8 @@
                     <configuration>
                         <skip>false</skip>
                         <skipTests>false</skipTests>
-                        <argLine>-Xmx1024m -Dfile.encoding=UTF-8</argLine>
+                        <!--suppress UnresolvedMavenProperty -->
+                        <argLine>${argLine} -Xmx1024m -Dfile.encoding=UTF-8</argLine>
                         <excludedGroups>integration</excludedGroups>
                         <additionalClasspathElements>
                             <additionalClasspathElement>${basedir}/target/test-classes</additionalClasspathElement>
@@ -293,7 +294,7 @@
                             <goal>check</goal>
                         </goals>
                         <configuration>
-                            <haltOnFailure>false</haltOnFailure>
+                            <haltOnFailure>true</haltOnFailure>
                             <rules>
                                 <rule>
                                     <element>BUNDLE</element>
@@ -346,16 +347,16 @@
                 <jdk>[1.8,)</jdk>
             </activation>
             <properties>
-                <central-maven-publishing-plugin.version>0.11.0</central-maven-publishing-plugin.version>
                 <additionalparam>-Xdoclint:none</additionalparam>
                 <maven-jacoco-plugin.version>0.8.15</maven-jacoco-plugin.version>
-            
-		<junit.version>4.13.2</junit.version>
-		<slf4j.version>2.0.18</slf4j.version>
-		<lombok.version>1.18.46</lombok.version>
-		<jackson.version>2.22.0</jackson.version>
-		<junit-jupiter.version>6.1.0</junit-jupiter.version>
-		<commons-lang.version>2.6</commons-lang.version></properties>
+                <maven-central-publishing-plugin.version>0.11.0</maven-central-publishing-plugin.version>
+                <junit.version>4.13.2</junit.version>
+                <slf4j.version>2.0.18</slf4j.version>
+                <lombok.version>1.18.46</lombok.version>
+                <jackson.version>2.22.0</jackson.version>
+                <junit-jupiter.version>6.1.0</junit-jupiter.version>
+                <commons-lang.version>2.6</commons-lang.version>
+            </properties>
         </profile>
         <!-- 发布到 Maven Central Portal：mvn -Prelease deploy（GPG 签名 + 源码 + Javadoc + Central 发布插件） -->
 
@@ -478,7 +479,7 @@
                         <!-- 发布插件：将制品发布到 Maven Central Portal -->
                         <groupId>org.sonatype.central</groupId>
                         <artifactId>central-publishing-maven-plugin</artifactId>
-                        <version>${central-maven-publishing-plugin.version}</version>
+                        <version>${maven-central-publishing-plugin.version}</version>
                         <extensions>true</extensions>
                         <configuration>
                             <publishingServerId>central</publishingServerId>
@@ -493,17 +494,18 @@
 
     <!-- 版本属性定义：Java 版本、依赖版本与 Maven 插件版本统一管理 -->
     <properties>
-        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <java.version>17</java.version>
         <maven.compiler.release>${java.version}</maven.compiler.release>
         <maven.version>3.0</maven.version>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <java.version>17</java.version>
         <slf4j.version>2.0.18</slf4j.version>
-        <okhttp3.version>5.4.0</okhttp3.version>
+        <okhttp3.version>4.12.0</okhttp3.version>
         <jackson.version>2.17.2</jackson.version>
         <junit.version>5.11.4</junit.version>
         <lombok.version>1.18.46</lombok.version>
         <commons-exec.version>1.4.0</commons-exec.version>
         <!-- Maven Plugin versions -->
+        <maven-central-publishing-plugin.version>0.11.0</maven-central-publishing-plugin.version>
         <maven-clean-plugin.version>3.5.0</maven-clean-plugin.version>
         <maven-compiler-plugin.version>3.15.0</maven-compiler-plugin.version>
         <maven-dependency-plugin.version>3.8.1</maven-dependency-plugin.version>
@@ -511,6 +513,7 @@
         <maven-enforcer-plugin.version>3.6.3</maven-enforcer-plugin.version>
         <maven-gpg-plugin.version>3.2.8</maven-gpg-plugin.version>
         <maven-install-plugin.version>3.1.4</maven-install-plugin.version>
+        <maven-jacoco-plugin.version>0.8.15</maven-jacoco-plugin.version>
         <maven-jar-plugin.version>3.5.0</maven-jar-plugin.version>
         <maven-javadoc-plugin.version>3.11.2</maven-javadoc-plugin.version>
         <maven-release-plugin.version>3.3.1</maven-release-plugin.version>

@@ -4,6 +4,7 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.github.easy4j.hermes.HermesHttpClientConfig;
+import io.github.easy4j.hermes.HermesOkHttpClientFactory;
 import static io.github.easy4j.hermes.api.HermesApiConstants.*;
 import io.github.easy4j.hermes.api.model.*;
 import io.github.easy4j.hermes.exception.HermesHttpException;
@@ -12,7 +13,6 @@ import okhttp3.*;
 
 import java.io.IOException;
 import java.util.*;
-import java.util.concurrent.TimeUnit;
 
 /**
  * Hermes Server HTTP 客户端，封装 REST API。
@@ -26,26 +26,25 @@ public class HermesHttpClient implements AutoCloseable {
     private final HermesHttpClientConfig config;
     private final ObjectMapper objectMapper;
     private final OkHttpClient httpClient;
+    private final boolean ownsHttpClient;
 
     public HermesHttpClient(HermesHttpClientConfig config) {
-        this(config, null, null);
+        this(config, null, HermesOkHttpClientFactory.create(config), true);
     }
 
     public HermesHttpClient(HermesHttpClientConfig config, ObjectMapper objectMapper, OkHttpClient httpClient) {
+        this(config, objectMapper,
+                Objects.isNull(httpClient) ? HermesOkHttpClientFactory.create(config) : httpClient,
+                Objects.isNull(httpClient));
+    }
+
+    private HermesHttpClient(HermesHttpClientConfig config, ObjectMapper objectMapper,
+                             OkHttpClient httpClient, boolean ownsHttpClient) {
         this.config = Objects.requireNonNull(config, "config");
         this.objectMapper = Objects.isNull(objectMapper) ? new ObjectMapper()
                 .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false) : objectMapper;
-        this.httpClient = Objects.isNull(httpClient) ? buildOkHttpClient(config) : httpClient;
-    }
-
-    private static OkHttpClient buildOkHttpClient(HermesHttpClientConfig config) {
-        OkHttpClient.Builder builder = new OkHttpClient.Builder()
-                .connectTimeout(config.getConnectTimeoutMillis(), TimeUnit.MILLISECONDS)
-                .readTimeout(config.getReadTimeoutMillis(), TimeUnit.MILLISECONDS);
-        if (!config.isVerifySsl()) {
-            builder.hostnameVerifier((hostname, session) -> true);
-        }
-        return builder.build();
+        this.httpClient = Objects.requireNonNull(httpClient, "httpClient");
+        this.ownsHttpClient = ownsHttpClient;
     }
 
     // ============================================================
@@ -393,6 +392,8 @@ public class HermesHttpClient implements AutoCloseable {
 
     @Override
     public void close() {
-        // 外部传入的 OkHttpClient 不关闭；自建的也不主动关闭（OkHttpClient 内部管理连接池）
+        if (ownsHttpClient) {
+            HermesOkHttpClientFactory.shutdown(httpClient);
+        }
     }
 }
