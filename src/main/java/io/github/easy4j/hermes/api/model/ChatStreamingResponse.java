@@ -1,11 +1,7 @@
 package io.github.easy4j.hermes.api.model;
 
-import lombok.Getter;
-
-import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ArrayBlockingQueue;
 import java.util.function.Consumer;
+import java.util.concurrent.CompletableFuture;
 
 /**
  * Convenience wrapper for SSE streaming — accumulates events and completes a
@@ -17,51 +13,25 @@ import java.util.function.Consumer;
  * String full = stream.get();  // blocks
  * }</pre>
  */
-public class ChatStreamingResponse extends CompletableFuture<String> {
-
-    private final StringBuilder content = new StringBuilder();
-    private Consumer<String> deltaConsumer;
-    @Getter
-    private final BlockingQueue<SseEvent> eventQueue;
+@Deprecated
+public class ChatStreamingResponse extends io.github.easy4j.hermes.api.sse.StreamingChatResponse {
 
     public ChatStreamingResponse() {
         this(1_024);
     }
 
     public ChatStreamingResponse(int eventQueueCapacity) {
-        this.eventQueue = new ArrayBlockingQueue<>(Math.max(1, eventQueueCapacity));
+        super(eventQueueCapacity);
     }
 
     public ChatStreamingResponse onDelta(Consumer<String> deltaConsumer) {
-        this.deltaConsumer = deltaConsumer;
+        super.onDelta(deltaConsumer);
         return this;
     }
 
-    /** Feed an SSE event into this stream. */
+    /** 二进制兼容旧事件类型。 */
     public void accept(SseEvent event) {
-        if (!eventQueue.offer(event)) {
-            eventQueue.poll();
-            eventQueue.offer(event);
-        }
-        String delta = event.deltaText();
-        if (delta != null) {
-            content.append(delta);
-            if (deltaConsumer != null) {
-                deltaConsumer.accept(delta);
-            }
-        }
+        super.accept(event);
     }
-
-    /** Signal stream completion. */
-    public void finish() {
-        complete(content.toString());
-    }
-
-    /** Signal stream error. */
-    public void fail(Throwable error) {
-        completeExceptionally(error);
-    }
-
-    public String getAccumulatedContent() { return content.toString(); }
 
 }

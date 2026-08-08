@@ -3,6 +3,8 @@ package io.github.easy4j.hermes;
 import org.junit.jupiter.api.Test;
 import io.github.easy4j.hermes.api.HermesChatClient;
 import io.github.easy4j.hermes.api.HermesHttpClient;
+import io.github.easy4j.hermes.api.sse.SseEvent;
+import io.github.easy4j.hermes.api.sse.StreamingChatResponse;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
@@ -34,5 +36,15 @@ class HermesHttpClientConfigTest {
         try (HermesChatClient client = new HermesChatClient(config)) {
             assertEquals(HermesHttpClient.class, client.getClass().getSuperclass());
         }
+    }
+
+    @Test
+    void shouldExposeStreamingObjectsUnderSsePackage() {
+        SseEvent event = new SseEvent();
+        event.setData("{\"choices\":[{\"delta\":{\"content\":\"hello\"}}]}");
+        StreamingChatResponse response = new StreamingChatResponse();
+        response.accept(event);
+        response.finish();
+        assertEquals("hello", response.join());
     }
 }
