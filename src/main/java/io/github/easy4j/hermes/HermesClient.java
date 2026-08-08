@@ -328,7 +328,14 @@ public class HermesClient implements AutoCloseable {
      * @return Chat 响应
      */
     public ChatResponse chatCompletionWithSession(ChatRequest request, String sessionKey) {
-        return chatCompletionWithSession(request, sessionKey, null);
+        return chatCompletionWithSession(request, sessionKey, (String) null);
+    }
+
+    /** 按 sessionKey 调用，并将业务取消信号传播到底层 HTTP Call。 */
+    public ChatResponse chatCompletionWithSession(ChatRequest request, String sessionKey,
+                                                  HttpCallCancellation cancellation) {
+        return httpClient.chatCompletion(request,
+                HermesHttpClient.hermesHeaders(sessionKey, null, null), cancellation);
     }
 
     // ============================================================
@@ -385,7 +392,8 @@ public class HermesClient implements AutoCloseable {
     public ChatStreamingResponse chatCompletionStream(ChatRequest request,
                                                       Map<String, String> headers) {
         Objects.requireNonNull(request, "request");
-        ChatStreamingResponse stream = new ChatStreamingResponse();
+        ChatStreamingResponse stream = new ChatStreamingResponse(
+                config.getHttp().getSseEventQueueCapacity());
         sseClient.subscribeChat(request.withStream(), headers, stream::accept, stream::finish, stream::fail);
         return stream;
     }

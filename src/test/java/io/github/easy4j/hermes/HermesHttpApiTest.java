@@ -85,6 +85,13 @@ class HermesHttpApiTest {
         assertNotNull(http.healthV1());
         assertNotNull(http.chatCompletion(chat));
         assertNotNull(http.chatCompletion(chat, map("X-Trace", "trace")));
+        AtomicBoolean cancellationRegistered = new AtomicBoolean();
+        assertThrows(HermesHttpException.class, () -> http.chatCompletion(chat, null, callback -> {
+            cancellationRegistered.set(true);
+            callback.run();
+            return () -> { };
+        }));
+        assertTrue(cancellationRegistered.get());
         assertNotNull(http.createResponse(response));
         assertNotNull(http.createResponse(response, map("X-Trace", "trace")));
         assertNotNull(http.getResponse("response-id"));
