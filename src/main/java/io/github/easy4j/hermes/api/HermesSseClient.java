@@ -18,11 +18,15 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
+import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.RejectedExecutionException;
+import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 
@@ -41,11 +45,7 @@ public class HermesSseClient implements AutoCloseable {
     private final OkHttpClient httpClient;
     private final boolean ownsHttpClient;
     private final Set<Subscription> activeSubscriptions = ConcurrentHashMap.newKeySet();
-    private final ExecutorService streamExecutor = Executors.newCachedThreadPool(runnable -> {
-        Thread thread = new Thread(runnable, "hermes-sse-consumer");
-        thread.setDaemon(true);
-        return thread;
-    });
+    private final ExecutorService streamExecutor;
 
     public HermesSseClient(HermesHttpClientConfig config, ObjectMapper objectMapper, OkHttpClient httpClient) {
         this.config = Objects.requireNonNull(config, "config");
@@ -53,6 +53,21 @@ public class HermesSseClient implements AutoCloseable {
                 .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false) : objectMapper;
         this.ownsHttpClient = Objects.isNull(httpClient);
         this.httpClient = this.ownsHttpClient ? HermesOkHttpClientFactory.create(config) : httpClient;
+        this.streamExecutor = createStreamExecutor(config);
+    }
+
+    private static ExecutorService createStreamExecutor(HermesHttpClientConfig config) {
+        int corePoolSize = Math.max(1, config.getSseCorePoolSize());
+        int maxPoolSize = Math.max(corePoolSize, config.getSseMaxPoolSize());
+        AtomicInteger threadIndex = new AtomicInteger();
+        return new ThreadPoolExecutor(corePoolSize, maxPoolSize,
+                Math.max(1L, config.getSseKeepAliveMillis()), TimeUnit.MILLISECONDS,
+                new LinkedBlockingQueue<>(Math.max(1, config.getSseQueueCapacity())), runnable -> {
+                    Thread thread = new Thread(runnable,
+                            "hermes-sse-consumer-" + threadIndex.incrementAndGet());
+                    thread.setDaemon(true);
+                    return thread;
+                }, new ThreadPoolExecutor.AbortPolicy());
     }
 
     // ============================================================
@@ -88,9 +103,18 @@ public class HermesSseClient implements AutoCloseable {
     }
 
     public BlockingQueue<SseEvent> subscribeQueue(String runId) {
-        BlockingQueue<SseEvent> queue = new LinkedBlockingQueue<>();
-        subscribe(runId, queue::offer);
+        BlockingQueue<SseEvent> queue = new ArrayBlockingQueue<>(
+                Math.max(1, config.getSseEventQueueCapacity()));
+        subscribe(runId, event -> offerLatest(queue, event));
         return queue;
+    }
+
+    private void offerLatest(BlockingQueue<SseEvent> queue, SseEvent event) {
+        if (!queue.offer(event)) {
+            queue.poll();
+            queue.offer(event);
+            log.warn("Hermes SSE event queue is full; discarded oldest event");
+        }
     }
 
     // ============================================================
@@ -104,10 +128,16 @@ public class HermesSseClient implements AutoCloseable {
     }
 
     private void startSubscription(Subscription subscription, Runnable task) {
-        Future<?> future = streamExecutor.submit(task);
-        subscription.taskRef.set(future);
-        if (!subscription.running) {
-            future.cancel(true);
+        try {
+            Future<?> future = streamExecutor.submit(task);
+            subscription.taskRef.set(future);
+            if (!subscription.running) {
+                future.cancel(true);
+            }
+        } catch (RejectedExecutionException error) {
+            activeSubscriptions.remove(subscription);
+            subscription.stop();
+            throw new HermesHttpException("Hermes SSE executor is full", error);
         }
     }
 
