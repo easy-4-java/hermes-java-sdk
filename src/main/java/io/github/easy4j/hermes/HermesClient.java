@@ -188,8 +188,8 @@ public class HermesClient implements AutoCloseable {
                     if (!"ok".equals(status.getStatus())) {
                         handleHttpCheckFailed(httpConfig, "Health check failed: " + status.getStatus());
                     } else {
-                        log.info("Hermes HTTP health check passed: serverUrl={}, defaultModel={}",
-                                httpConfig.getServerUrl(), httpConfig.getDefaultModel());
+                        log.info("Hermes HTTP health check passed: baseUrl={}, defaultModel={}",
+                                httpConfig.getBaseUrl(), httpConfig.getDefaultModel());
                     }
                 } catch (Exception e) {
                     handleHttpCheckFailed(httpConfig, "Health check failed: " + e.getMessage());
