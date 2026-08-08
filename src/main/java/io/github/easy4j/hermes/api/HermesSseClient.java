@@ -3,6 +3,7 @@ package io.github.easy4j.hermes.api;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.github.easy4j.hermes.HermesHttpClientConfig;
+import io.github.easy4j.hermes.HermesOkHttpClientFactory;
 import static io.github.easy4j.hermes.api.HermesApiConstants.*;
 import io.github.easy4j.hermes.api.model.ChatRequest;
 import io.github.easy4j.hermes.api.model.SseEvent;
@@ -14,11 +15,14 @@ import java.io.IOException;
 import java.util.Collections;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 import java.util.concurrent.LinkedBlockingQueue;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 
@@ -35,23 +39,17 @@ public class HermesSseClient implements AutoCloseable {
     private final HermesHttpClientConfig config;
     private final ObjectMapper mapper;
     private final OkHttpClient httpClient;
-    private final AtomicReference<Subscription> activeSubscription = new AtomicReference<>();
+    private final boolean ownsHttpClient;
+    private final Set<Subscription> activeSubscriptions = ConcurrentHashMap.newKeySet();
+    private final ExecutorService streamExecutor = Executors.newThreadPerTaskExecutor(
+            Thread.ofVirtual().name("hermes-sse-", 0L).factory());
 
     public HermesSseClient(HermesHttpClientConfig config, ObjectMapper objectMapper, OkHttpClient httpClient) {
         this.config = Objects.requireNonNull(config, "config");
         this.mapper = Objects.isNull(objectMapper) ? new ObjectMapper()
                 .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false) : objectMapper;
-        this.httpClient = Objects.isNull(httpClient) ? buildSseOkHttpClient(config) : httpClient;
-    }
-
-    private static OkHttpClient buildSseOkHttpClient(HermesHttpClientConfig config) {
-        OkHttpClient.Builder builder = new OkHttpClient.Builder()
-                .connectTimeout(config.getConnectTimeoutMillis(), TimeUnit.MILLISECONDS)
-                .readTimeout(0, TimeUnit.MILLISECONDS); // SSE 无读超时
-        if (!config.isVerifySsl()) {
-            builder.hostnameVerifier((hostname, session) -> true);
-        }
-        return builder.build();
+        this.ownsHttpClient = Objects.isNull(httpClient);
+        this.httpClient = this.ownsHttpClient ? HermesOkHttpClientFactory.create(config) : httpClient;
     }
 
     // ============================================================
@@ -70,11 +68,9 @@ public class HermesSseClient implements AutoCloseable {
                               Consumer<SseEvent> consumer,
                               Runnable onComplete,
                               Consumer<Throwable> onError) {
-        stopCurrent();
-        Subscription sub = new Subscription("hermes-sse-chat");
-        activeSubscription.set(sub);
-        sub.executor.submit(() -> doSubscribePost(
-                config.getServerUrl() + PATH_CHAT_COMPLETIONS,
+        Subscription sub = new Subscription();
+        activeSubscriptions.add(sub);
+        startSubscription(sub, () -> doSubscribePost(config.getServerUrl() + PATH_CHAT_COMPLETIONS,
                 request, headers, consumer, onComplete, onError, sub));
     }
 
@@ -83,10 +79,9 @@ public class HermesSseClient implements AutoCloseable {
     // ============================================================
 
     public void subscribe(String runId, Consumer<SseEvent> consumer) {
-        stopCurrent();
-        Subscription sub = new Subscription("hermes-sse-run");
-        activeSubscription.set(sub);
-        sub.executor.submit(() -> doSubscribeRun(runId, consumer, sub));
+        Subscription sub = new Subscription();
+        activeSubscriptions.add(sub);
+        startSubscription(sub, () -> doSubscribeRun(runId, consumer, sub));
     }
 
     public BlockingQueue<SseEvent> subscribeQueue(String runId) {
@@ -100,10 +95,17 @@ public class HermesSseClient implements AutoCloseable {
     // ============================================================
 
     public void subscribeSessionStream(String sessionId, String input, Consumer<SseEvent> consumer) {
-        stopCurrent();
-        Subscription sub = new Subscription("hermes-sse-session");
-        activeSubscription.set(sub);
-        sub.executor.submit(() -> doSubscribeSessionStream(sessionId, input, consumer, sub));
+        Subscription sub = new Subscription();
+        activeSubscriptions.add(sub);
+        startSubscription(sub, () -> doSubscribeSessionStream(sessionId, input, consumer, sub));
+    }
+
+    private void startSubscription(Subscription subscription, Runnable task) {
+        Future<?> future = streamExecutor.submit(task);
+        subscription.taskRef.set(future);
+        if (!subscription.running) {
+            future.cancel(true);
+        }
     }
 
     // ============================================================
@@ -117,27 +119,34 @@ public class HermesSseClient implements AutoCloseable {
                                  Runnable onComplete,
                                  Consumer<Throwable> onError,
                                  Subscription sub) {
+        AtomicBoolean completionSent = new AtomicBoolean();
+        Runnable completeOnce = () -> {
+            if (completionSent.compareAndSet(false, true)) {
+                onComplete.run();
+            }
+        };
         try {
             Request request = buildPostSseRequest(url, requestBody, headers);
-            sub.callRef.set(httpClient.newCall(request));
-            try (Response response = httpClient.newCall(request).execute()) {
+            Call call = httpClient.newCall(request);
+            sub.callRef.set(call);
+            try (Response response = call.execute()) {
                 if (!response.isSuccessful()) {
                     String body = response.body() != null ? response.body().string() : "";
                     onError.accept(new HermesHttpException(response.code(), body));
                     return;
                 }
                 if (response.body() != null) {
-                    parseSseSource(response.body().source(), consumer, onComplete, sub);
+                    parseSseSource(response.body().source(), consumer, completeOnce, sub);
                 }
             }
-            onComplete.run();
+            completeOnce.run();
         } catch (Exception e) {
             if (sub.running) {
                 log.warn("SSE chat error", e);
                 onError.accept(e);
             }
         } finally {
-            sub.executor.shutdown();
+            activeSubscriptions.remove(sub);
         }
     }
 
@@ -147,8 +156,9 @@ public class HermesSseClient implements AutoCloseable {
             try {
                 String url = config.getServerUrl() + PATH_SESSIONS + "/" + sessionId + "/chat/stream";
                 Request request = buildPostSseRequest(url, Collections.singletonMap("input", input), null);
-                sub.callRef.set(httpClient.newCall(request));
-                try (Response response = httpClient.newCall(request).execute()) {
+                Call call = httpClient.newCall(request);
+                sub.callRef.set(call);
+                try (Response response = call.execute()) {
                     if (!response.isSuccessful()) {
                         String body = response.body() != null ? response.body().string() : "";
                         log.warn("SSE session stream failed status={}, retrying", response.code());
@@ -170,6 +180,7 @@ public class HermesSseClient implements AutoCloseable {
                 }
             }
         }
+        activeSubscriptions.remove(sub);
     }
 
     private void doSubscribeRun(String runId, Consumer<SseEvent> consumer, Subscription sub) {
@@ -177,8 +188,9 @@ public class HermesSseClient implements AutoCloseable {
             try {
                 String url = config.getServerUrl() + PATH_RUNS + "/" + runId + "/events";
                 Request request = buildGetSseRequest(url);
-                sub.callRef.set(httpClient.newCall(request));
-                try (Response response = httpClient.newCall(request).execute()) {
+                Call call = httpClient.newCall(request);
+                sub.callRef.set(call);
+                try (Response response = call.execute()) {
                     if (!response.isSuccessful()) {
                         log.warn("SSE run events failed status={}, retrying", response.code());
                         Thread.sleep(DEFAULT_CONNECT_TIMEOUT_MS / 3);
@@ -200,6 +212,7 @@ public class HermesSseClient implements AutoCloseable {
                 }
             }
         }
+        activeSubscriptions.remove(sub);
     }
 
     // ============================================================
@@ -268,31 +281,36 @@ public class HermesSseClient implements AutoCloseable {
     public void stop() { stopCurrent(); }
 
     private void stopCurrent() {
-        Subscription old = activeSubscription.getAndSet(null);
-        if (old != null) old.stop();
+        for (Subscription subscription : activeSubscriptions) {
+            subscription.stop();
+        }
+        activeSubscriptions.clear();
     }
 
     @Override
-    public void close() { stop(); }
+    public void close() {
+        stop();
+        streamExecutor.shutdownNow();
+        if (ownsHttpClient) {
+            HermesOkHttpClientFactory.shutdown(httpClient);
+        }
+    }
 
     private static class Subscription {
         volatile boolean running = true;
         final AtomicReference<Call> callRef = new AtomicReference<>();
-        final ExecutorService executor;
-
-        Subscription(String name) {
-            this.executor = Executors.newSingleThreadExecutor(r -> {
-                Thread t = new Thread(r, name);
-                t.setDaemon(true);
-                return t;
-            });
-        }
+        final AtomicReference<Future<?>> taskRef = new AtomicReference<>();
 
         void stop() {
             running = false;
             Call call = callRef.get();
-            if (call != null) call.cancel();
-            executor.shutdownNow();
+            if (Objects.nonNull(call)) {
+                call.cancel();
+            }
+            Future<?> task = taskRef.get();
+            if (Objects.nonNull(task)) {
+                task.cancel(true);
+            }
         }
     }
 }

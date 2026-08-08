@@ -24,6 +24,7 @@ public class HermesClient implements AutoCloseable {
     private final HermesHttpClient httpClient;
     private final HermesSseClient sseClient;
     private final HermesCli cli;
+    private final OkHttpClient ownedHttpClient;
 
     /**
      * 使用组合配置构造客户端（推荐方式）。
@@ -32,7 +33,19 @@ public class HermesClient implements AutoCloseable {
      * @param config 组合配置，不得为 null
      */
     public HermesClient(HermesClientConfig config) {
-        this(config, new ObjectMapper(), new OkHttpClient());
+        this(Objects.requireNonNull(config, "config").getHttp(), config.getCli(), new ObjectMapper(),
+                HermesOkHttpClientFactory.create(config.getHttp()), true);
+    }
+
+    /**
+     * 使用组合配置和调用方管理的共享 {@link OkHttpClient}。
+     * <p>适用于直接注入 Spring 容器中由 okhttp3-extension/starter 配置的客户端。</p>
+     *
+     * @param config 组合配置
+     * @param httpClient 外部共享 OkHttpClient
+     */
+    public HermesClient(HermesClientConfig config, OkHttpClient httpClient) {
+        this(config, new ObjectMapper(), httpClient);
     }
 
     /**
@@ -46,7 +59,8 @@ public class HermesClient implements AutoCloseable {
         this(Objects.requireNonNull(config, "config").getHttp(),
                 config.getCli(),
                 objectMapper,
-                httpClient);
+                httpClient,
+                false);
     }
 
     /**
@@ -99,7 +113,19 @@ public class HermesClient implements AutoCloseable {
      * @param cliConfig  CLI 配置，不得为 null
      */
     public HermesClient(HermesHttpClientConfig httpConfig, HermesCliConfig cliConfig) {
-        this(httpConfig, cliConfig, new ObjectMapper(), new OkHttpClient());
+        this(httpConfig, cliConfig, new ObjectMapper(), HermesOkHttpClientFactory.create(httpConfig), true);
+    }
+
+    /**
+     * 使用 HTTP/CLI 配置和调用方管理的共享 {@link OkHttpClient}。
+     *
+     * @param httpConfig HTTP 配置
+     * @param cliConfig CLI 配置
+     * @param httpClient 外部共享 OkHttpClient
+     */
+    public HermesClient(HermesHttpClientConfig httpConfig, HermesCliConfig cliConfig,
+                        OkHttpClient httpClient) {
+        this(httpConfig, cliConfig, new ObjectMapper(), httpClient);
     }
 
     /**
@@ -112,10 +138,16 @@ public class HermesClient implements AutoCloseable {
      */
     public HermesClient(HermesHttpClientConfig httpConfig, HermesCliConfig cliConfig,
                         ObjectMapper objectMapper, OkHttpClient httpClient) {
+        this(httpConfig, cliConfig, objectMapper, httpClient, false);
+    }
+
+    private HermesClient(HermesHttpClientConfig httpConfig, HermesCliConfig cliConfig,
+                         ObjectMapper objectMapper, OkHttpClient httpClient, boolean ownsHttpClient) {
         Objects.requireNonNull(httpConfig, "httpConfig");
         Objects.requireNonNull(cliConfig, "cliConfig");
         Objects.requireNonNull(objectMapper, "objectMapper");
         Objects.requireNonNull(httpClient, "httpClient");
+        this.ownedHttpClient = ownsHttpClient ? httpClient : null;
         this.config = new HermesClientConfig();
         copyHttpConfig(httpConfig);
         copyCliConfig(cliConfig);
@@ -171,6 +203,7 @@ public class HermesClient implements AutoCloseable {
         this.httpClient = Objects.requireNonNull(httpClient, "httpClient");
         this.sseClient = Objects.requireNonNull(sseClient, "sseClient");
         this.cli = Objects.requireNonNull(cli, "cli");
+        this.ownedHttpClient = null;
     }
 
     private void copyHttpConfig(HermesHttpClientConfig src) {
@@ -181,6 +214,13 @@ public class HermesClient implements AutoCloseable {
         this.config.getHttp().setApiKey(src.getApiKey());
         this.config.getHttp().setConnectTimeoutMillis(src.getConnectTimeoutMillis());
         this.config.getHttp().setReadTimeoutMillis(src.getReadTimeoutMillis());
+        this.config.getHttp().setWriteTimeoutMillis(src.getWriteTimeoutMillis());
+        this.config.getHttp().setCallTimeoutMillis(src.getCallTimeoutMillis());
+        this.config.getHttp().setMaxIdleConnections(src.getMaxIdleConnections());
+        this.config.getHttp().setKeepAliveDurationMillis(src.getKeepAliveDurationMillis());
+        this.config.getHttp().setMaxRequests(src.getMaxRequests());
+        this.config.getHttp().setMaxRequestsPerHost(src.getMaxRequestsPerHost());
+        this.config.getHttp().setRetryOnConnectionFailure(src.isRetryOnConnectionFailure());
         this.config.getHttp().setVerifySsl(src.isVerifySsl());
         this.config.getHttp().setDefaultModel(src.getDefaultModel());
         this.config.getHttp().setDefaultInstructions(src.getDefaultInstructions());
@@ -319,10 +359,9 @@ public class HermesClient implements AutoCloseable {
     /** Streaming chat completion with Hermes custom headers. */
     public ChatStreamingResponse chatCompletionStream(ChatRequest request,
                                                       Map<String, String> headers) {
-       
-        request.setStream(true);
+        Objects.requireNonNull(request, "request");
         ChatStreamingResponse stream = new ChatStreamingResponse();
-        sseClient.subscribeChat(request, headers, stream::accept, stream::finish, stream::fail);
+        sseClient.subscribeChat(request.withStream(), headers, stream::accept, stream::finish, stream::fail);
         return stream;
     }
 
@@ -392,9 +431,19 @@ public class HermesClient implements AutoCloseable {
 
     public HermesClientConfig getConfig() { return config; }
 
+    /**
+     * 返回 HTTP 与 SSE 共用的 OkHttpClient；HTTP 未启用时返回 null。
+     *
+     * @return 实际使用的 OkHttpClient
+     */
+    public OkHttpClient getOkHttpClient() {
+        return httpClient != null ? httpClient.getOkHttpClient() : null;
+    }
+
     @Override
     public void close() {
         if (httpClient != null) httpClient.close();
         if (sseClient != null) sseClient.close();
+        HermesOkHttpClientFactory.shutdown(ownedHttpClient);
     }
 }
