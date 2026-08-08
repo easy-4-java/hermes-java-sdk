@@ -189,6 +189,21 @@ try (HermesClient client = new HermesClient(config)) {
 
 预期结果：打印健康状态，并从类型化 `ChatResponse` 打印助手回复内容。
 
+### 6.1 单 Gateway 多 Profile
+
+Hermes 开启 `gateway.multiplex_profiles` 后，只需配置一个 API Server 地址和端口。
+SDK 使用根客户端创建受托管的 profile 客户端：
+
+```java
+try (HermesClient client = new HermesClient(config)) {
+    HermesClient sales = client.forProfile("sales");
+    ChatResponse response = sales.chatCompletionWithSession(request, sessionKey);
+}
+```
+
+上面的请求会发送到 `/p/sales/v1/chat/completions`。所有 profile 复用根客户端的
+OkHttp 连接池和 ObjectMapper；profile 客户端由根客户端统一关闭，不应单独管理其生命周期。
+
 <a id="7-configuration"></a>
 ## 7. 配置
 

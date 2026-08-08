@@ -13,6 +13,10 @@ import okhttp3.OkHttpClient;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.regex.Pattern;
 
 /**
  * Hermes 客户端门面：HTTP REST + SSE 事件流 + 本地 CLI。
@@ -20,11 +24,19 @@ import java.util.Objects;
 @Slf4j
 public class HermesClient implements AutoCloseable {
 
+    private static final Pattern PROFILE_ID_PATTERN =
+            Pattern.compile("[A-Za-z0-9][A-Za-z0-9._-]{0,127}");
+
     private final HermesClientConfig config;
     private final HermesHttpClient httpClient;
     private final HermesSseClient sseClient;
     private final HermesCli cli;
     private final OkHttpClient ownedHttpClient;
+    private final ObjectMapper objectMapper;
+    private final OkHttpClient sharedHttpClient;
+    private final boolean managedProfileView;
+    private final ConcurrentMap<String, HermesClient> profileClients = new ConcurrentHashMap<>();
+    private final AtomicBoolean closed = new AtomicBoolean();
 
     /**
      * 使用组合配置构造客户端（推荐方式）。
@@ -143,11 +155,20 @@ public class HermesClient implements AutoCloseable {
 
     private HermesClient(HermesHttpClientConfig httpConfig, HermesCliConfig cliConfig,
                          ObjectMapper objectMapper, OkHttpClient httpClient, boolean ownsHttpClient) {
+        this(httpConfig, cliConfig, objectMapper, httpClient, ownsHttpClient, false);
+    }
+
+    private HermesClient(HermesHttpClientConfig httpConfig, HermesCliConfig cliConfig,
+                         ObjectMapper objectMapper, OkHttpClient httpClient, boolean ownsHttpClient,
+                         boolean managedProfileView) {
         Objects.requireNonNull(httpConfig, "httpConfig");
         Objects.requireNonNull(cliConfig, "cliConfig");
         Objects.requireNonNull(objectMapper, "objectMapper");
         Objects.requireNonNull(httpClient, "httpClient");
         this.ownedHttpClient = ownsHttpClient ? httpClient : null;
+        this.objectMapper = objectMapper;
+        this.sharedHttpClient = httpClient;
+        this.managedProfileView = managedProfileView;
         this.config = new HermesClientConfig();
         copyHttpConfig(httpConfig);
         copyCliConfig(cliConfig);
@@ -201,27 +222,34 @@ public class HermesClient implements AutoCloseable {
         this.sseClient = Objects.requireNonNull(sseClient, "sseClient");
         this.cli = Objects.requireNonNull(cli, "cli");
         this.ownedHttpClient = null;
+        this.objectMapper = new ObjectMapper();
+        this.sharedHttpClient = httpClient.getOkHttpClient();
+        this.managedProfileView = false;
     }
 
     private void copyHttpConfig(HermesHttpClientConfig src) {
-        this.config.getHttp().setEnabled(src.isEnabled());
-        this.config.getHttp().setStartupCheckEnabled(src.isStartupCheckEnabled());
-        this.config.getHttp().setFailFastOnUnavailable(src.isFailFastOnUnavailable());
-        this.config.getHttp().setServerUrl(src.getServerUrl());
-        this.config.getHttp().setApiKey(src.getApiKey());
-        this.config.getHttp().setConnectTimeoutMillis(src.getConnectTimeoutMillis());
-        this.config.getHttp().setReadTimeoutMillis(src.getReadTimeoutMillis());
-        this.config.getHttp().setWriteTimeoutMillis(src.getWriteTimeoutMillis());
-        this.config.getHttp().setCallTimeoutMillis(src.getCallTimeoutMillis());
-        this.config.getHttp().setMaxIdleConnections(src.getMaxIdleConnections());
-        this.config.getHttp().setKeepAliveDurationMillis(src.getKeepAliveDurationMillis());
-        this.config.getHttp().setMaxRequests(src.getMaxRequests());
-        this.config.getHttp().setMaxRequestsPerHost(src.getMaxRequestsPerHost());
-        this.config.getHttp().setRetryOnConnectionFailure(src.isRetryOnConnectionFailure());
-        this.config.getHttp().setVerifySsl(src.isVerifySsl());
-        this.config.getHttp().setDefaultModel(src.getDefaultModel());
-        this.config.getHttp().setDefaultInstructions(src.getDefaultInstructions());
-        this.config.getHttp().setDefaultProvider(src.getDefaultProvider());
+        copyHttpConfig(src, this.config.getHttp());
+    }
+
+    private static void copyHttpConfig(HermesHttpClientConfig src, HermesHttpClientConfig target) {
+        target.setEnabled(src.isEnabled());
+        target.setStartupCheckEnabled(src.isStartupCheckEnabled());
+        target.setFailFastOnUnavailable(src.isFailFastOnUnavailable());
+        target.setServerUrl(src.getServerUrl());
+        target.setApiKey(src.getApiKey());
+        target.setConnectTimeoutMillis(src.getConnectTimeoutMillis());
+        target.setReadTimeoutMillis(src.getReadTimeoutMillis());
+        target.setWriteTimeoutMillis(src.getWriteTimeoutMillis());
+        target.setCallTimeoutMillis(src.getCallTimeoutMillis());
+        target.setMaxIdleConnections(src.getMaxIdleConnections());
+        target.setKeepAliveDurationMillis(src.getKeepAliveDurationMillis());
+        target.setMaxRequests(src.getMaxRequests());
+        target.setMaxRequestsPerHost(src.getMaxRequestsPerHost());
+        target.setRetryOnConnectionFailure(src.isRetryOnConnectionFailure());
+        target.setVerifySsl(src.isVerifySsl());
+        target.setDefaultModel(src.getDefaultModel());
+        target.setDefaultInstructions(src.getDefaultInstructions());
+        target.setDefaultProvider(src.getDefaultProvider());
     }
 
     private void copyCliConfig(HermesCliConfig src) {
@@ -429,6 +457,52 @@ public class HermesClient implements AutoCloseable {
     public HermesClientConfig getConfig() { return config; }
 
     /**
+     * 返回由当前根客户端托管的 Hermes multiplex profile 客户端。
+     * <p>profile 客户端复用根客户端的 OkHttp 连接池和 ObjectMapper，请只关闭根客户端。</p>
+     *
+     * @param profileId Hermes profile 标识，例如 {@code sales}
+     * @return 基础路径为 {@code /p/<profileId>} 的客户端
+     */
+    public HermesClient forProfile(String profileId) {
+        if (managedProfileView) {
+            throw new IllegalStateException("Cannot create a profile client from another profile client");
+        }
+        if (closed.get()) {
+            throw new IllegalStateException("HermesClient is closed");
+        }
+        if (!isHttpEnabled()) {
+            throw new IllegalStateException("Hermes HTTP client is disabled");
+        }
+        String normalizedProfileId = normalizeProfileId(profileId);
+        return profileClients.computeIfAbsent(normalizedProfileId, this::createProfileClient);
+    }
+
+    private HermesClient createProfileClient(String profileId) {
+        HermesHttpClientConfig profileConfig = new HermesHttpClientConfig();
+        copyHttpConfig(config.getHttp(), profileConfig);
+        profileConfig.setServerUrl(profileServerUrl(config.getHttp().getServerUrl(), profileId));
+        profileConfig.setStartupCheckEnabled(false);
+        HermesCliConfig disabledCli = new HermesCliConfig();
+        disabledCli.setEnabled(false);
+        return new HermesClient(profileConfig, disabledCli, objectMapper, sharedHttpClient, false, true);
+    }
+
+    static String profileServerUrl(String serverUrl, String profileId) {
+        if (Objects.isNull(serverUrl) || serverUrl.trim().isEmpty()) {
+            throw new IllegalStateException("Hermes serverUrl must not be blank");
+        }
+        String normalizedServerUrl = serverUrl.trim().replaceAll("/+$", "");
+        return normalizedServerUrl + "/p/" + normalizeProfileId(profileId);
+    }
+
+    private static String normalizeProfileId(String profileId) {
+        if (Objects.isNull(profileId) || !PROFILE_ID_PATTERN.matcher(profileId.trim()).matches()) {
+            throw new IllegalArgumentException("Invalid Hermes profileId: " + profileId);
+        }
+        return profileId.trim();
+    }
+
+    /**
      * 返回 HTTP 与 SSE 共用的 OkHttpClient；HTTP 未启用时返回 null。
      *
      * @return 实际使用的 OkHttpClient
@@ -439,6 +513,21 @@ public class HermesClient implements AutoCloseable {
 
     @Override
     public void close() {
+        if (managedProfileView || !closed.compareAndSet(false, true)) {
+            return;
+        }
+        profileClients.values().forEach(HermesClient::closeManagedProfile);
+        profileClients.clear();
+        closeResources();
+    }
+
+    private void closeManagedProfile() {
+        if (closed.compareAndSet(false, true)) {
+            closeResources();
+        }
+    }
+
+    private void closeResources() {
         if (httpClient != null) httpClient.close();
         if (sseClient != null) sseClient.close();
         HermesOkHttpClientFactory.shutdown(ownedHttpClient);
