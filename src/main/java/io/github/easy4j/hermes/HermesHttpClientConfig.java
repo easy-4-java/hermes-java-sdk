@@ -14,6 +14,9 @@ import java.util.Objects;
 @Data
 public class HermesHttpClientConfig {
 
+    /** 对话响应模式，默认保持兼容的完整响应模式。 */
+    private HttpResponseMode mode = HttpResponseMode.BLOCKING;
+
     /**
      * 是否启用 HTTP API 功能。
      * <p>为 false 时跳过 HTTP 客户端初始化和检查。</p>
@@ -70,23 +73,83 @@ public class HermesHttpClientConfig {
     /** 单主机异步请求最大并发数。 */
     private int maxRequestsPerHost = 64;
 
-    /** SSE 消费线程池核心线程数。 */
-    private int sseCorePoolSize = 64;
+    /** 流式响应消费线程池核心线程数。 */
+    private int streamCorePoolSize = 64;
 
     /** SSE 消费线程池最大线程数。 */
-    private int sseMaxPoolSize = 64;
+    private int streamMaxPoolSize = 64;
 
     /** SSE 消费线程池有界队列容量。 */
-    private int sseQueueCapacity = 128;
+    private int streamQueueCapacity = 128;
 
     /** SSE 消费线程空闲保活时间（毫秒）。 */
-    private long sseKeepAliveMillis = 60_000L;
+    private long streamKeepAliveMillis = 60_000L;
 
-    /** 对外暴露的 SSE 事件缓存上限。 */
-    private int sseEventQueueCapacity = 1_024;
+    /** 单个流式订阅的事件缓存上限。 */
+    private int streamEventQueueCapacity = 1_024;
 
     /** 遇到失效连接等传输故障时是否允许 OkHttp 自动恢复。 */
     private boolean retryOnConnectionFailure = true;
+
+    /** @deprecated 使用 {@link #getStreamCorePoolSize()}。 */
+    @Deprecated
+    public int getSseCorePoolSize() {
+        return streamCorePoolSize;
+    }
+
+    /** @deprecated 使用 {@link #setStreamCorePoolSize(int)}。 */
+    @Deprecated
+    public void setSseCorePoolSize(int value) {
+        this.streamCorePoolSize = value;
+    }
+
+    /** @deprecated 使用 {@link #getStreamMaxPoolSize()}。 */
+    @Deprecated
+    public int getSseMaxPoolSize() {
+        return streamMaxPoolSize;
+    }
+
+    /** @deprecated 使用 {@link #setStreamMaxPoolSize(int)}。 */
+    @Deprecated
+    public void setSseMaxPoolSize(int value) {
+        this.streamMaxPoolSize = value;
+    }
+
+    /** @deprecated 使用 {@link #getStreamQueueCapacity()}。 */
+    @Deprecated
+    public int getSseQueueCapacity() {
+        return streamQueueCapacity;
+    }
+
+    /** @deprecated 使用 {@link #setStreamQueueCapacity(int)}。 */
+    @Deprecated
+    public void setSseQueueCapacity(int value) {
+        this.streamQueueCapacity = value;
+    }
+
+    /** @deprecated 使用 {@link #getStreamKeepAliveMillis()}。 */
+    @Deprecated
+    public long getSseKeepAliveMillis() {
+        return streamKeepAliveMillis;
+    }
+
+    /** @deprecated 使用 {@link #setStreamKeepAliveMillis(long)}。 */
+    @Deprecated
+    public void setSseKeepAliveMillis(long value) {
+        this.streamKeepAliveMillis = value;
+    }
+
+    /** @deprecated 使用 {@link #getStreamEventQueueCapacity()}。 */
+    @Deprecated
+    public int getSseEventQueueCapacity() {
+        return streamEventQueueCapacity;
+    }
+
+    /** @deprecated 使用 {@link #setStreamEventQueueCapacity(int)}。 */
+    @Deprecated
+    public void setSseEventQueueCapacity(int value) {
+        this.streamEventQueueCapacity = value;
+    }
 
     /**
      * 是否校验 HTTPS 证书；为 false 时关闭校验（仅建议开发环境）。
