@@ -1,4 +1,7 @@
 package io.github.easy4j.hermes.api;
+/**
+ * @author <a href="https://github.com/loong10k">@Loong Wan</a>
+ */
 
 /**
  * Hermes API Server constants — paths, header names, defaults.

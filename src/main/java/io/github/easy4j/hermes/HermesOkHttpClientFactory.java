@@ -1,4 +1,7 @@
 package io.github.easy4j.hermes;
+/**
+ * @author <a href="https://github.com/loong10k">@Loong Wan</a>
+ */
 
 import okhttp3.ConnectionPool;
 import okhttp3.Dispatcher;
