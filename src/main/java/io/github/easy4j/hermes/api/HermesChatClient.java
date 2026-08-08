@@ -3,7 +3,7 @@ package io.github.easy4j.hermes.api;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.github.easy4j.hermes.HermesHttpClientConfig;
 import io.github.easy4j.hermes.api.model.ChatRequest;
-import io.github.easy4j.hermes.api.model.ChatStreamingResponse;
+import io.github.easy4j.hermes.api.sse.StreamingChatResponse;
 import okhttp3.OkHttpClient;
 
 import java.util.Map;
@@ -34,36 +34,36 @@ public class HermesChatClient extends HermesHttpClient {
         this.eventClient = new HermesSseClient(config, getObjectMapper(), getOkHttpClient());
     }
 
-    public ChatStreamingResponse chatCompletionStream(ChatRequest request) {
+    public StreamingChatResponse chatCompletionStream(ChatRequest request) {
         return chatCompletionStream(request, null, null);
     }
 
-    public ChatStreamingResponse chatCompletionStream(ChatRequest request,
+    public StreamingChatResponse chatCompletionStream(ChatRequest request,
                                                        Map<String, String> headers) {
         return chatCompletionStream(request, headers, null);
     }
 
     /** 在订阅启动前绑定增量回调，避免丢失首批分片。 */
-    public ChatStreamingResponse chatCompletionStream(ChatRequest request,
+    public StreamingChatResponse chatCompletionStream(ChatRequest request,
                                                        Map<String, String> headers,
                                                        Consumer<String> deltaConsumer) {
         Objects.requireNonNull(request, "request");
-        ChatStreamingResponse stream = new ChatStreamingResponse(
+        StreamingChatResponse stream = new StreamingChatResponse(
                 config.getStreamEventQueueCapacity()).onDelta(deltaConsumer);
         eventClient.subscribeChat(request.withStream(), headers, stream::accept, stream::finish, stream::fail);
         return stream;
     }
 
-    public ChatStreamingResponse chatCompletionStreamWithSession(ChatRequest request, String sessionKey) {
+    public StreamingChatResponse chatCompletionStreamWithSession(ChatRequest request, String sessionKey) {
         return chatCompletionStreamWithSession(request, sessionKey, null, null);
     }
 
-    public ChatStreamingResponse chatCompletionStreamWithSession(ChatRequest request, String sessionKey,
+    public StreamingChatResponse chatCompletionStreamWithSession(ChatRequest request, String sessionKey,
                                                                   String sessionId) {
         return chatCompletionStreamWithSession(request, sessionKey, sessionId, null);
     }
 
-    public ChatStreamingResponse chatCompletionStreamWithSession(ChatRequest request, String sessionKey,
+    public StreamingChatResponse chatCompletionStreamWithSession(ChatRequest request, String sessionKey,
                                                                   String sessionId,
                                                                   Consumer<String> deltaConsumer) {
         return chatCompletionStream(request,
