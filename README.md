@@ -188,6 +188,18 @@ Expected result: the health status is printed, and the assistant reply content i
 
 Configuration is grouped in `HermesClientConfig`, which holds an `HermesHttpClientConfig` (`getHttp()`) and an `HermesCliConfig` (`getCli()`).
 
+For a multiplexed Hermes Gateway, keep one API Server URL and derive managed profile clients:
+
+```java
+try (HermesClient client = new HermesClient(config)) {
+    HermesClient sales = client.forProfile("sales");
+    ChatResponse response = sales.chatCompletionWithSession(request, sessionKey);
+}
+```
+
+The request is sent to `/p/sales/v1/chat/completions`. Profile clients share the root
+client's OkHttp transport and ObjectMapper and are closed with the root client.
+
 `HermesHttpClientConfig`:
 
 | Property | Default | Description |
