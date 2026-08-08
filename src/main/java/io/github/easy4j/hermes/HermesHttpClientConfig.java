@@ -36,7 +36,19 @@ public class HermesHttpClientConfig {
     /**
      * Hermes API Server 根地址，例如 {@code http://localhost:8642}。
      */
-    private String serverUrl = HermesApiConstants.DEFAULT_SERVER_URL;
+    private String baseUrl = HermesApiConstants.DEFAULT_SERVER_URL;
+
+    /** @deprecated 使用 {@link #getBaseUrl()}。 */
+    @Deprecated
+    public String getServerUrl() {
+        return baseUrl;
+    }
+
+    /** @deprecated 使用 {@link #setBaseUrl(String)}。 */
+    @Deprecated
+    public void setServerUrl(String value) {
+        this.baseUrl = value;
+    }
 
     /**
      * Bearer token（对应 {@code API_SERVER_KEY}）。

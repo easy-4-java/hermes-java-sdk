@@ -5,6 +5,7 @@ import io.github.easy4j.hermes.api.model.*;
 import io.github.easy4j.hermes.cli.HermesCli;
 import io.github.easy4j.hermes.cli.HermesCliExecutor;
 import io.github.easy4j.hermes.api.HermesHttpClient;
+import io.github.easy4j.hermes.api.HermesChatClient;
 import io.github.easy4j.hermes.api.HermesSseClient;
 import io.github.easy4j.hermes.api.model.ChatStreamingResponse;
 import lombok.extern.slf4j.Slf4j;
@@ -30,6 +31,7 @@ public class HermesClient implements AutoCloseable {
 
     private final HermesClientConfig config;
     private final HermesHttpClient httpClient;
+    private final HermesChatClient chatClient;
     private final HermesSseClient sseClient;
     private final HermesCli cli;
     private final OkHttpClient ownedHttpClient;
@@ -176,8 +178,9 @@ public class HermesClient implements AutoCloseable {
 
         // HTTP 客户端初始化
         if (httpConfig.isEnabled()) {
-            this.httpClient = new HermesHttpClient(httpConfig, objectMapper, httpClient);
-            this.sseClient = new HermesSseClient(httpConfig, objectMapper, httpClient);
+            this.chatClient = new HermesChatClient(httpConfig, objectMapper, httpClient);
+            this.httpClient = this.chatClient;
+            this.sseClient = this.chatClient.events();
             // HTTP 启动检查
             if (httpConfig.isStartupCheckEnabled()) {
                 try {
@@ -194,6 +197,7 @@ public class HermesClient implements AutoCloseable {
             }
         } else {
             this.httpClient = null;
+            this.chatClient = null;
             this.sseClient = null;
         }
 
@@ -223,6 +227,7 @@ public class HermesClient implements AutoCloseable {
                         HermesSseClient sseClient, HermesCli cli) {
         this.config = Objects.requireNonNull(config, "config");
         this.httpClient = Objects.requireNonNull(httpClient, "httpClient");
+        this.chatClient = httpClient instanceof HermesChatClient ? (HermesChatClient) httpClient : null;
         this.sseClient = Objects.requireNonNull(sseClient, "sseClient");
         this.cli = Objects.requireNonNull(cli, "cli");
         this.ownedHttpClient = null;
@@ -473,6 +478,11 @@ public class HermesClient implements AutoCloseable {
     // SSE (raw access)
     // ============================================================
 
+    /** 获取统一的 Hermes 聊天场景客户端。 */
+    public HermesChatClient chat() { return chatClient; }
+
+    /** @deprecated 业务聊天请使用 {@link #chat()}，这里只保留原始事件订阅兼容入口。 */
+    @Deprecated
     public HermesSseClient sse() { return sseClient; }
 
     // ============================================================
