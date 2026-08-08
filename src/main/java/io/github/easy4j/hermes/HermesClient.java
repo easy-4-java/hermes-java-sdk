@@ -7,7 +7,7 @@ import io.github.easy4j.hermes.cli.HermesCliExecutor;
 import io.github.easy4j.hermes.api.HermesHttpClient;
 import io.github.easy4j.hermes.api.HermesChatClient;
 import io.github.easy4j.hermes.api.HermesSseClient;
-import io.github.easy4j.hermes.api.model.ChatStreamingResponse;
+import io.github.easy4j.hermes.api.sse.StreamingChatResponse;
 import lombok.extern.slf4j.Slf4j;
 import okhttp3.OkHttpClient;
 
@@ -245,7 +245,7 @@ public class HermesClient implements AutoCloseable {
         target.setEnabled(src.isEnabled());
         target.setStartupCheckEnabled(src.isStartupCheckEnabled());
         target.setFailFastOnUnavailable(src.isFailFastOnUnavailable());
-        target.setServerUrl(src.getServerUrl());
+        target.setBaseUrl(src.getBaseUrl());
         target.setApiKey(src.getApiKey());
         target.setConnectTimeoutMillis(src.getConnectTimeoutMillis());
         target.setReadTimeoutMillis(src.getReadTimeoutMillis());
@@ -396,25 +396,25 @@ public class HermesClient implements AutoCloseable {
     // ============================================================
 
     /**
-     * Streaming chat completion returning a {@link ChatStreamingResponse} that accumulates
+     * Streaming chat completion returning a {@link StreamingChatResponse} that accumulates
      * delta text and completes when the stream ends.
      */
-    public ChatStreamingResponse chatCompletionStream(ChatRequest request) {
+    public StreamingChatResponse chatCompletionStream(ChatRequest request) {
         return chatCompletionStream(request, (Map<String, String>) null);
     }
 
     /** Streaming chat completion with Hermes custom headers. */
-    public ChatStreamingResponse chatCompletionStream(ChatRequest request,
+    public StreamingChatResponse chatCompletionStream(ChatRequest request,
                                                       Map<String, String> headers) {
         return chatCompletionStream(request, headers, null);
     }
 
     /** Streaming chat completion，订阅启动前绑定增量回调，避免丢失首批分片。 */
-    public ChatStreamingResponse chatCompletionStream(ChatRequest request,
+    public StreamingChatResponse chatCompletionStream(ChatRequest request,
                                                       Map<String, String> headers,
                                                       Consumer<String> deltaConsumer) {
         Objects.requireNonNull(request, "request");
-        ChatStreamingResponse stream = new ChatStreamingResponse(
+        StreamingChatResponse stream = new StreamingChatResponse(
                 config.getHttp().getStreamEventQueueCapacity());
         stream.onDelta(deltaConsumer);
         sseClient.subscribeChat(request.withStream(), headers, stream::accept, stream::finish, stream::fail);
@@ -422,19 +422,19 @@ public class HermesClient implements AutoCloseable {
     }
 
     /** Convenience: streaming chat with session key. */
-    public ChatStreamingResponse chatCompletionStreamWithSession(ChatRequest request, String sessionKey, String sessionId) {
+    public StreamingChatResponse chatCompletionStreamWithSession(ChatRequest request, String sessionKey, String sessionId) {
         return chatCompletionStreamWithSession(request, sessionKey, sessionId, null);
     }
 
     /**
      * 按 sessionKey 流式 chat completion（2 参数版，对齐 OpenClaw/OpenCode）。
      */
-    public ChatStreamingResponse chatCompletionStreamWithSession(ChatRequest request, String sessionKey) {
+    public StreamingChatResponse chatCompletionStreamWithSession(ChatRequest request, String sessionKey) {
         return chatCompletionStreamWithSession(request, sessionKey, null, null);
     }
 
     /** 按 sessionKey 流式对话，并在订阅启动前绑定增量回调。 */
-    public ChatStreamingResponse chatCompletionStreamWithSession(ChatRequest request, String sessionKey,
+    public StreamingChatResponse chatCompletionStreamWithSession(ChatRequest request, String sessionKey,
                                                                   String sessionId,
                                                                   Consumer<String> deltaConsumer) {
         return chatCompletionStream(request,
@@ -481,10 +481,6 @@ public class HermesClient implements AutoCloseable {
     /** 获取统一的 Hermes 聊天场景客户端。 */
     public HermesChatClient chat() { return chatClient; }
 
-    /** @deprecated 业务聊天请使用 {@link #chat()}，这里只保留原始事件订阅兼容入口。 */
-    @Deprecated
-    public HermesSseClient sse() { return sseClient; }
-
     // ============================================================
     // CLI
     // ============================================================
@@ -523,7 +519,7 @@ public class HermesClient implements AutoCloseable {
     private HermesClient createProfileClient(String profileId) {
         HermesHttpClientConfig profileConfig = new HermesHttpClientConfig();
         copyHttpConfig(config.getHttp(), profileConfig);
-        profileConfig.setServerUrl(profileServerUrl(config.getHttp().getServerUrl(), profileId));
+        profileConfig.setBaseUrl(profileServerUrl(config.getHttp().getBaseUrl(), profileId));
         profileConfig.setStartupCheckEnabled(false);
         HermesCliConfig disabledCli = new HermesCliConfig();
         disabledCli.setEnabled(false);

@@ -38,18 +38,6 @@ public class HermesHttpClientConfig {
      */
     private String baseUrl = HermesApiConstants.DEFAULT_SERVER_URL;
 
-    /** @deprecated 使用 {@link #getBaseUrl()}。 */
-    @Deprecated
-    public String getServerUrl() {
-        return baseUrl;
-    }
-
-    /** @deprecated 使用 {@link #setBaseUrl(String)}。 */
-    @Deprecated
-    public void setServerUrl(String value) {
-        this.baseUrl = value;
-    }
-
     /**
      * Bearer token（对应 {@code API_SERVER_KEY}）。
      * <p>为空时不使用 Bearer Auth。</p>
@@ -102,66 +90,6 @@ public class HermesHttpClientConfig {
 
     /** 遇到失效连接等传输故障时是否允许 OkHttp 自动恢复。 */
     private boolean retryOnConnectionFailure = true;
-
-    /** @deprecated 使用 {@link #getStreamCorePoolSize()}。 */
-    @Deprecated
-    public int getSseCorePoolSize() {
-        return streamCorePoolSize;
-    }
-
-    /** @deprecated 使用 {@link #setStreamCorePoolSize(int)}。 */
-    @Deprecated
-    public void setSseCorePoolSize(int value) {
-        this.streamCorePoolSize = value;
-    }
-
-    /** @deprecated 使用 {@link #getStreamMaxPoolSize()}。 */
-    @Deprecated
-    public int getSseMaxPoolSize() {
-        return streamMaxPoolSize;
-    }
-
-    /** @deprecated 使用 {@link #setStreamMaxPoolSize(int)}。 */
-    @Deprecated
-    public void setSseMaxPoolSize(int value) {
-        this.streamMaxPoolSize = value;
-    }
-
-    /** @deprecated 使用 {@link #getStreamQueueCapacity()}。 */
-    @Deprecated
-    public int getSseQueueCapacity() {
-        return streamQueueCapacity;
-    }
-
-    /** @deprecated 使用 {@link #setStreamQueueCapacity(int)}。 */
-    @Deprecated
-    public void setSseQueueCapacity(int value) {
-        this.streamQueueCapacity = value;
-    }
-
-    /** @deprecated 使用 {@link #getStreamKeepAliveMillis()}。 */
-    @Deprecated
-    public long getSseKeepAliveMillis() {
-        return streamKeepAliveMillis;
-    }
-
-    /** @deprecated 使用 {@link #setStreamKeepAliveMillis(long)}。 */
-    @Deprecated
-    public void setSseKeepAliveMillis(long value) {
-        this.streamKeepAliveMillis = value;
-    }
-
-    /** @deprecated 使用 {@link #getStreamEventQueueCapacity()}。 */
-    @Deprecated
-    public int getSseEventQueueCapacity() {
-        return streamEventQueueCapacity;
-    }
-
-    /** @deprecated 使用 {@link #setStreamEventQueueCapacity(int)}。 */
-    @Deprecated
-    public void setSseEventQueueCapacity(int value) {
-        this.streamEventQueueCapacity = value;
-    }
 
     /**
      * 是否校验 HTTPS 证书；为 false 时关闭校验（仅建议开发环境）。

@@ -303,7 +303,7 @@ public class HermesHttpClient implements AutoCloseable {
     // ============================================================
 
     private String url(String path) {
-        return config.getServerUrl() + path;
+        return config.getBaseUrl() + path;
     }
 
     private Request.Builder authedRequest(String url) {

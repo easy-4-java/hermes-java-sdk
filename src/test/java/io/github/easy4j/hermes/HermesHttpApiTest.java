@@ -58,7 +58,7 @@ class HermesHttpApiTest {
                     .build();
         }).build();
         httpConfig = new HermesHttpClientConfig();
-        httpConfig.setServerUrl("http://localhost:8642");
+        httpConfig.setBaseUrl("http://localhost:8642");
         httpConfig.setApiKey("secret");
         http = new HermesHttpClient(httpConfig, new ObjectMapper(), okHttpClient);
     }
@@ -207,7 +207,7 @@ class HermesHttpApiTest {
             assertTrue(client.pauseJob("job").isEmpty());
             assertTrue(client.resumeJob("job").isEmpty());
             assertTrue(client.runJobNow("job").isEmpty());
-            assertNotNull(client.sse());
+            assertNotNull(client.chat());
             assertNull(client.cli());
             assertNotNull(client.getConfig());
             assertSame(okHttpClient, client.getOkHttpClient());
@@ -250,7 +250,7 @@ class HermesHttpApiTest {
 
         HermesHttpClientConfig checkedHttp = new HermesHttpClientConfig();
         checkedHttp.setStartupCheckEnabled(true);
-        checkedHttp.setServerUrl("http://localhost:8642");
+        checkedHttp.setBaseUrl("http://localhost:8642");
         HermesCliConfig checkedCli = new HermesCliConfig();
         checkedCli.setEnabled(true);
         checkedCli.setStartupCheckEnabled(true);
