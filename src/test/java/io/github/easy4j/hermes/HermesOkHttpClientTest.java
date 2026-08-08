@@ -24,12 +24,52 @@ import java.util.concurrent.TimeUnit;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * Hermes OkHttpClient 复用、配置与生命周期测试。
  */
 class HermesOkHttpClientTest {
+
+    @Test
+    void shouldRouteManagedProfilesThroughOneSharedTransport() {
+        AtomicReference<String> requestedPath = new AtomicReference<>();
+        OkHttpClient external = new OkHttpClient.Builder()
+                .addInterceptor(chain -> {
+                    requestedPath.set(chain.request().url().encodedPath());
+                    return new Response.Builder()
+                            .request(chain.request())
+                            .protocol(Protocol.HTTP_1_1)
+                            .code(200)
+                            .message("OK")
+                            .body(ResponseBody.create(
+                                    "{\"id\":\"response-1\",\"choices\":[]}",
+                                    MediaType.get("application/json")))
+                            .build();
+                })
+                .build();
+        HermesHttpClientConfig httpConfig = new HermesHttpClientConfig();
+        httpConfig.setServerUrl("http://127.0.0.1:8642/");
+        HermesCliConfig cliConfig = new HermesCliConfig();
+        cliConfig.setEnabled(false);
+
+        try (HermesClient client = new HermesClient(httpConfig, cliConfig, new ObjectMapper(), external)) {
+            HermesClient sales = client.forProfile("sales");
+            assertSame(sales, client.forProfile("sales"));
+            assertSame(external, sales.getOkHttpClient());
+            assertFalse(sales.isCliEnabled());
+            sales.chatCompletion(new ChatRequest());
+            assertEquals("/p/sales/v1/chat/completions", requestedPath.get());
+            assertThrows(IllegalArgumentException.class, () -> client.forProfile("../sales"));
+            assertThrows(IllegalStateException.class, () -> sales.forProfile("care"));
+
+            sales.close();
+            assertSame(sales, client.forProfile("sales"));
+        } finally {
+            HermesOkHttpClientFactory.shutdown(external);
+        }
+    }
 
     @Test
     void shouldUseAndPreserveExternallyManagedOkHttpClient() {
