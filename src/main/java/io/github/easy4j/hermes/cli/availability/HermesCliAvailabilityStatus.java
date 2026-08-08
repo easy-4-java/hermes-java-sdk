@@ -1,4 +1,7 @@
 package io.github.easy4j.hermes.cli.availability;
+/**
+ * @author <a href="https://github.com/loong10k">@Loong Wan</a>
+ */
 
 /**
  * Hermes CLI 可用性探测结论分类。

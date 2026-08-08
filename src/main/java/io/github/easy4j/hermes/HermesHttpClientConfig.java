@@ -1,4 +1,7 @@
 package io.github.easy4j.hermes;
+/**
+ * @author <a href="https://github.com/loong10k">@Loong Wan</a>
+ */
 
 import io.github.easy4j.hermes.api.HermesApiConstants;
 import lombok.Data;

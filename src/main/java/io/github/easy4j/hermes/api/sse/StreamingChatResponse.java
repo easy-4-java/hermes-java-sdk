@@ -1,4 +1,7 @@
 package io.github.easy4j.hermes.api.sse;
+/**
+ * @author <a href="https://github.com/loong10k">@Loong Wan</a>
+ */
 
 import lombok.Getter;
 

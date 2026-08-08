@@ -1,4 +1,7 @@
 package io.github.easy4j.hermes.api.model;
+/**
+ * @author <a href="https://github.com/loong10k">@Loong Wan</a>
+ */
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import lombok.Data;
