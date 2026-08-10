@@ -1,5 +1,4 @@
 package io.github.easy4j.hermes.api.sse;
-
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -9,15 +8,32 @@ import lombok.Data;
 import java.util.Map;
 
 /**
- * Hermes SSE 事件值对象，封装 {@code event:}、{@code data:} 及增量解析。
+ * <p>Hermes SSE 事件值对象。</p>
+ *
+ * <p>保存事件类型、原始数据及扩展字段，并从不同服务端增量格式中提取文本。</p>
+ *
+ * @author <a href="https://github.com/loong10k">Loong Wan</a>
+ * @since 1.0.0
  */
 @Data
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class SseEvent {
 
+    /**
+     * SSE event 字段。
+     */
     private String event;
+    /**
+     * 协议数据集合或 SSE 原始数据。
+     */
     private String data;
 
+    /**
+     * <p>将 SSE data 解析为键值映射。</p>
+     *
+     * @return SSE data 解析得到的键值映射；无法解析时返回 {@code null}
+     * @since 1.0.0
+     */
     public Map<String, Object> getDataAsMap() {
         if (data == null) {
             return null;
@@ -29,6 +45,12 @@ public class SseEvent {
         }
     }
 
+    /**
+     * <p>将 SSE data 解析为 Jackson 树节点。</p>
+     *
+     * @return 解析成功的 JSON 树；无法解析时返回 {@code null}
+     * @since 1.0.0
+     */
     public JsonNode getDataAsNode() {
         if (data == null) {
             return null;
@@ -40,6 +62,12 @@ public class SseEvent {
         }
     }
 
+    /**
+     * <p>从 SSE 事件中提取文本增量。</p>
+     *
+     * @return 当前事件携带的文本增量；事件不含文本时返回 {@code null}
+     * @since 1.0.0
+     */
     public String deltaText() {
         if (data == null) {
             return null;

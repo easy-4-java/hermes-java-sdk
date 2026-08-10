@@ -1,5 +1,4 @@
 package io.github.easy4j.hermes;
-
 import okhttp3.ConnectionPool;
 import okhttp3.Dispatcher;
 import okhttp3.OkHttpClient;
@@ -11,9 +10,12 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
- * Hermes 独立运行时使用的高并发 OkHttpClient 工厂。
+ * <p>Hermes SDK 的高并发 OkHttpClient 工厂。</p>
  *
- * <p>Spring 容器已经提供共享 {@link OkHttpClient} 时应使用注入构造器，本工厂不会参与。</p>
+ * <p>创建具有有界并发、连接复用和明确所有权的独立传输；外部注入客户端不由本工厂创建。</p>
+ *
+ * @author <a href="https://github.com/loong10k">Loong Wan</a>
+ * @since 1.0.0
  */
 public final class HermesOkHttpClientFactory {
 
@@ -21,10 +23,11 @@ public final class HermesOkHttpClientFactory {
     }
 
     /**
-     * 根据 Hermes HTTP 配置创建客户端。
+     * <p>根据配置创建 OkHttpClient。</p>
      *
-     * @param config HTTP 配置
-     * @return SDK 自主管理的 OkHttpClient
+     * @param config 客户端配置，不得为 {@code null}
+     * @return 由 SDK 管理生命周期的高并发 OkHttpClient
+     * @since 1.0.0
      */
     public static OkHttpClient create(HermesHttpClientConfig config) {
         Objects.requireNonNull(config, "config");
@@ -47,11 +50,19 @@ public final class HermesOkHttpClientFactory {
         return builder.build();
     }
 
-    /** 创建具有固定并发上限的 Dispatcher，供 HTTP 与 SSE 共享语义。 */
+    /**
+     * <p>根据配置创建有界并发 Dispatcher。</p>
+     *
+     * @param config 客户端配置，不得为 {@code null}
+     * @return 具有全局和单主机并发上限的 Dispatcher
+     * @since 1.0.0
+     */
     public static Dispatcher createDispatcher(HermesHttpClientConfig config) {
         Objects.requireNonNull(config, "config");
         int maxRequests = Math.max(1, config.getMaxRequests());
         AtomicInteger threadIndex = new AtomicInteger();
+        // 工作线程数与等待队列均受 maxRequests 约束，防止并发突发造成无界线程或任务积压。
+        // Dispatcher 继续执行全局和单主机准入，本执行器提供确定的资源上限。
         ThreadPoolExecutor executor = new ThreadPoolExecutor(maxRequests, maxRequests, 60L, TimeUnit.SECONDS,
                 new LinkedBlockingQueue<>(maxRequests), runnable -> {
                     Thread thread = new Thread(runnable,
@@ -67,9 +78,10 @@ public final class HermesOkHttpClientFactory {
     }
 
     /**
-     * 释放 SDK 自建客户端资源。
+     * <p>释放 SDK 自建 OkHttpClient 的资源。</p>
      *
-     * @param client SDK 自建客户端
+     * @param client 待释放的 OkHttpClient；可以为 {@code null}
+     * @since 1.0.0
      */
     public static void shutdown(OkHttpClient client) {
         if (Objects.isNull(client)) {

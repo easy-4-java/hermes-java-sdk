@@ -1,16 +1,26 @@
 package io.github.easy4j.hermes;
-
 /**
- * HTTP 对话响应模式。
+ * <p>Hermes HTTP 对话响应模式。</p>
+ *
+ * <p>区分完整响应与流式响应语义，默认使用兼容的完整响应模式。</p>
+ *
+ * @author <a href="https://github.com/loong10k">Loong Wan</a>
+ * @since 1.0.0
  */
 public enum HttpResponseMode {
 
-    /** 等待完整响应后一次性返回。 */
+    /**
+     * 等待服务端完成后返回类型化完整响应。
+     */
     BLOCKING,
 
-    /** 消费 Provider SSE 并逐段回调。 */
+    /**
+     * 通过 SSE 持续返回文本和事件增量。
+     */
     STREAM,
 
-    /** 由调用方根据结构化输出等请求特征选择。 */
+    /**
+     * 由调用方法或请求参数自动选择完整响应或流式响应。
+     */
     AUTO
 }

@@ -1,20 +1,24 @@
 package io.github.easy4j.hermes;
-
 import lombok.Data;
 
 /**
- * Hermes 客户端统一配置（纯 POJO，可与 Spring {@code @ConfigurationProperties} 映射）。
- * <p>
- * 组合 {@link HermesHttpClientConfig}（HTTP/API Server 相关）与 {@link HermesCliConfig}（本地 CLI 相关），
- * 作为 {@link HermesClient} 等统一入口的配置载体。
- * </p>
+ * <p>Hermes 客户端组合配置。</p>
+ *
+ * <p>聚合 HTTP 与本地 CLI 配置，可作为纯 POJO 使用，也可映射到外部配置系统。</p>
+ *
+ * @author <a href="https://github.com/loong10k">Loong Wan</a>
+ * @since 1.0.0
  */
 @Data
 public class HermesClientConfig {
 
-    /** HTTP/API Server 相关配置 */
+    /**
+     * HTTP 与 SSE 通道配置。
+     */
     private final HermesHttpClientConfig http = new HermesHttpClientConfig();
 
-    /** 本地 CLI 相关配置 */
+    /**
+     * 本地 Hermes CLI 客户端。
+     */
     private final HermesCliConfig cli = new HermesCliConfig();
 }
