@@ -9,6 +9,8 @@ import io.github.easy4j.hermes.HermesHttpClientConfig;
 import io.github.easy4j.hermes.HermesOkHttpClientFactory;
 import io.github.easy4j.hermes.api.model.ChatRequest;
 import io.github.easy4j.hermes.api.sse.SseEvent;
+import io.github.easy4j.hermes.api.sse.SseQueueSubscription;
+import io.github.easy4j.hermes.api.sse.SseSubscription;
 import io.github.easy4j.hermes.exception.HermesHttpException;
 import lombok.extern.slf4j.Slf4j;
 import okhttp3.MediaType;
@@ -67,7 +69,7 @@ public class HermesSseClient implements AutoCloseable {
     private final boolean ownsHttpClient;
     private final boolean ownsDispatcher;
     private final EventSource.Factory eventSourceFactory;
-    private final Set<Subscription> activeSubscriptions = ConcurrentHashMap.newKeySet();
+    private final Set<SubscriptionState> activeSubscriptions = ConcurrentHashMap.newKeySet();
     private final ScheduledExecutorService reconnectScheduler;
 
     public HermesSseClient(HermesHttpClientConfig config, ObjectMapper objectMapper, OkHttpClient httpClient) {
@@ -99,22 +101,22 @@ public class HermesSseClient implements AutoCloseable {
     }
 
     /** 订阅流式聊天。 */
-    public Subscription subscribeChat(ChatRequest request, Consumer<SseEvent> consumer,
-                                      Runnable onComplete, Consumer<Throwable> onError) {
+    public SseSubscription subscribeChat(ChatRequest request, Consumer<SseEvent> consumer,
+                                         Runnable onComplete, Consumer<Throwable> onError) {
         return subscribeChat(request, null, consumer, onComplete, onError);
     }
 
     /** 订阅流式聊天，并附加业务请求头。 */
-    public Subscription subscribeChat(ChatRequest request, Map<String, String> headers,
-                                      Consumer<SseEvent> consumer, Runnable onComplete,
-                                      Consumer<Throwable> onError) {
+    public SseSubscription subscribeChat(ChatRequest request, Map<String, String> headers,
+                                         Consumer<SseEvent> consumer, Runnable onComplete,
+                                         Consumer<Throwable> onError) {
         String url = config.getBaseUrl() + PATH_CHAT_COMPLETIONS;
         return start(() -> buildPostSseRequest(url, request, headers), consumer,
                 onComplete, onError, false, "chat");
     }
 
     /** 订阅运行事件，断线后有界重连。 */
-    public Subscription subscribe(String runId, Consumer<SseEvent> consumer) {
+    public SseSubscription subscribeRunEvents(String runId, Consumer<SseEvent> consumer) {
         String url = config.getBaseUrl() + PATH_RUNS + "/" + runId + "/events";
         return start(() -> buildGetSseRequest(url), consumer, () -> { },
                 error -> log.warn("Hermes run SSE stopped: runId={}, error={}", runId, error.getMessage()),
@@ -122,21 +124,16 @@ public class HermesSseClient implements AutoCloseable {
     }
 
     /** 创建有界队列订阅。 */
-    public QueueSubscription subscribeQueueSubscription(String runId) {
+    public SseQueueSubscription subscribeRunEventsQueue(String runId) {
         BlockingQueue<SseEvent> queue = new ArrayBlockingQueue<>(
                 Math.max(1, config.getStreamEventQueueCapacity()));
-        Subscription subscription = subscribe(runId, event -> offerLatest(queue, event));
-        return new QueueSubscription(queue, subscription);
-    }
-
-    /** 兼容入口；调用方应优先使用 subscribeQueueSubscription 以便显式关闭。 */
-    public BlockingQueue<SseEvent> subscribeQueue(String runId) {
-        return subscribeQueueSubscription(runId).getQueue();
+        SseSubscription subscription = subscribeRunEvents(runId, event -> offerLatest(queue, event));
+        return new SseQueueSubscription(queue, subscription);
     }
 
     /** 订阅 session/chat/stream，断线后有界重连。 */
-    public Subscription subscribeSessionStream(String sessionId, String input,
-                                               Consumer<SseEvent> consumer) {
+    public SseSubscription subscribeSessionEvents(String sessionId, String input,
+                                                  Consumer<SseEvent> consumer) {
         String url = config.getBaseUrl() + PATH_SESSIONS + "/" + sessionId + "/chat/stream";
         return start(() -> buildPostSseRequest(url, Collections.singletonMap("input", input), null),
                 consumer, () -> { },
@@ -144,20 +141,20 @@ public class HermesSseClient implements AutoCloseable {
                         sessionId, error.getMessage()), true, "session:" + sessionId);
     }
 
-    private Subscription start(RequestFactory requestFactory, Consumer<SseEvent> consumer,
-                               Runnable onComplete, Consumer<Throwable> onError,
-                               boolean reconnect, String label) {
+    private SseSubscription start(RequestFactory requestFactory, Consumer<SseEvent> consumer,
+                                  Runnable onComplete, Consumer<Throwable> onError,
+                                  boolean reconnect, String label) {
         Objects.requireNonNull(consumer, "consumer");
-        Subscription subscription = new Subscription();
+        SubscriptionState subscription = new SubscriptionState();
         activeSubscriptions.add(subscription);
         connect(subscription, requestFactory, consumer, onComplete, onError, reconnect, label);
-        return subscription;
+        return subscription.handle;
     }
 
-    private void connect(Subscription subscription, RequestFactory requestFactory,
+    private void connect(SubscriptionState subscription, RequestFactory requestFactory,
                          Consumer<SseEvent> consumer, Runnable onComplete,
                          Consumer<Throwable> onError, boolean reconnect, String label) {
-        if (!subscription.running.get()) {
+        if (!subscription.handle.isActive()) {
             finish(subscription);
             return;
         }
@@ -197,11 +194,11 @@ public class HermesSseClient implements AutoCloseable {
                     if (!terminalSignal.compareAndSet(false, true)) {
                         return;
                     }
-                    if (!subscription.running.get()) {
+                    if (!subscription.handle.isActive()) {
                         finish(subscription);
                         return;
                     }
-                    if (reconnect && subscription.running.get()) {
+                    if (reconnect && subscription.handle.isActive()) {
                         scheduleReconnect(subscription, requestFactory, consumer, onComplete,
                                 onError, label, new IOException("SSE stream closed"));
                     } else {
@@ -215,13 +212,13 @@ public class HermesSseClient implements AutoCloseable {
                     if (!terminalSignal.compareAndSet(false, true)) {
                         return;
                     }
-                    if (!subscription.running.get()) {
+                    if (!subscription.handle.isActive()) {
                         finish(subscription);
                         return;
                     }
                     Throwable failure = Objects.nonNull(error) ? error
                             : new HermesHttpException(Objects.nonNull(response) ? response.code() : -1, "");
-                    if (reconnect && subscription.running.get()) {
+                    if (reconnect && subscription.handle.isActive()) {
                         scheduleReconnect(subscription, requestFactory, consumer, onComplete,
                                 onError, label, failure);
                     } else {
@@ -231,11 +228,11 @@ public class HermesSseClient implements AutoCloseable {
                 }
             });
             subscription.sourceRef.set(source);
-            if (!subscription.running.get()) {
+            if (!subscription.handle.isActive()) {
                 source.cancel();
             }
         } catch (Exception error) {
-            if (reconnect && subscription.running.get()) {
+            if (reconnect && subscription.handle.isActive()) {
                 scheduleReconnect(subscription, requestFactory, consumer, onComplete,
                         onError, label, error);
             } else {
@@ -245,10 +242,10 @@ public class HermesSseClient implements AutoCloseable {
         }
     }
 
-    private void scheduleReconnect(Subscription subscription, RequestFactory requestFactory,
+    private void scheduleReconnect(SubscriptionState subscription, RequestFactory requestFactory,
                                    Consumer<SseEvent> consumer, Runnable onComplete,
                                    Consumer<Throwable> onError, String label, Throwable cause) {
-        if (!subscription.running.get() || reconnectScheduler.isShutdown()) {
+        if (!subscription.handle.isActive() || reconnectScheduler.isShutdown()) {
             finish(subscription);
             return;
         }
@@ -327,21 +324,25 @@ public class HermesSseClient implements AutoCloseable {
         return (System.nanoTime() - startedAt) / 1_000_000L;
     }
 
-    private void finish(Subscription subscription) {
-        subscription.close();
-        activeSubscriptions.remove(subscription);
+    private void finish(SubscriptionState subscription) {
+        subscription.handle.close();
     }
 
-    public void stop() {
-        for (Subscription subscription : activeSubscriptions) {
-            subscription.close();
+    /** 返回当前活动订阅数量。 */
+    public int activeSubscriptionCount() {
+        return activeSubscriptions.size();
+    }
+
+    private void closeSubscriptions() {
+        for (SubscriptionState subscription : activeSubscriptions) {
+            subscription.handle.close();
         }
         activeSubscriptions.clear();
     }
 
     @Override
     public void close() {
-        stop();
+        closeSubscriptions();
         reconnectScheduler.shutdownNow();
         if (ownsHttpClient) {
             HermesOkHttpClientFactory.shutdown(httpClient);
@@ -356,16 +357,14 @@ public class HermesSseClient implements AutoCloseable {
         Request create() throws IOException;
     }
 
-    /** 可显式取消的 SSE 订阅。 */
-    public final class Subscription implements AutoCloseable {
-        private final AtomicBoolean running = new AtomicBoolean(true);
+    /** Hermes 重连状态；公共生命周期只通过 SseSubscription 暴露。 */
+    private final class SubscriptionState {
         private final AtomicInteger reconnectAttempts = new AtomicInteger();
         private final AtomicReference<EventSource> sourceRef = new AtomicReference<>();
         private final AtomicReference<ScheduledFuture<?>> retryRef = new AtomicReference<>();
+        private final SseSubscription handle = new SseSubscription(this::cancel);
 
-        @Override
-        public void close() {
-            running.set(false);
+        private void cancel() {
             EventSource source = sourceRef.getAndSet(null);
             if (Objects.nonNull(source)) {
                 source.cancel();
@@ -375,26 +374,6 @@ public class HermesSseClient implements AutoCloseable {
                 retry.cancel(false);
             }
             activeSubscriptions.remove(this);
-        }
-    }
-
-    /** 队列与订阅生命周期的组合句柄。 */
-    public static final class QueueSubscription implements AutoCloseable {
-        private final BlockingQueue<SseEvent> queue;
-        private final Subscription subscription;
-
-        private QueueSubscription(BlockingQueue<SseEvent> queue, Subscription subscription) {
-            this.queue = queue;
-            this.subscription = subscription;
-        }
-
-        public BlockingQueue<SseEvent> getQueue() {
-            return queue;
-        }
-
-        @Override
-        public void close() {
-            subscription.close();
         }
     }
 }

@@ -6,6 +6,7 @@ package io.github.easy4j.hermes.api;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.github.easy4j.hermes.HermesHttpClientConfig;
 import io.github.easy4j.hermes.api.model.ChatRequest;
+import io.github.easy4j.hermes.api.sse.SseSubscription;
 import io.github.easy4j.hermes.api.sse.StreamingChatResponse;
 import okhttp3.OkHttpClient;
 
@@ -22,19 +23,30 @@ import java.util.function.Consumer;
 public class HermesChatClient extends HermesHttpClient {
 
     private final HermesHttpClientConfig config;
-    private final HermesSseClient eventClient;
+    private final HermesSseClient sseClient;
+    private final boolean ownsSseClient;
 
     public HermesChatClient(HermesHttpClientConfig config) {
         super(config);
         this.config = Objects.requireNonNull(config, "config");
-        this.eventClient = new HermesSseClient(config, getObjectMapper(), getOkHttpClient());
+        this.sseClient = new HermesSseClient(config, getObjectMapper(), getOkHttpClient());
+        this.ownsSseClient = true;
     }
 
     public HermesChatClient(HermesHttpClientConfig config, ObjectMapper objectMapper,
                             OkHttpClient httpClient) {
         super(config, objectMapper, httpClient);
         this.config = Objects.requireNonNull(config, "config");
-        this.eventClient = new HermesSseClient(config, getObjectMapper(), getOkHttpClient());
+        this.sseClient = new HermesSseClient(config, getObjectMapper(), getOkHttpClient());
+        this.ownsSseClient = true;
+    }
+
+    public HermesChatClient(HermesHttpClientConfig config, ObjectMapper objectMapper,
+                            OkHttpClient httpClient, HermesSseClient sseClient) {
+        super(config, objectMapper, httpClient);
+        this.config = Objects.requireNonNull(config, "config");
+        this.sseClient = Objects.requireNonNull(sseClient, "sseClient");
+        this.ownsSseClient = false;
     }
 
     public StreamingChatResponse chatCompletionStream(ChatRequest request) {
@@ -53,7 +65,7 @@ public class HermesChatClient extends HermesHttpClient {
         Objects.requireNonNull(request, "request");
         StreamingChatResponse stream = new StreamingChatResponse(
                 config.getStreamEventQueueCapacity()).onDelta(deltaConsumer);
-        HermesSseClient.Subscription subscription = eventClient.subscribeChat(
+        SseSubscription subscription = sseClient.subscribeChat(
                 request.withStream(), headers, stream::accept, stream::finish, stream::fail);
         stream.onCancel(subscription::close);
         stream.whenComplete((value, error) -> subscription.close());
@@ -76,16 +88,11 @@ public class HermesChatClient extends HermesHttpClient {
                 HermesHttpClient.hermesHeaders(sessionKey, sessionId, null), deltaConsumer);
     }
 
-    /**
-     * 原始事件客户端，仅供 run/session 事件等高级场景使用。
-     */
-    public HermesSseClient events() {
-        return eventClient;
-    }
-
     @Override
     public void close() {
-        eventClient.close();
+        if (ownsSseClient) {
+            sseClient.close();
+        }
         super.close();
     }
 }
