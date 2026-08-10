@@ -170,15 +170,13 @@ public class HermesSseClient implements AutoCloseable {
             sub.callRef.set(call);
             try (Response response = call.execute()) {
                 if (!response.isSuccessful()) {
-                    String body = response.body() != null ? response.body().string() : "";
+                    String body = response.body().string();
                     onError.accept(new HermesHttpException(response.code(), body));
                     return;
                 }
                 log.info("SSE chat connected: url={}, status={}, elapsedMs={}", url, response.code(),
                         (System.nanoTime() - startedAt) / 1_000_000L);
-                if (response.body() != null) {
-                    parseSseSource(response.body().source(), consumer, completeOnce, sub);
-                }
+                parseSseSource(response.body().source(), consumer, completeOnce, sub);
             }
             completeOnce.run();
         } catch (Exception e) {
@@ -201,14 +199,12 @@ public class HermesSseClient implements AutoCloseable {
                 sub.callRef.set(call);
                 try (Response response = call.execute()) {
                     if (!response.isSuccessful()) {
-                        String body = response.body() != null ? response.body().string() : "";
+                        String body = response.body().string();
                         log.warn("SSE session stream failed status={}, retrying", response.code());
                         Thread.sleep(DEFAULT_CONNECT_TIMEOUT_MS / 3);
                         continue;
                     }
-                    if (response.body() != null) {
-                        parseSseSource(response.body().source(), consumer, () -> {}, sub);
-                    }
+                    parseSseSource(response.body().source(), consumer, () -> {}, sub);
                 }
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
@@ -238,9 +234,8 @@ public class HermesSseClient implements AutoCloseable {
                         continue;
                     }
                     log.info("SSE connected to run events {}", runId);
-                    if (response.body() != null) {
-                        parseSseSource(response.body().source(), consumer, () -> {}, sub);
-                    }
+                    parseSseSource(response.body().source(), consumer, () -> {
+                    }, sub);
                 }
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();

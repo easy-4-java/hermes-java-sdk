@@ -9,10 +9,12 @@ import io.github.easy4j.hermes.HermesOkHttpClientFactory;
 import static io.github.easy4j.hermes.api.HermesApiConstants.*;
 import io.github.easy4j.hermes.api.model.*;
 import io.github.easy4j.hermes.exception.HermesHttpException;
+import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import okhttp3.*;
 
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicLong;
 import okio.Buffer;
@@ -22,12 +24,18 @@ import okio.Buffer;
  * <p>基于 OkHttp，支持外部传入 {@link OkHttpClient}（复用别的插件实例）。</p>
  */
 @Slf4j
+@SuppressWarnings("unchecked")
 public class HermesHttpClient implements AutoCloseable {
 
     private static final MediaType JSON = MediaType.get("application/json; charset=utf-8");
     private static final AtomicLong REQUEST_SEQUENCE = new AtomicLong();
 
     private final HermesHttpClientConfig config;
+    /**
+     * -- GETTER --
+     *  暴露 ObjectMapper 供外部复用。
+     */
+    @Getter
     private final ObjectMapper objectMapper;
     private final OkHttpClient httpClient;
     private final boolean ownsHttpClient;
@@ -108,11 +116,7 @@ public class HermesHttpClient implements AutoCloseable {
     public ModelsResponse listModels() { return get(PATH_MODELS, ModelsResponse.class); }
 
     private static String encodePathSegment(String value) {
-        try {
-            return java.net.URLEncoder.encode(value, "UTF-8");
-        } catch (java.io.UnsupportedEncodingException e) {
-            throw new IllegalStateException("UTF-8 is not supported", e);
-        }
+        return java.net.URLEncoder.encode(value, StandardCharsets.UTF_8);
     }
 
     public ModelsResponse.ModelData getModel(String modelId) {
@@ -157,7 +161,6 @@ public class HermesHttpClient implements AutoCloseable {
         }
     }
 
-    @SuppressWarnings("unchecked")
     public Map<String, Object> approveRun(String runId, Map<String, Object> decision) {
         return postMap(PATH_RUNS + "/" + runId + "/approval", decision);
     }
@@ -227,7 +230,6 @@ public class HermesHttpClient implements AutoCloseable {
         return postMap(PATH_JOBS, job);
     }
 
-    @SuppressWarnings("unchecked")
     public Map<String, Object> getJob(String jobId) {
         Request request = authedRequest(url(PATH_JOBS + "/" + jobId)).get().build();
         try (Response response = httpClient.newCall(request).execute()) {
@@ -241,7 +243,6 @@ public class HermesHttpClient implements AutoCloseable {
         }
     }
 
-    @SuppressWarnings("unchecked")
     public Map<String, Object> updateJob(String jobId, Map<String, Object> patch) {
         Request request = authedRequest(url(PATH_JOBS + "/" + jobId))
                 .patch(RequestBody.create(toJson(patch), JSON)).build();
@@ -297,13 +298,6 @@ public class HermesHttpClient implements AutoCloseable {
      */
     public OkHttpClient getOkHttpClient() {
         return httpClient;
-    }
-
-    /**
-     * 暴露 ObjectMapper 供外部复用。
-     */
-    public ObjectMapper getObjectMapper() {
-        return objectMapper;
     }
 
     // ============================================================
