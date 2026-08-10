@@ -63,7 +63,6 @@ class HermesSseAndModelTest {
         stream.accept(chat);
         stream.accept(direct);
         stream.accept(event("{}"));
-        assertEquals(3, stream.getEventQueue().size());
         assertEquals("hello world", stream.getAccumulatedContent());
         stream.finish();
         assertEquals("hello world", stream.get(1, TimeUnit.SECONDS));
@@ -263,6 +262,20 @@ class HermesSseAndModelTest {
 
             server.enqueue(new MockResponse().setResponseCode(200)
                     .setHeader("Content-Type", "text/event-stream")
+                    .setBody("data: [DONE]\n\n"));
+            try (HermesSseClient sse = new HermesSseClient(config, null, null)) {
+                SseSubscription completed = sse.subscribeSessionEvents(
+                        "session-complete", "hello", event -> { });
+                assertNotNull(server.takeRequest(3, TimeUnit.SECONDS));
+                long deadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(3);
+                while (completed.isActive() && System.nanoTime() < deadline) {
+                    Thread.yield();
+                }
+                assertFalse(completed.isActive());
+            }
+
+            server.enqueue(new MockResponse().setResponseCode(200)
+                    .setHeader("Content-Type", "text/event-stream")
                     .setBodyDelay(3, TimeUnit.SECONDS).setBody("data: [DONE]\n\n"));
             try (HermesSseClient sse = new HermesSseClient(config, null, null)) {
                 sse.subscribeRunEvents("run-active", event -> { });
@@ -293,12 +306,6 @@ class HermesSseAndModelTest {
         } finally {
             HermesOkHttpClientFactory.shutdown(client);
         }
-
-        StreamingChatResponse bounded = new StreamingChatResponse(1);
-        bounded.accept(event("{\"delta\":\"first\"}"));
-        SseEvent latest = event("{\"delta\":\"latest\"}");
-        bounded.accept(latest);
-        assertEquals(latest, bounded.getEventQueue().poll());
 
         AtomicInteger cancellations = new AtomicInteger();
         StreamingChatResponse cancelBeforeBind = new StreamingChatResponse();

@@ -22,13 +22,12 @@ import java.util.function.Consumer;
  */
 public class HermesChatClient extends HermesHttpClient {
 
-    private final HermesHttpClientConfig config;
     private final HermesSseClient sseClient;
     private final boolean ownsSseClient;
 
     public HermesChatClient(HermesHttpClientConfig config) {
         super(config);
-        this.config = Objects.requireNonNull(config, "config");
+        Objects.requireNonNull(config, "config");
         this.sseClient = new HermesSseClient(config, getObjectMapper(), getOkHttpClient());
         this.ownsSseClient = true;
     }
@@ -36,7 +35,7 @@ public class HermesChatClient extends HermesHttpClient {
     public HermesChatClient(HermesHttpClientConfig config, ObjectMapper objectMapper,
                             OkHttpClient httpClient) {
         super(config, objectMapper, httpClient);
-        this.config = Objects.requireNonNull(config, "config");
+        Objects.requireNonNull(config, "config");
         this.sseClient = new HermesSseClient(config, getObjectMapper(), getOkHttpClient());
         this.ownsSseClient = true;
     }
@@ -44,7 +43,7 @@ public class HermesChatClient extends HermesHttpClient {
     public HermesChatClient(HermesHttpClientConfig config, ObjectMapper objectMapper,
                             OkHttpClient httpClient, HermesSseClient sseClient) {
         super(config, objectMapper, httpClient);
-        this.config = Objects.requireNonNull(config, "config");
+        Objects.requireNonNull(config, "config");
         this.sseClient = Objects.requireNonNull(sseClient, "sseClient");
         this.ownsSseClient = false;
     }
@@ -63,8 +62,7 @@ public class HermesChatClient extends HermesHttpClient {
                                                        Map<String, String> headers,
                                                        Consumer<String> deltaConsumer) {
         Objects.requireNonNull(request, "request");
-        StreamingChatResponse stream = new StreamingChatResponse(
-                config.getStreamEventQueueCapacity()).onDelta(deltaConsumer);
+        StreamingChatResponse stream = new StreamingChatResponse().onDelta(deltaConsumer);
         SseSubscription subscription = sseClient.subscribeChat(
                 request.withStream(), headers, stream::accept, stream::finish, stream::fail);
         stream.onCancel(subscription::close);

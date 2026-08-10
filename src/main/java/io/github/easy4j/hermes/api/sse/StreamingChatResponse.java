@@ -3,10 +3,6 @@ package io.github.easy4j.hermes.api.sse;
  * @author <a href="https://github.com/loong10k">@Loong Wan</a>
  */
 
-import lombok.Getter;
-
-import java.util.concurrent.ArrayBlockingQueue;
-import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.Objects;
@@ -20,15 +16,9 @@ public class StreamingChatResponse extends CompletableFuture<String> {
     private final StringBuilder content = new StringBuilder();
     private Consumer<String> deltaConsumer;
     private final AtomicReference<Runnable> cancellation = new AtomicReference<>();
-    @Getter
-    private final BlockingQueue<SseEvent> eventQueue;
 
+    /** 创建不缓存原始事件的流式响应。 */
     public StreamingChatResponse() {
-        this(1_024);
-    }
-
-    public StreamingChatResponse(int eventQueueCapacity) {
-        this.eventQueue = new ArrayBlockingQueue<>(Math.max(1, eventQueueCapacity));
     }
 
     public StreamingChatResponse onDelta(Consumer<String> consumer) {
@@ -37,10 +27,6 @@ public class StreamingChatResponse extends CompletableFuture<String> {
     }
 
     public void accept(SseEvent event) {
-        if (!eventQueue.offer(event)) {
-            eventQueue.poll();
-            eventQueue.offer(event);
-        }
         String delta = event.deltaText();
         if (delta != null) {
             content.append(delta);

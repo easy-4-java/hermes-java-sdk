@@ -33,6 +33,8 @@ class HermesSseApiShapeTest {
         assertFalse(hasMethod(HermesSseClient.class, "subscribeSessionStream"));
         assertFalse(hasMethod(HermesSseClient.class, "stop"));
         assertFalse(hasMethod(HermesChatClient.class, "events"));
+        assertFalse(hasMethod(io.github.easy4j.hermes.api.sse.StreamingChatResponse.class,
+                "getEventQueue"));
         for (Field field : HermesChatClient.class.getDeclaredFields()) {
             assertFalse("eventClient".equals(field.getName()));
         }
