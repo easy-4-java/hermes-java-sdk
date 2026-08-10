@@ -1,5 +1,7 @@
 package io.github.easy4j.hermes;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import io.github.easy4j.hermes.api.HermesChatClient;
 import io.github.easy4j.hermes.api.HermesSseClient;
 import io.github.easy4j.hermes.api.model.ChatRequest;
 import io.github.easy4j.hermes.api.sse.StreamingChatResponse;
@@ -14,6 +16,8 @@ import okhttp3.OkHttpClient;
 import okhttp3.Protocol;
 import okhttp3.Response;
 import okhttp3.ResponseBody;
+import okhttp3.mockwebserver.MockResponse;
+import okhttp3.mockwebserver.MockWebServer;
 import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
@@ -22,6 +26,7 @@ import java.util.Map;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -183,6 +188,126 @@ class HermesSseAndModelTest {
 
         HermesSseClient owned = new HermesSseClient(config, null, null);
         owned.close();
+    }
+
+    @Test
+    void shouldReconnectRunEventsAndCloseAllActiveSubscriptions() throws Exception {
+        try (MockWebServer server = new MockWebServer()) {
+            server.enqueue(new MockResponse().setResponseCode(500).setBody("first failure"));
+            server.enqueue(new MockResponse().setResponseCode(500).setBody("second failure"));
+            HermesHttpClientConfig config = new HermesHttpClientConfig();
+            config.setBaseUrl(server.url("").toString().replaceAll("/+$", ""));
+            config.setStreamReconnectMaxAttempts(1);
+            config.setStreamReconnectInitialDelayMillis(1);
+            config.setStreamReconnectMaxDelayMillis(1);
+
+            try (HermesSseClient sse = new HermesSseClient(config, null, null)) {
+                SseSubscription subscription = sse.subscribeRunEvents("run-retry", event -> { });
+                assertNotNull(server.takeRequest(3, TimeUnit.SECONDS));
+                assertNotNull(server.takeRequest(3, TimeUnit.SECONDS));
+                long deadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(3);
+                while (sse.activeSubscriptionCount() != 0 && System.nanoTime() < deadline) {
+                    Thread.yield();
+                }
+                assertEquals(0, sse.activeSubscriptionCount());
+                assertFalse(subscription.isActive());
+            }
+        }
+
+        HermesHttpClientConfig invalidConfig = new HermesHttpClientConfig();
+        invalidConfig.setBaseUrl("not-a-url");
+        AtomicReference<Throwable> error = new AtomicReference<>();
+        try (HermesSseClient sse = new HermesSseClient(invalidConfig, null, null)) {
+            SseSubscription subscription = sse.subscribeChat(new ChatRequest(), event -> { },
+                    () -> { }, error::set);
+            assertNotNull(error.get());
+            assertFalse(subscription.isActive());
+        }
+    }
+
+    @Test
+    void shouldKeepLatestQueueEventAndExposeSubscriptionLifecycle() throws Exception {
+        try (MockWebServer server = new MockWebServer()) {
+            server.enqueue(new MockResponse().setResponseCode(200)
+                    .setHeader("Content-Type", "text/event-stream")
+                    .setBody("data: {\"data\":\"{\\\"delta\\\":\\\"first\\\"}\"}\n\n"
+                            + "data: {\"data\":\"{\\\"delta\\\":\\\"latest\\\"}\"}\n\n"));
+            HermesHttpClientConfig config = new HermesHttpClientConfig();
+            config.setBaseUrl(server.url("").toString().replaceAll("/+$", ""));
+            config.setStreamEventQueueCapacity(1);
+            config.setStreamReconnectMaxAttempts(0);
+            try (HermesSseClient sse = new HermesSseClient(config, null, null);
+                 SseQueueSubscription queueSubscription =
+                         sse.subscribeRunEventsQueue("run-queue")) {
+                assertNotNull(server.takeRequest(3, TimeUnit.SECONDS));
+                long deadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(3);
+                while (sse.activeSubscriptionCount() != 0 && System.nanoTime() < deadline) {
+                    Thread.yield();
+                }
+                SseEvent event = queueSubscription.getQueue().poll(3, TimeUnit.SECONDS);
+                assertNotNull(event);
+                assertEquals("latest", event.deltaText());
+                assertNotNull(queueSubscription.getSubscription());
+            }
+
+            server.enqueue(new MockResponse().setResponseCode(500).setBody("session failure"));
+            try (HermesSseClient sse = new HermesSseClient(config, null, null)) {
+                sse.subscribeSessionEvents("session-failed", "hello", event -> { });
+                assertNotNull(server.takeRequest(3, TimeUnit.SECONDS));
+                long deadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(3);
+                while (sse.activeSubscriptionCount() != 0 && System.nanoTime() < deadline) {
+                    Thread.yield();
+                }
+                assertEquals(0, sse.activeSubscriptionCount());
+            }
+
+            server.enqueue(new MockResponse().setResponseCode(200)
+                    .setHeader("Content-Type", "text/event-stream")
+                    .setBodyDelay(3, TimeUnit.SECONDS).setBody("data: [DONE]\n\n"));
+            try (HermesSseClient sse = new HermesSseClient(config, null, null)) {
+                sse.subscribeRunEvents("run-active", event -> { });
+                assertEquals(1, sse.activeSubscriptionCount());
+            }
+        }
+    }
+
+    @Test
+    void shouldCoverChatStreamingOverloadsAndCancellationPaths() throws Exception {
+        OkHttpClient client = new OkHttpClient.Builder().addInterceptor(chain ->
+                new Response.Builder().request(chain.request()).protocol(Protocol.HTTP_1_1)
+                        .code(200).message("OK")
+                        .body(ResponseBody.create("data: [DONE]\n\n",
+                                MediaType.get("text/event-stream"))).build()).build();
+        HermesHttpClientConfig config = new HermesHttpClientConfig();
+        ChatRequest request = new ChatRequest();
+        request.setMessages(List.of(new ChatRequest.Message("user", "hello")));
+        try (HermesChatClient chat = new HermesChatClient(config, new ObjectMapper(), client)) {
+            assertEquals("", chat.chatCompletionStream(request, Map.of("X-Test", "true"))
+                    .get(3, TimeUnit.SECONDS));
+            assertEquals("", chat.chatCompletionStreamWithSession(request, "key")
+                    .get(3, TimeUnit.SECONDS));
+            assertEquals("", chat.chatCompletionStreamWithSession(request, "key", "session")
+                    .get(3, TimeUnit.SECONDS));
+            assertEquals("", chat.chatCompletionStreamWithSession(
+                    request, "key", "session", ignored -> { }).get(3, TimeUnit.SECONDS));
+        } finally {
+            HermesOkHttpClientFactory.shutdown(client);
+        }
+
+        StreamingChatResponse bounded = new StreamingChatResponse(1);
+        bounded.accept(event("{\"delta\":\"first\"}"));
+        SseEvent latest = event("{\"delta\":\"latest\"}");
+        bounded.accept(latest);
+        assertEquals(latest, bounded.getEventQueue().poll());
+
+        AtomicInteger cancellations = new AtomicInteger();
+        StreamingChatResponse cancelBeforeBind = new StreamingChatResponse();
+        cancelBeforeBind.cancel(false);
+        cancelBeforeBind.onCancel(cancellations::incrementAndGet);
+        StreamingChatResponse bindBeforeCancel = new StreamingChatResponse()
+                .onCancel(cancellations::incrementAndGet);
+        bindBeforeCancel.cancel(false);
+        assertEquals(2, cancellations.get());
     }
 
     private SseEvent event(String data) {
