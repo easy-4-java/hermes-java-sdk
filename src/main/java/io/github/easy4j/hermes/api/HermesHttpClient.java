@@ -17,6 +17,8 @@ import okhttp3.*;
 
 import java.io.IOException;
 import java.util.*;
+import java.util.concurrent.atomic.AtomicLong;
+import okio.Buffer;
 
 /**
  * Hermes Server HTTP 客户端，封装 REST API。
@@ -26,6 +28,7 @@ import java.util.*;
 public class HermesHttpClient implements AutoCloseable {
 
     private static final MediaType JSON = MediaType.get("application/json; charset=utf-8");
+    private static final AtomicLong REQUEST_SEQUENCE = new AtomicLong();
 
     private final HermesHttpClientConfig config;
     private final ObjectMapper objectMapper;
@@ -49,6 +52,11 @@ public class HermesHttpClient implements AutoCloseable {
                 .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false) : objectMapper;
         this.httpClient = Objects.requireNonNull(httpClient, "httpClient");
         this.ownsHttpClient = ownsHttpClient;
+        log.debug("Hermes HTTP client initialized: baseUrl={}, connectTimeoutMs={}, readTimeoutMs={}, "
+                        + "callTimeoutMs={}, retryOnConnectionFailure={}, detailedLoggingEnabled={}",
+                config.getBaseUrl(), config.getConnectTimeoutMillis(), config.getReadTimeoutMillis(),
+                config.getCallTimeoutMillis(), config.isRetryOnConnectionFailure(),
+                config.isDetailedLoggingEnabled());
     }
 
     // ============================================================
@@ -377,16 +385,23 @@ public class HermesHttpClient implements AutoCloseable {
     }
 
     private <T> T execute(Request request, Class<T> type, HttpCallCancellation cancellation) {
+        long requestId = beginTrace(request);
+        long startedAt = System.nanoTime();
         Call call = httpClient.newCall(request);
         AutoCloseable registration = cancellation != null ? cancellation.onCancel(call::cancel) : null;
         try (Response response = call.execute()) {
             String respBody = response.body() != null ? response.body().string() : "";
+            logResponse(requestId, request, response.code(), respBody, startedAt);
             if (!response.isSuccessful()) {
                 throw new HermesHttpException(response.code(), respBody);
             }
             return objectMapper.readValue(respBody, type);
         } catch (IOException e) {
+            logFailure(requestId, request, startedAt, e);
             throw new HermesHttpException("HTTP request failed: " + e.getMessage(), e);
+        } catch (RuntimeException e) {
+            logFailure(requestId, request, startedAt, e);
+            throw e;
         } finally {
             closeRegistration(registration);
         }
@@ -404,15 +419,79 @@ public class HermesHttpClient implements AutoCloseable {
     }
 
     private <T> T executeList(Request request, TypeReference<T> typeRef) {
+        long requestId = beginTrace(request);
+        long startedAt = System.nanoTime();
         try (Response response = httpClient.newCall(request).execute()) {
             String respBody = response.body() != null ? response.body().string() : "";
+            logResponse(requestId, request, response.code(), respBody, startedAt);
             if (!response.isSuccessful()) {
                 throw new HermesHttpException(response.code(), respBody);
             }
             return objectMapper.readValue(respBody, typeRef);
         } catch (IOException e) {
+            logFailure(requestId, request, startedAt, e);
             throw new HermesHttpException("HTTP request failed: " + e.getMessage(), e);
+        } catch (RuntimeException e) {
+            logFailure(requestId, request, startedAt, e);
+            throw e;
         }
+    }
+
+    private long beginTrace(Request request) {
+        long requestId = REQUEST_SEQUENCE.incrementAndGet();
+        log.debug("HTTP request started: requestId={}, method={}, url={}",
+                requestId, request.method(), request.url());
+        if (config.isDetailedLoggingEnabled()) {
+            log.debug("HTTP request details: requestId={}, headers={}, body={}", requestId,
+                    redactHeaders(request.headers()), requestBody(request));
+        }
+        return requestId;
+    }
+
+    private void logResponse(long requestId, Request request, int status, String body, long startedAt) {
+        log.debug("HTTP request completed: requestId={}, method={}, url={}, status={}, bodyLength={}, elapsedMs={}",
+                requestId, request.method(), request.url(), status, body.length(), elapsedMillis(startedAt));
+        if (config.isDetailedLoggingEnabled()) {
+            log.debug("HTTP response body: requestId={}, body={}", requestId, truncate(body));
+        }
+    }
+
+    private void logFailure(long requestId, Request request, long startedAt, Exception error) {
+        log.warn("HTTP request failed: requestId={}, method={}, url={}, elapsedMs={}, error={}",
+                requestId, request.method(), request.url(), elapsedMillis(startedAt), error.getMessage());
+    }
+
+    private long elapsedMillis(long startedAt) {
+        return (System.nanoTime() - startedAt) / 1_000_000L;
+    }
+
+    private String requestBody(Request request) {
+        if (Objects.isNull(request.body())) {
+            return "";
+        }
+        try {
+            Buffer buffer = new Buffer();
+            request.body().writeTo(buffer);
+            return truncate(buffer.readUtf8());
+        } catch (IOException error) {
+            return "<unavailable:" + error.getMessage() + ">";
+        }
+    }
+
+    private String truncate(String value) {
+        int limit = Math.max(0, config.getMaxLoggedBodyLength());
+        return value.length() <= limit ? value : value.substring(0, limit) + "...<truncated>";
+    }
+
+    private Headers redactHeaders(Headers headers) {
+        Headers.Builder safe = headers.newBuilder();
+        for (String name : headers.names()) {
+            String lowerName = name.toLowerCase();
+            if ("authorization".equals(lowerName) || lowerName.contains("token") || lowerName.contains("key")) {
+                safe.set(name, "██");
+            }
+        }
+        return safe.build();
     }
 
     private String toJson(Object body) {

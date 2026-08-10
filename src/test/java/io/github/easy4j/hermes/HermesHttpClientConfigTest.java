@@ -7,6 +7,7 @@ import io.github.easy4j.hermes.api.sse.SseEvent;
 import io.github.easy4j.hermes.api.sse.StreamingChatResponse;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 
 class HermesHttpClientConfigTest {
 
@@ -14,6 +15,8 @@ class HermesHttpClientConfigTest {
     void shouldExposeUnifiedHttpProperties() {
         HermesHttpClientConfig config = new HermesHttpClientConfig();
         assertEquals(HttpResponseMode.BLOCKING, config.getMode());
+        assertFalse(config.isDetailedLoggingEnabled());
+        assertEquals(2_000, config.getMaxLoggedBodyLength());
         config.setBaseUrl("http://hermes");
         assertEquals("http://hermes", config.getBaseUrl());
 
