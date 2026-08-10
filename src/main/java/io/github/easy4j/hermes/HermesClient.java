@@ -7,6 +7,7 @@ import io.github.easy4j.hermes.cli.HermesCliExecutor;
 import io.github.easy4j.hermes.api.HermesHttpClient;
 import io.github.easy4j.hermes.api.HermesChatClient;
 import io.github.easy4j.hermes.api.HermesSseClient;
+import io.github.easy4j.hermes.api.sse.SseSubscription;
 import io.github.easy4j.hermes.api.sse.StreamingChatResponse;
 import lombok.extern.slf4j.Slf4j;
 import okhttp3.OkHttpClient;
@@ -179,9 +180,10 @@ public class HermesClient implements AutoCloseable {
 
         // HTTP 客户端初始化
         if (httpConfig.isEnabled()) {
-            this.chatClient = new HermesChatClient(httpConfig, objectMapper, httpClient);
+            this.sseClient = new HermesSseClient(httpConfig, objectMapper, httpClient);
+            this.chatClient = new HermesChatClient(
+                    httpConfig, objectMapper, httpClient, this.sseClient);
             this.httpClient = this.chatClient;
-            this.sseClient = this.chatClient.events();
             // HTTP 启动检查
             if (httpConfig.isStartupCheckEnabled()) {
                 try {
@@ -443,7 +445,7 @@ public class HermesClient implements AutoCloseable {
         StreamingChatResponse stream = new StreamingChatResponse(
                 config.getHttp().getStreamEventQueueCapacity());
         stream.onDelta(deltaConsumer);
-        HermesSseClient.Subscription subscription = sseClient.subscribeChat(
+        SseSubscription subscription = sseClient.subscribeChat(
                 request.withStream(), headers, stream::accept, stream::finish, stream::fail);
         stream.onCancel(subscription::close);
         stream.whenComplete((value, error) -> subscription.close());
@@ -509,6 +511,9 @@ public class HermesClient implements AutoCloseable {
 
     /** 获取统一的 Hermes 聊天场景客户端。 */
     public HermesChatClient chat() { return chatClient; }
+
+    /** 获取统一的 Hermes SSE 客户端。 */
+    public HermesSseClient sse() { return sseClient; }
 
     // ============================================================
     // CLI
@@ -596,8 +601,8 @@ public class HermesClient implements AutoCloseable {
     }
 
     private void closeResources() {
-        if (httpClient != null) httpClient.close();
         if (sseClient != null) sseClient.close();
+        if (httpClient != null) httpClient.close();
         HermesOkHttpClientFactory.shutdown(ownedHttpClient);
     }
 }
