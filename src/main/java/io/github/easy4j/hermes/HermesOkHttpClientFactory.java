@@ -8,7 +8,10 @@ import okhttp3.Dispatcher;
 import okhttp3.OkHttpClient;
 
 import java.util.Objects;
+import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * Hermes 独立运行时使用的高并发 OkHttpClient 工厂。
@@ -28,9 +31,7 @@ public final class HermesOkHttpClientFactory {
      */
     public static OkHttpClient create(HermesHttpClientConfig config) {
         Objects.requireNonNull(config, "config");
-        Dispatcher dispatcher = new Dispatcher();
-        dispatcher.setMaxRequests(Math.max(1, config.getMaxRequests()));
-        dispatcher.setMaxRequestsPerHost(Math.max(1, config.getMaxRequestsPerHost()));
+        Dispatcher dispatcher = createDispatcher(config);
         ConnectionPool connectionPool = new ConnectionPool(
                 Math.max(1, config.getMaxIdleConnections()),
                 Math.max(1L, config.getKeepAliveDurationMillis()),
@@ -47,6 +48,25 @@ public final class HermesOkHttpClientFactory {
             builder.hostnameVerifier((hostname, session) -> true);
         }
         return builder.build();
+    }
+
+    /** 创建具有固定并发上限的 Dispatcher，供 HTTP 与 SSE 共享语义。 */
+    public static Dispatcher createDispatcher(HermesHttpClientConfig config) {
+        Objects.requireNonNull(config, "config");
+        int maxRequests = Math.max(1, config.getMaxRequests());
+        AtomicInteger threadIndex = new AtomicInteger();
+        ThreadPoolExecutor executor = new ThreadPoolExecutor(maxRequests, maxRequests, 60L, TimeUnit.SECONDS,
+                new LinkedBlockingQueue<>(maxRequests), runnable -> {
+                    Thread thread = new Thread(runnable,
+                            "hermes-okhttp-dispatcher-" + threadIndex.incrementAndGet());
+                    thread.setDaemon(true);
+                    return thread;
+                });
+        executor.allowCoreThreadTimeOut(true);
+        Dispatcher dispatcher = new Dispatcher(executor);
+        dispatcher.setMaxRequests(maxRequests);
+        dispatcher.setMaxRequestsPerHost(Math.max(1, config.getMaxRequestsPerHost()));
+        return dispatcher;
     }
 
     /**

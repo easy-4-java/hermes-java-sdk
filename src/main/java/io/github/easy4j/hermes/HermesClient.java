@@ -17,6 +17,7 @@ import okhttp3.OkHttpClient;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Consumer;
 import java.util.concurrent.ConcurrentMap;
@@ -263,6 +264,9 @@ public class HermesClient implements AutoCloseable {
         target.setStreamQueueCapacity(src.getStreamQueueCapacity());
         target.setStreamKeepAliveMillis(src.getStreamKeepAliveMillis());
         target.setStreamEventQueueCapacity(src.getStreamEventQueueCapacity());
+        target.setStreamReconnectMaxAttempts(src.getStreamReconnectMaxAttempts());
+        target.setStreamReconnectInitialDelayMillis(src.getStreamReconnectInitialDelayMillis());
+        target.setStreamReconnectMaxDelayMillis(src.getStreamReconnectMaxDelayMillis());
         target.setRetryOnConnectionFailure(src.isRetryOnConnectionFailure());
         target.setDetailedLoggingEnabled(src.isDetailedLoggingEnabled());
         target.setMaxLoggedBodyLength(src.getMaxLoggedBodyLength());
@@ -311,6 +315,7 @@ public class HermesClient implements AutoCloseable {
     // ============================================================
 
     public HealthStatus health() { return httpClient.health(); }
+    public CompletableFuture<HealthStatus> healthAsync() { return httpClient.healthAsync(); }
     public HealthStatus healthDetailed() { return httpClient.healthDetailed(); }
     public HealthStatus healthV1() { return httpClient.healthV1(); }
 
@@ -323,11 +328,20 @@ public class HermesClient implements AutoCloseable {
         return httpClient.chatCompletion(request);
     }
 
+    public CompletableFuture<ChatResponse> chatCompletionAsync(ChatRequest request) {
+        return httpClient.chatCompletionAsync(request);
+    }
+
     /** Chat completion with Hermes custom headers. */
     public ChatResponse chatCompletion(ChatRequest request,
                                        Map<String, String> headers) {
        
         return httpClient.chatCompletion(request, headers);
+    }
+
+    public CompletableFuture<ChatResponse> chatCompletionAsync(ChatRequest request,
+                                                               Map<String, String> headers) {
+        return httpClient.chatCompletionAsync(request, headers, null);
     }
 
     /** Convenience: chat with session key. */
@@ -367,9 +381,18 @@ public class HermesClient implements AutoCloseable {
         return httpClient.createResponse(request);
     }
 
+    public CompletableFuture<ResponseResult> createResponseAsync(ResponseRequest request) {
+        return httpClient.createResponseAsync(request);
+    }
+
     public ResponseResult createResponse(ResponseRequest request, Map<String, String> headers) {
        
         return httpClient.createResponse(request, headers);
+    }
+
+    public CompletableFuture<ResponseResult> createResponseAsync(ResponseRequest request,
+                                                                 Map<String, String> headers) {
+        return httpClient.createResponseAsync(request, headers);
     }
 
     public ResponseResult getResponse(String responseId) { return httpClient.getResponse(responseId); }
@@ -380,6 +403,7 @@ public class HermesClient implements AutoCloseable {
     // ============================================================
 
     public ModelsResponse listModels() { return httpClient.listModels(); }
+    public CompletableFuture<ModelsResponse> listModelsAsync() { return httpClient.listModelsAsync(); }
     public CapabilityInfo getCapabilities() { return httpClient.getCapabilities(); }
     public List<Map<String, Object>> listSkills() { return httpClient.listSkills(); }
     public List<Map<String, Object>> listToolsets() { return httpClient.listToolsets(); }
@@ -422,7 +446,10 @@ public class HermesClient implements AutoCloseable {
         StreamingChatResponse stream = new StreamingChatResponse(
                 config.getHttp().getStreamEventQueueCapacity());
         stream.onDelta(deltaConsumer);
-        sseClient.subscribeChat(request.withStream(), headers, stream::accept, stream::finish, stream::fail);
+        HermesSseClient.Subscription subscription = sseClient.subscribeChat(
+                request.withStream(), headers, stream::accept, stream::finish, stream::fail);
+        stream.onCancel(subscription::close);
+        stream.whenComplete((value, error) -> subscription.close());
         return stream;
     }
 

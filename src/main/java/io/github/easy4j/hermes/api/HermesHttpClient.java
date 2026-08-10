@@ -17,6 +17,8 @@ import okhttp3.*;
 
 import java.io.IOException;
 import java.util.*;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionException;
 import java.util.concurrent.atomic.AtomicLong;
 import okio.Buffer;
 
@@ -63,7 +65,8 @@ public class HermesHttpClient implements AutoCloseable {
     // Global / Health
     // ============================================================
 
-    public HealthStatus health() { return get(PATH_HEALTH, HealthStatus.class); }
+    public HealthStatus health() { return awaitFuture(healthAsync()); }
+    public CompletableFuture<HealthStatus> healthAsync() { return getAsync(PATH_HEALTH, HealthStatus.class); }
     public HealthStatus healthDetailed() { return get(PATH_HEALTH_DETAILED, HealthStatus.class); }
     public HealthStatus healthV1() { return get(PATH_V1_HEALTH, HealthStatus.class); }
 
@@ -81,7 +84,18 @@ public class HermesHttpClient implements AutoCloseable {
 
     public ChatResponse chatCompletion(ChatRequest request, Map<String, String> headers,
                                        HttpCallCancellation cancellation) {
-        return post(PATH_CHAT_COMPLETIONS, request, ChatResponse.class, headers, cancellation);
+        return awaitFuture(chatCompletionAsync(request, headers, cancellation));
+    }
+
+    /** 异步发送 Chat Completion 请求。 */
+    public CompletableFuture<ChatResponse> chatCompletionAsync(ChatRequest request,
+                                                               Map<String, String> headers,
+                                                               HttpCallCancellation cancellation) {
+        return postAsync(PATH_CHAT_COMPLETIONS, request, ChatResponse.class, headers, cancellation);
+    }
+
+    public CompletableFuture<ChatResponse> chatCompletionAsync(ChatRequest request) {
+        return chatCompletionAsync(request, null, null);
     }
 
     // ============================================================
@@ -89,11 +103,21 @@ public class HermesHttpClient implements AutoCloseable {
     // ============================================================
 
     public ResponseResult createResponse(ResponseRequest request) {
-        return post(PATH_RESPONSES, request, ResponseResult.class);
+        return awaitFuture(createResponseAsync(request));
+    }
+
+    /** 异步创建 Responses API 响应。 */
+    public CompletableFuture<ResponseResult> createResponseAsync(ResponseRequest request) {
+        return postAsync(PATH_RESPONSES, request, ResponseResult.class, null, null);
     }
 
     public ResponseResult createResponse(ResponseRequest request, Map<String, String> headers) {
         return post(PATH_RESPONSES, request, ResponseResult.class, headers);
+    }
+
+    public CompletableFuture<ResponseResult> createResponseAsync(ResponseRequest request,
+                                                                 Map<String, String> headers) {
+        return postAsync(PATH_RESPONSES, request, ResponseResult.class, headers, null);
     }
 
     public ResponseResult getResponse(String responseId) {
@@ -108,7 +132,8 @@ public class HermesHttpClient implements AutoCloseable {
     // Models & Capabilities
     // ============================================================
 
-    public ModelsResponse listModels() { return get(PATH_MODELS, ModelsResponse.class); }
+    public ModelsResponse listModels() { return awaitFuture(listModelsAsync()); }
+    public CompletableFuture<ModelsResponse> listModelsAsync() { return getAsync(PATH_MODELS, ModelsResponse.class); }
 
     private static String encodePathSegment(String value) {
         try {
@@ -148,16 +173,19 @@ public class HermesHttpClient implements AutoCloseable {
     public RunStatus getRun(String runId) { return get("/v1/runs/" + runId, RunStatus.class); }
 
     public void stopRun(String runId) {
+        awaitFuture(stopRunAsync(runId));
+    }
+
+    /** 异步停止运行。 */
+    public CompletableFuture<Void> stopRunAsync(String runId) {
         Request request = authedRequest(url(PATH_RUNS + "/" + runId + "/stop"))
                 .post(RequestBody.create(new byte[0], null)).build();
-        try (Response response = httpClient.newCall(request).execute()) {
+        return executeResponseAsync(request, null).thenApply(response -> {
             if (!response.isSuccessful()) {
-                String body = response.body() != null ? response.body().string() : "";
-                throw new HermesHttpException(response.code(), body);
+                throw new HermesHttpException(response.getStatusCode(), response.getBody());
             }
-        } catch (IOException e) {
-            throw new HermesHttpException("stopRun failed: " + e.getMessage(), e);
-        }
+            return null;
+        });
     }
 
     @SuppressWarnings("unchecked")
@@ -178,7 +206,6 @@ public class HermesHttpClient implements AutoCloseable {
         return getList(PATH_SESSIONS, new TypeReference<List<Session>>() {});
     }
 
-    @SuppressWarnings("unchecked")
     public List<Session> listSessions(Integer limit, Integer offset, String source, Boolean includeChildren) {
         HttpUrl.Builder urlBuilder = HttpUrl.get(url(PATH_SESSIONS)).newBuilder();
         if (limit != null) urlBuilder.addQueryParameter("limit", String.valueOf(limit));
@@ -191,7 +218,6 @@ public class HermesHttpClient implements AutoCloseable {
 
     public Session getSession(String id) { return get(PATH_SESSIONS + "/" + id, Session.class); }
 
-    @SuppressWarnings("unchecked")
     public List<Map<String, Object>> getSessionMessages(String id) {
         return getList(PATH_SESSIONS + "/" + id + "/messages",
                 new TypeReference<List<Map<String, Object>>>() {});
@@ -207,7 +233,6 @@ public class HermesHttpClient implements AutoCloseable {
         return deleteBoolean(PATH_SESSIONS + "/" + id);
     }
 
-    @SuppressWarnings("unchecked")
     public Session updateSession(String id, Map<String, Object> patch) {
         Request request = authedRequest(url(PATH_SESSIONS + "/" + id))
                 .patch(RequestBody.create(toJson(patch), JSON)).build();
@@ -233,42 +258,24 @@ public class HermesHttpClient implements AutoCloseable {
     @SuppressWarnings("unchecked")
     public Map<String, Object> getJob(String jobId) {
         Request request = authedRequest(url(PATH_JOBS + "/" + jobId)).get().build();
-        try (Response response = httpClient.newCall(request).execute()) {
-            String body = response.body() != null ? response.body().string() : "";
-            if (!response.isSuccessful()) {
-                throw new HermesHttpException(response.code(), body);
-            }
-            return objectMapper.readValue(body, new TypeReference<Map<String, Object>>() {});
-        } catch (IOException e) {
-            throw new HermesHttpException("getJob failed: " + e.getMessage(), e);
-        }
+        return executeList(request, new TypeReference<Map<String, Object>>() {});
     }
 
     @SuppressWarnings("unchecked")
     public Map<String, Object> updateJob(String jobId, Map<String, Object> patch) {
         Request request = authedRequest(url(PATH_JOBS + "/" + jobId))
                 .patch(RequestBody.create(toJson(patch), JSON)).build();
-        try (Response response = httpClient.newCall(request).execute()) {
-            String body = response.body() != null ? response.body().string() : "";
-            if (!response.isSuccessful()) {
-                throw new HermesHttpException(response.code(), body);
-            }
-            return objectMapper.readValue(body, new TypeReference<Map<String, Object>>() {});
-        } catch (IOException e) {
-            throw new HermesHttpException("updateJob failed: " + e.getMessage(), e);
-        }
+        return executeList(request, new TypeReference<Map<String, Object>>() {});
     }
 
     public boolean deleteJob(String jobId) {
         Request request = authedRequest(url(PATH_JOBS + "/" + jobId)).delete().build();
-        try (Response response = httpClient.newCall(request).execute()) {
-            if (!response.isSuccessful() && response.code() != 404) {
-                log.warn("deleteJob {} failed: {}", jobId, response.code());
+        return awaitFuture(executeResponseAsync(request, null).thenApply(response -> {
+            if (!response.isSuccessful() && response.getStatusCode() != 404) {
+                log.warn("deleteJob {} failed: {}", jobId, response.getStatusCode());
             }
             return response.isSuccessful();
-        } catch (IOException e) {
-            throw new HermesHttpException("deleteJob failed: " + e.getMessage(), e);
-        }
+        }));
     }
 
     public Map<String, Object> pauseJob(String jobId) {
@@ -327,8 +334,12 @@ public class HermesHttpClient implements AutoCloseable {
     }
 
     private <T> T get(String path, Class<T> type) {
+        return awaitFuture(getAsync(path, type));
+    }
+
+    private <T> CompletableFuture<T> getAsync(String path, Class<T> type) {
         Request request = authedRequest(url(path)).get().build();
-        return execute(request, type);
+        return executeAsync(request, type, null);
     }
 
     private <T> T getList(String path, TypeReference<T> typeRef) {
@@ -346,38 +357,31 @@ public class HermesHttpClient implements AutoCloseable {
         return post(path, body, type, headers, null);
     }
 
-    private <T> T post(String path, Object body, Class<T> type, Map<String, String> headers,
-                       HttpCallCancellation cancellation) {
+    private <T> T post(String path, Object body, Class<T> type, Map<String, String> headers, HttpCallCancellation cancellation) {
+        return awaitFuture(postAsync(path, body, type, headers, cancellation));
+    }
+
+    private <T> CompletableFuture<T> postAsync(String path, Object body, Class<T> type,
+                                               Map<String, String> headers,
+                                               HttpCallCancellation cancellation) {
         Request.Builder builder = authedRequest(url(path));
         if (headers != null) {
             headers.forEach((k, v) -> { if (k != null && v != null) builder.header(k, v); });
         }
         Request request = builder.post(RequestBody.create(toJson(body), JSON)).build();
-        return execute(request, type, cancellation);
+        return executeAsync(request, type, cancellation);
     }
 
     @SuppressWarnings("unchecked")
     private Map<String, Object> postMap(String path, Object body) {
         Request request = authedRequest(url(path))
                 .post(RequestBody.create(toJson(body), JSON)).build();
-        try (Response response = httpClient.newCall(request).execute()) {
-            String respBody = response.body() != null ? response.body().string() : "";
-            if (!response.isSuccessful()) {
-                throw new HermesHttpException(response.code(), respBody);
-            }
-            return objectMapper.readValue(respBody, new TypeReference<Map<String, Object>>() {});
-        } catch (IOException e) {
-            throw new HermesHttpException("postMap failed: " + e.getMessage(), e);
-        }
+        return executeList(request, new TypeReference<Map<String, Object>>() {});
     }
 
     private boolean deleteBoolean(String path) {
         Request request = authedRequest(url(path)).delete().build();
-        try (Response response = httpClient.newCall(request).execute()) {
-            return response.isSuccessful();
-        } catch (IOException e) {
-            throw new HermesHttpException("DELETE failed: " + e.getMessage(), e);
-        }
+        return awaitFuture(executeResponseAsync(request, null).thenApply(HttpResponseData::isSuccessful));
     }
 
     private <T> T execute(Request request, Class<T> type) {
@@ -385,26 +389,60 @@ public class HermesHttpClient implements AutoCloseable {
     }
 
     private <T> T execute(Request request, Class<T> type, HttpCallCancellation cancellation) {
+        return awaitFuture(executeAsync(request, type, cancellation));
+    }
+
+    /** 使用 OkHttp enqueue 异步执行并反序列化对象。 */
+    protected <T> CompletableFuture<T> executeAsync(Request request, Class<T> type,
+                                                    HttpCallCancellation cancellation) {
+        return executeResponseAsync(request, cancellation).thenApply(response -> {
+            if (!response.isSuccessful()) {
+                throw new HermesHttpException(response.getStatusCode(), response.getBody());
+            }
+            try {
+                return objectMapper.readValue(response.getBody(), type);
+            } catch (IOException error) {
+                throw new HermesHttpException("Failed to parse response: " + error.getMessage(), error);
+            }
+        });
+    }
+
+    private CompletableFuture<HttpResponseData> executeResponseAsync(Request request,
+                                                                     HttpCallCancellation cancellation) {
         long requestId = beginTrace(request);
         long startedAt = System.nanoTime();
         Call call = httpClient.newCall(request);
-        AutoCloseable registration = cancellation != null ? cancellation.onCancel(call::cancel) : null;
-        try (Response response = call.execute()) {
-            String respBody = response.body() != null ? response.body().string() : "";
-            logResponse(requestId, request, response.code(), respBody, startedAt);
-            if (!response.isSuccessful()) {
-                throw new HermesHttpException(response.code(), respBody);
+        AutoCloseable registration = Objects.nonNull(cancellation) ? cancellation.onCancel(call::cancel) : null;
+        CompletableFuture<HttpResponseData> result = new CompletableFuture<>();
+        call.enqueue(new Callback() {
+            @Override
+            public void onFailure(Call ignored, IOException error) {
+                closeRegistration(registration);
+                logFailure(requestId, request, startedAt, error);
+                result.completeExceptionally(new HermesHttpException(
+                        "HTTP request failed: " + error.getMessage(), error));
             }
-            return objectMapper.readValue(respBody, type);
-        } catch (IOException e) {
-            logFailure(requestId, request, startedAt, e);
-            throw new HermesHttpException("HTTP request failed: " + e.getMessage(), e);
-        } catch (RuntimeException e) {
-            logFailure(requestId, request, startedAt, e);
-            throw e;
-        } finally {
-            closeRegistration(registration);
-        }
+
+            @Override
+            public void onResponse(Call ignored, Response response) {
+                try (Response completed = response) {
+                    String body = Objects.nonNull(completed.body()) ? completed.body().string() : "";
+                    logResponse(requestId, request, completed.code(), body, startedAt);
+                    result.complete(new HttpResponseData(completed.code(), body));
+                } catch (Exception error) {
+                    logFailure(requestId, request, startedAt, error);
+                    result.completeExceptionally(error);
+                } finally {
+                    closeRegistration(registration);
+                }
+            }
+        });
+        result.whenComplete((value, error) -> {
+            if (result.isCancelled()) {
+                call.cancel();
+            }
+        });
+        return result;
     }
 
     private void closeRegistration(AutoCloseable registration) {
@@ -419,21 +457,49 @@ public class HermesHttpClient implements AutoCloseable {
     }
 
     private <T> T executeList(Request request, TypeReference<T> typeRef) {
-        long requestId = beginTrace(request);
-        long startedAt = System.nanoTime();
-        try (Response response = httpClient.newCall(request).execute()) {
-            String respBody = response.body() != null ? response.body().string() : "";
-            logResponse(requestId, request, response.code(), respBody, startedAt);
+        return awaitFuture(executeResponseAsync(request, null).thenApply(response -> {
             if (!response.isSuccessful()) {
-                throw new HermesHttpException(response.code(), respBody);
+                throw new HermesHttpException(response.getStatusCode(), response.getBody());
             }
-            return objectMapper.readValue(respBody, typeRef);
-        } catch (IOException e) {
-            logFailure(requestId, request, startedAt, e);
-            throw new HermesHttpException("HTTP request failed: " + e.getMessage(), e);
-        } catch (RuntimeException e) {
-            logFailure(requestId, request, startedAt, e);
-            throw e;
+            try {
+                return objectMapper.readValue(response.getBody(), typeRef);
+            } catch (IOException error) {
+                throw new HermesHttpException("Failed to parse response: " + error.getMessage(), error);
+            }
+        }));
+    }
+
+    protected <T> T awaitFuture(CompletableFuture<T> future) {
+        try {
+            return future.join();
+        } catch (CompletionException error) {
+            Throwable cause = Objects.nonNull(error.getCause()) ? error.getCause() : error;
+            if (cause instanceof RuntimeException) {
+                throw (RuntimeException) cause;
+            }
+            throw new HermesHttpException("Async HTTP request failed: " + cause.getMessage(), cause);
+        }
+    }
+
+    private static final class HttpResponseData {
+        private final int statusCode;
+        private final String body;
+
+        private HttpResponseData(int statusCode, String body) {
+            this.statusCode = statusCode;
+            this.body = body;
+        }
+
+        private int getStatusCode() {
+            return statusCode;
+        }
+
+        private String getBody() {
+            return body;
+        }
+
+        private boolean isSuccessful() {
+            return statusCode >= 200 && statusCode < 300;
         }
     }
 

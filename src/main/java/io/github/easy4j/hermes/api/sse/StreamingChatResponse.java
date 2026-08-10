@@ -8,6 +8,8 @@ import lombok.Getter;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.atomic.AtomicReference;
+import java.util.Objects;
 import java.util.function.Consumer;
 
 /**
@@ -17,6 +19,7 @@ public class StreamingChatResponse extends CompletableFuture<String> {
 
     private final StringBuilder content = new StringBuilder();
     private Consumer<String> deltaConsumer;
+    private final AtomicReference<Runnable> cancellation = new AtomicReference<>();
     @Getter
     private final BlockingQueue<SseEvent> eventQueue;
 
@@ -57,5 +60,23 @@ public class StreamingChatResponse extends CompletableFuture<String> {
 
     public String getAccumulatedContent() {
         return content.toString();
+    }
+
+    /** 绑定底层 SSE 取消动作。 */
+    public StreamingChatResponse onCancel(Runnable action) {
+        cancellation.set(action);
+        if (isCancelled() && Objects.nonNull(action)) {
+            action.run();
+        }
+        return this;
+    }
+
+    @Override
+    public boolean cancel(boolean mayInterruptIfRunning) {
+        Runnable action = cancellation.getAndSet(null);
+        if (Objects.nonNull(action)) {
+            action.run();
+        }
+        return super.cancel(mayInterruptIfRunning);
     }
 }
