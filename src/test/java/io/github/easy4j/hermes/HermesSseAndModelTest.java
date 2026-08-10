@@ -5,6 +5,8 @@ import io.github.easy4j.hermes.api.model.ChatRequest;
 import io.github.easy4j.hermes.api.sse.StreamingChatResponse;
 import io.github.easy4j.hermes.api.model.ResponseRequest;
 import io.github.easy4j.hermes.api.sse.SseEvent;
+import io.github.easy4j.hermes.api.sse.SseQueueSubscription;
+import io.github.easy4j.hermes.api.sse.SseSubscription;
 import io.github.easy4j.hermes.util.HermesJsonParser;
 import io.github.easy4j.hermes.util.HermesObjectMapper;
 import okhttp3.MediaType;
@@ -18,7 +20,6 @@ import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
@@ -140,7 +141,6 @@ class HermesSseAndModelTest {
             });
             assertTrue(errorLatch.await(3, TimeUnit.SECONDS));
             assertNotNull(error.get());
-            sse.stop();
         } finally {
             HermesOkHttpClientFactory.shutdown(client);
         }
@@ -158,23 +158,27 @@ class HermesSseAndModelTest {
         HermesHttpClientConfig config = new HermesHttpClientConfig();
 
         try (HermesSseClient sse = new HermesSseClient(config, null, client)) {
-            BlockingQueue<SseEvent> queue = sse.subscribeQueue("run-id");
-            SseEvent runEvent = queue.poll(3, TimeUnit.SECONDS);
-            assertNotNull(runEvent);
-            assertEquals("hi", runEvent.deltaText());
-            sse.stop();
+            try (SseQueueSubscription subscription = sse.subscribeRunEventsQueue("run-id")) {
+                SseEvent runEvent = subscription.getQueue().poll(3, TimeUnit.SECONDS);
+                assertNotNull(runEvent);
+                assertEquals("hi", runEvent.deltaText());
+            }
         }
 
-        AtomicReference<HermesSseClient> reference = new AtomicReference<>();
+        AtomicReference<SseSubscription> reference = new AtomicReference<>();
         CountDownLatch sessionLatch = new CountDownLatch(1);
         try (HermesSseClient sse = new HermesSseClient(config, null, client)) {
-            reference.set(sse);
-            sse.subscribeSessionStream("session-id", "hello", event -> {
+            SseSubscription subscription = sse.subscribeSessionEvents("session-id", "hello", event -> {
                 assertEquals("hi", event.deltaText());
                 sessionLatch.countDown();
-                reference.get().stop();
+                SseSubscription active = reference.get();
+                if (active != null) {
+                    active.cancel();
+                }
             });
+            reference.set(subscription);
             assertTrue(sessionLatch.await(3, TimeUnit.SECONDS));
+            subscription.cancel();
         } finally {
             HermesOkHttpClientFactory.shutdown(client);
         }
