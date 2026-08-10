@@ -1,10 +1,11 @@
 package io.github.easy4j.hermes;
 /**
- * @author <a href="https://github.com/loong10k">@Loong Wan</a>
- */
-
-/**
- * 将业务层取消信号绑定到一次 Hermes HTTP 调用。
+ * <p>一次 Hermes HTTP 调用的取消信号接口。</p>
+ *
+ * <p>实现方注册底层取消动作并返回注销句柄，使业务取消能够安全传播到 OkHttp Call。</p>
+ *
+ * @author <a href="https://github.com/loong10k">Loong Wan</a>
+ * @since 1.0.0
  */
 @FunctionalInterface
 public interface HttpCallCancellation {

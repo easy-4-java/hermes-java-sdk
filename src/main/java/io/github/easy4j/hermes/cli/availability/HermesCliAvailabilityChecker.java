@@ -1,8 +1,4 @@
 package io.github.easy4j.hermes.cli.availability;
-/**
- * @author <a href="https://github.com/loong10k">@Loong Wan</a>
- */
-
 import io.github.easy4j.hermes.HermesCliConfig;
 import io.github.easy4j.hermes.cli.HermesCli;
 import io.github.easy4j.hermes.cli.HermesCliExecutor;
@@ -13,15 +9,21 @@ import java.util.Objects;
 import java.util.Optional;
 
 /**
- * 探测本机 {@code hermes} 是否已安装且可执行 {@code hermes --version}。
+ * <p>Hermes CLI 可用性检查器。</p>
+ *
+ * <p>校验可执行文件并运行有界超时的版本探测，生成结构化就绪报告。</p>
+ *
+ * @author <a href="https://github.com/loong10k">Loong Wan</a>
+ * @since 1.0.0
  */
 public class HermesCliAvailabilityChecker {
 
     /**
-     * 使用与运行时一致的配置探测 CLI。
+     * <p>检查 Hermes CLI 的配置、文件权限和版本命令执行结果。</p>
      *
-     * @param config CLI 配置，不得为 null
-     * @return 探测报告
+     * @param config 客户端配置，不得为 {@code null}
+     * @return 包含探测状态、路径和诊断信息的可用性报告
+     * @since 1.0.0
      */
     public HermesCliAvailabilityReport check(HermesCliConfig config) {
         Objects.requireNonNull(config, "config");

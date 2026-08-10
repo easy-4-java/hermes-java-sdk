@@ -1,34 +1,51 @@
 package io.github.easy4j.hermes.cli.availability;
 /**
- * @author <a href="https://github.com/loong10k">@Loong Wan</a>
- */
-
-/**
- * Hermes CLI 可用性探测结论分类。
+ * <p>Hermes CLI 可用性状态枚举。</p>
+ *
+ * <p>区分可用、未配置、文件不存在、不可执行、超时和执行失败等探测结论。</p>
+ *
+ * @author <a href="https://github.com/loong10k">Loong Wan</a>
+ * @since 1.0.0
  */
 public enum HermesCliAvailabilityStatus {
 
-    /** {@code hermes --version} 探测成功。 */
+    /**
+     * CLI 已配置、可执行且版本探测成功。
+     */
     AVAILABLE,
 
-    /** 未配置可执行文件。 */
+    /**
+     * CLI 可执行文件名称或路径未配置。
+     */
     EXECUTABLE_NOT_CONFIGURED,
 
-    /** 路径不存在或 PATH 中找不到。 */
+    /**
+     * 配置的 CLI 可执行文件无法解析或不存在。
+     */
     EXECUTABLE_NOT_FOUND,
 
-    /** 存在但不可执行。 */
+    /**
+     * CLI 文件存在但当前进程没有执行权限。
+     */
     EXECUTABLE_NOT_EXECUTABLE,
 
-    /** 进程无法启动。 */
+    /**
+     * 操作系统无法创建 CLI 子进程。
+     */
     SPAWN_FAILED,
 
-    /** 非零退出。 */
+    /**
+     * CLI 版本探测以非零退出码结束。
+     */
     NON_ZERO_EXIT,
 
-    /** 探测超时。 */
+    /**
+     * CLI 版本探测超过配置时限。
+     */
     TIMEOUT,
 
-    /** 其它失败。 */
+    /**
+     * CLI 探测发生未归类异常。
+     */
     FAILED
 }
