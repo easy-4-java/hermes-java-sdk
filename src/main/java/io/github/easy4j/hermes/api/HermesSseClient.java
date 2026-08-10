@@ -57,6 +57,10 @@ public class HermesSseClient implements AutoCloseable {
         this.ownsHttpClient = Objects.isNull(httpClient);
         this.httpClient = this.ownsHttpClient ? HermesOkHttpClientFactory.create(config) : httpClient;
         this.streamExecutor = createStreamExecutor(config);
+        log.debug("Hermes SSE client initialized: baseUrl={}, corePoolSize={}, maxPoolSize={}, queueCapacity={}, "
+                        + "eventQueueCapacity={}, detailedLoggingEnabled={}", config.getBaseUrl(),
+                config.getStreamCorePoolSize(), config.getStreamMaxPoolSize(), config.getStreamQueueCapacity(),
+                config.getStreamEventQueueCapacity(), config.isDetailedLoggingEnabled());
     }
 
     private static ExecutorService createStreamExecutor(HermesHttpClientConfig config) {
@@ -163,6 +167,8 @@ public class HermesSseClient implements AutoCloseable {
         };
         try {
             Request request = buildPostSseRequest(url, requestBody, headers);
+            long startedAt = System.nanoTime();
+            log.debug("SSE chat subscription started: url={}", url);
             Call call = httpClient.newCall(request);
             sub.callRef.set(call);
             try (Response response = call.execute()) {
@@ -171,6 +177,8 @@ public class HermesSseClient implements AutoCloseable {
                     onError.accept(new HermesHttpException(response.code(), body));
                     return;
                 }
+                log.info("SSE chat connected: url={}, status={}, elapsedMs={}", url, response.code(),
+                        (System.nanoTime() - startedAt) / 1_000_000L);
                 if (response.body() != null) {
                     parseSseSource(response.body().source(), consumer, completeOnce, sub);
                 }
