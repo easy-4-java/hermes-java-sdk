@@ -445,8 +445,7 @@ public class HermesClient implements AutoCloseable {
                                                       Map<String, String> headers,
                                                       Consumer<String> deltaConsumer) {
         Objects.requireNonNull(request, "request");
-        StreamingChatResponse stream = new StreamingChatResponse(
-                config.getHttp().getStreamEventQueueCapacity());
+        StreamingChatResponse stream = new StreamingChatResponse();
         stream.onDelta(deltaConsumer);
         SseSubscription subscription = sseClient.subscribeChat(
                 request.withStream(), headers, stream::accept, stream::finish, stream::fail);
