@@ -7,36 +7,54 @@ import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.github.easy4j.hermes.HermesHttpClientConfig;
 import io.github.easy4j.hermes.HermesOkHttpClientFactory;
-import static io.github.easy4j.hermes.api.HermesApiConstants.*;
 import io.github.easy4j.hermes.api.model.ChatRequest;
 import io.github.easy4j.hermes.api.sse.SseEvent;
 import io.github.easy4j.hermes.exception.HermesHttpException;
 import lombok.extern.slf4j.Slf4j;
-import okhttp3.*;
+import okhttp3.MediaType;
+import okhttp3.OkHttpClient;
+import okhttp3.Request;
+import okhttp3.RequestBody;
+import okhttp3.Response;
+import okhttp3.sse.EventSource;
+import okhttp3.sse.EventSourceListener;
+import okhttp3.sse.EventSources;
 
 import java.io.IOException;
 import java.util.Collections;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
-import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Future;
 import java.util.concurrent.ArrayBlockingQueue;
-import java.util.concurrent.LinkedBlockingQueue;
-import java.util.concurrent.RejectedExecutionException;
-import java.util.concurrent.ThreadPoolExecutor;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.ThreadLocalRandom;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 
+import static io.github.easy4j.hermes.api.HermesApiConstants.AUTH_BEARER_PREFIX;
+import static io.github.easy4j.hermes.api.HermesApiConstants.CACHE_NO_CACHE;
+import static io.github.easy4j.hermes.api.HermesApiConstants.CONTENT_TYPE_JSON;
+import static io.github.easy4j.hermes.api.HermesApiConstants.HEADER_ACCEPT;
+import static io.github.easy4j.hermes.api.HermesApiConstants.HEADER_AUTHORIZATION;
+import static io.github.easy4j.hermes.api.HermesApiConstants.HEADER_CACHE_CONTROL;
+import static io.github.easy4j.hermes.api.HermesApiConstants.HEADER_CONTENT_TYPE;
+import static io.github.easy4j.hermes.api.HermesApiConstants.MEDIA_TYPE_SSE;
+import static io.github.easy4j.hermes.api.HermesApiConstants.PATH_CHAT_COMPLETIONS;
+import static io.github.easy4j.hermes.api.HermesApiConstants.PATH_RUNS;
+import static io.github.easy4j.hermes.api.HermesApiConstants.PATH_SESSIONS;
+import static io.github.easy4j.hermes.api.HermesApiConstants.SSE_DONE_MARKER;
+
 /**
- * Hermes Server SSE 客户端，消费 run 事件流和 session/chat 流式聊天。
- * <p>基于 OkHttp，支持外部传入 {@link OkHttpClient}。
- * GET SSE 用 {@code okhttp3.sse.EventSources}；POST SSE 用 {@code Response.body().source()} 手动解析。</p>
+ * Hermes Server SSE 客户端。
+ *
+ * <p>所有连接均使用 OkHttp EventSource 回调；断线重连由共享调度器执行，禁止休眠循环。</p>
  */
 @Slf4j
 public class HermesSseClient implements AutoCloseable {
@@ -47,73 +65,227 @@ public class HermesSseClient implements AutoCloseable {
     private final ObjectMapper mapper;
     private final OkHttpClient httpClient;
     private final boolean ownsHttpClient;
+    private final boolean ownsDispatcher;
+    private final EventSource.Factory eventSourceFactory;
     private final Set<Subscription> activeSubscriptions = ConcurrentHashMap.newKeySet();
-    private final ExecutorService streamExecutor;
+    private final ScheduledExecutorService reconnectScheduler;
 
     public HermesSseClient(HermesHttpClientConfig config, ObjectMapper objectMapper, OkHttpClient httpClient) {
         this.config = Objects.requireNonNull(config, "config");
         this.mapper = Objects.isNull(objectMapper) ? new ObjectMapper()
                 .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false) : objectMapper;
         this.ownsHttpClient = Objects.isNull(httpClient);
-        this.httpClient = this.ownsHttpClient ? HermesOkHttpClientFactory.create(config) : httpClient;
-        this.streamExecutor = createStreamExecutor(config);
-        log.debug("Hermes SSE client initialized: baseUrl={}, corePoolSize={}, maxPoolSize={}, queueCapacity={}, "
-                        + "eventQueueCapacity={}, detailedLoggingEnabled={}", config.getBaseUrl(),
-                config.getStreamCorePoolSize(), config.getStreamMaxPoolSize(), config.getStreamQueueCapacity(),
+        this.ownsDispatcher = Objects.nonNull(httpClient);
+        OkHttpClient baseClient = this.ownsHttpClient ? HermesOkHttpClientFactory.create(config) : httpClient;
+        OkHttpClient.Builder clientBuilder = baseClient.newBuilder().readTimeout(0, TimeUnit.MILLISECONDS);
+        if (this.ownsDispatcher) {
+            clientBuilder.dispatcher(HermesOkHttpClientFactory.createDispatcher(config));
+        }
+        this.httpClient = clientBuilder.build();
+        this.eventSourceFactory = EventSources.createFactory(this.httpClient);
+        AtomicInteger threadIndex = new AtomicInteger();
+        this.reconnectScheduler = Executors.newSingleThreadScheduledExecutor(runnable -> {
+            Thread thread = new Thread(runnable,
+                    "hermes-sse-reconnect-" + threadIndex.incrementAndGet());
+            thread.setDaemon(true);
+            return thread;
+        });
+        log.debug("Hermes SSE client initialized: baseUrl={}, reconnectMaxAttempts={}, "
+                        + "reconnectInitialDelayMs={}, reconnectMaxDelayMs={}, eventQueueCapacity={}, "
+                        + "detailedLoggingEnabled={}",
+                config.getBaseUrl(), config.getStreamReconnectMaxAttempts(),
+                config.getStreamReconnectInitialDelayMillis(), config.getStreamReconnectMaxDelayMillis(),
                 config.getStreamEventQueueCapacity(), config.isDetailedLoggingEnabled());
     }
 
-    private static ExecutorService createStreamExecutor(HermesHttpClientConfig config) {
-        int corePoolSize = Math.max(1, config.getStreamCorePoolSize());
-        int maxPoolSize = Math.max(corePoolSize, config.getStreamMaxPoolSize());
-        AtomicInteger threadIndex = new AtomicInteger();
-        return new ThreadPoolExecutor(corePoolSize, maxPoolSize,
-                Math.max(1L, config.getStreamKeepAliveMillis()), TimeUnit.MILLISECONDS,
-                new LinkedBlockingQueue<>(Math.max(1, config.getStreamQueueCapacity())), runnable -> {
-                    Thread thread = new Thread(runnable,
-                            "hermes-sse-consumer-" + threadIndex.incrementAndGet());
-                    thread.setDaemon(true);
-                    return thread;
-                }, new ThreadPoolExecutor.AbortPolicy());
+    /** 订阅流式聊天。 */
+    public Subscription subscribeChat(ChatRequest request, Consumer<SseEvent> consumer,
+                                      Runnable onComplete, Consumer<Throwable> onError) {
+        return subscribeChat(request, null, consumer, onComplete, onError);
     }
 
-    // ============================================================
-    // Chat Completion SSE（POST → SSE 流式）
-    // ============================================================
-
-    public void subscribeChat(ChatRequest request,
-                              Consumer<SseEvent> consumer,
-                              Runnable onComplete,
-                              Consumer<Throwable> onError) {
-        subscribeChat(request, null, consumer, onComplete, onError);
+    /** 订阅流式聊天，并附加业务请求头。 */
+    public Subscription subscribeChat(ChatRequest request, Map<String, String> headers,
+                                      Consumer<SseEvent> consumer, Runnable onComplete,
+                                      Consumer<Throwable> onError) {
+        String url = config.getBaseUrl() + PATH_CHAT_COMPLETIONS;
+        return start(() -> buildPostSseRequest(url, request, headers), consumer,
+                onComplete, onError, false, "chat");
     }
 
-    public void subscribeChat(ChatRequest request,
-                              Map<String, String> headers,
-                              Consumer<SseEvent> consumer,
-                              Runnable onComplete,
-                              Consumer<Throwable> onError) {
-        Subscription sub = new Subscription();
-        activeSubscriptions.add(sub);
-        startSubscription(sub, () -> doSubscribePost(config.getBaseUrl() + PATH_CHAT_COMPLETIONS,
-                request, headers, consumer, onComplete, onError, sub));
+    /** 订阅运行事件，断线后有界重连。 */
+    public Subscription subscribe(String runId, Consumer<SseEvent> consumer) {
+        String url = config.getBaseUrl() + PATH_RUNS + "/" + runId + "/events";
+        return start(() -> buildGetSseRequest(url), consumer, () -> { },
+                error -> log.warn("Hermes run SSE stopped: runId={}, error={}", runId, error.getMessage()),
+                true, "run:" + runId);
     }
 
-    // ============================================================
-    // Run Events SSE（GET → SSE 事件流，带断线重连）
-    // ============================================================
-
-    public void subscribe(String runId, Consumer<SseEvent> consumer) {
-        Subscription sub = new Subscription();
-        activeSubscriptions.add(sub);
-        startSubscription(sub, () -> doSubscribeRun(runId, consumer, sub));
-    }
-
-    public BlockingQueue<SseEvent> subscribeQueue(String runId) {
+    /** 创建有界队列订阅。 */
+    public QueueSubscription subscribeQueueSubscription(String runId) {
         BlockingQueue<SseEvent> queue = new ArrayBlockingQueue<>(
                 Math.max(1, config.getStreamEventQueueCapacity()));
-        subscribe(runId, event -> offerLatest(queue, event));
-        return queue;
+        Subscription subscription = subscribe(runId, event -> offerLatest(queue, event));
+        return new QueueSubscription(queue, subscription);
+    }
+
+    /** 兼容入口；调用方应优先使用 subscribeQueueSubscription 以便显式关闭。 */
+    public BlockingQueue<SseEvent> subscribeQueue(String runId) {
+        return subscribeQueueSubscription(runId).getQueue();
+    }
+
+    /** 订阅 session/chat/stream，断线后有界重连。 */
+    public Subscription subscribeSessionStream(String sessionId, String input,
+                                               Consumer<SseEvent> consumer) {
+        String url = config.getBaseUrl() + PATH_SESSIONS + "/" + sessionId + "/chat/stream";
+        return start(() -> buildPostSseRequest(url, Collections.singletonMap("input", input), null),
+                consumer, () -> { },
+                error -> log.warn("Hermes session SSE stopped: sessionId={}, error={}",
+                        sessionId, error.getMessage()), true, "session:" + sessionId);
+    }
+
+    private Subscription start(RequestFactory requestFactory, Consumer<SseEvent> consumer,
+                               Runnable onComplete, Consumer<Throwable> onError,
+                               boolean reconnect, String label) {
+        Objects.requireNonNull(consumer, "consumer");
+        Subscription subscription = new Subscription();
+        activeSubscriptions.add(subscription);
+        connect(subscription, requestFactory, consumer, onComplete, onError, reconnect, label);
+        return subscription;
+    }
+
+    private void connect(Subscription subscription, RequestFactory requestFactory,
+                         Consumer<SseEvent> consumer, Runnable onComplete,
+                         Consumer<Throwable> onError, boolean reconnect, String label) {
+        if (!subscription.running.get()) {
+            finish(subscription);
+            return;
+        }
+        try {
+            Request request = requestFactory.create();
+            long startedAt = System.nanoTime();
+            AtomicBoolean terminalSignal = new AtomicBoolean();
+            EventSource source = eventSourceFactory.newEventSource(request, new EventSourceListener() {
+                @Override
+                public void onOpen(EventSource eventSource, Response response) {
+                    log.info("Hermes SSE connected: label={}, url={}, status={}, elapsedMs={}",
+                            label, request.url(), response.code(), elapsedMillis(startedAt));
+                }
+
+                @Override
+                public void onEvent(EventSource eventSource, String id, String type, String data) {
+                    if (SSE_DONE_MARKER.equals(data)) {
+                        terminalSignal.set(true);
+                        onComplete.run();
+                        finish(subscription);
+                        return;
+                    }
+                    if (data == null || data.isEmpty()) {
+                        return;
+                    }
+                    try {
+                        SseEvent event = mapper.readValue(data, SseEvent.class);
+                        event.setEvent(type);
+                        consumer.accept(event);
+                    } catch (Exception error) {
+                        log.debug("Hermes SSE parse failed: label={}, data={}", label, data, error);
+                    }
+                }
+
+                @Override
+                public void onClosed(EventSource eventSource) {
+                    if (!terminalSignal.compareAndSet(false, true)) {
+                        return;
+                    }
+                    if (!subscription.running.get()) {
+                        finish(subscription);
+                        return;
+                    }
+                    if (reconnect && subscription.running.get()) {
+                        scheduleReconnect(subscription, requestFactory, consumer, onComplete,
+                                onError, label, new IOException("SSE stream closed"));
+                    } else {
+                        onComplete.run();
+                        finish(subscription);
+                    }
+                }
+
+                @Override
+                public void onFailure(EventSource eventSource, Throwable error, Response response) {
+                    if (!terminalSignal.compareAndSet(false, true)) {
+                        return;
+                    }
+                    if (!subscription.running.get()) {
+                        finish(subscription);
+                        return;
+                    }
+                    Throwable failure = Objects.nonNull(error) ? error
+                            : new HermesHttpException(Objects.nonNull(response) ? response.code() : -1, "");
+                    if (reconnect && subscription.running.get()) {
+                        scheduleReconnect(subscription, requestFactory, consumer, onComplete,
+                                onError, label, failure);
+                    } else {
+                        onError.accept(failure);
+                        finish(subscription);
+                    }
+                }
+            });
+            subscription.sourceRef.set(source);
+            if (!subscription.running.get()) {
+                source.cancel();
+            }
+        } catch (Exception error) {
+            if (reconnect && subscription.running.get()) {
+                scheduleReconnect(subscription, requestFactory, consumer, onComplete,
+                        onError, label, error);
+            } else {
+                onError.accept(error);
+                finish(subscription);
+            }
+        }
+    }
+
+    private void scheduleReconnect(Subscription subscription, RequestFactory requestFactory,
+                                   Consumer<SseEvent> consumer, Runnable onComplete,
+                                   Consumer<Throwable> onError, String label, Throwable cause) {
+        if (!subscription.running.get() || reconnectScheduler.isShutdown()) {
+            finish(subscription);
+            return;
+        }
+        int attempt = subscription.reconnectAttempts.incrementAndGet();
+        if (attempt > Math.max(0, config.getStreamReconnectMaxAttempts())) {
+            log.warn("Hermes SSE reconnect exhausted: label={}, attempts={}, error={}",
+                    label, attempt - 1, cause.getMessage());
+            onError.accept(cause);
+            finish(subscription);
+            return;
+        }
+        long delay = reconnectDelayMillis(attempt);
+        log.warn("Hermes SSE reconnect scheduled: label={}, attempt={}, delayMs={}, error={}",
+                label, attempt, delay, cause.getMessage());
+        ScheduledFuture<?> future;
+        try {
+            future = reconnectScheduler.schedule(
+                    () -> connect(subscription, requestFactory, consumer, onComplete, onError, true, label),
+                    delay, TimeUnit.MILLISECONDS);
+        } catch (java.util.concurrent.RejectedExecutionException ignored) {
+            finish(subscription);
+            return;
+        }
+        ScheduledFuture<?> previous = subscription.retryRef.getAndSet(future);
+        if (Objects.nonNull(previous)) {
+            previous.cancel(false);
+        }
+    }
+
+    private long reconnectDelayMillis(int attempt) {
+        long initial = Math.max(1L, config.getStreamReconnectInitialDelayMillis());
+        long maximum = Math.max(initial, config.getStreamReconnectMaxDelayMillis());
+        int shift = Math.min(20, Math.max(0, attempt - 1));
+        long exponential = initial > Long.MAX_VALUE >> shift ? maximum : initial << shift;
+        long bounded = Math.min(maximum, exponential);
+        long jitterBound = Math.max(1L, bounded / 4L);
+        return Math.min(maximum, bounded + ThreadLocalRandom.current().nextLong(jitterBound));
     }
 
     private void offerLatest(BlockingQueue<SseEvent> queue, SseEvent event) {
@@ -123,176 +295,6 @@ public class HermesSseClient implements AutoCloseable {
             log.warn("Hermes SSE event queue is full; discarded oldest event");
         }
     }
-
-    // ============================================================
-    // Session Stream SSE（POST → SSE 流式，带断线重连）
-    // ============================================================
-
-    public void subscribeSessionStream(String sessionId, String input, Consumer<SseEvent> consumer) {
-        Subscription sub = new Subscription();
-        activeSubscriptions.add(sub);
-        startSubscription(sub, () -> doSubscribeSessionStream(sessionId, input, consumer, sub));
-    }
-
-    private void startSubscription(Subscription subscription, Runnable task) {
-        try {
-            Future<?> future = streamExecutor.submit(task);
-            subscription.taskRef.set(future);
-            if (!subscription.running) {
-                future.cancel(true);
-            }
-        } catch (RejectedExecutionException error) {
-            activeSubscriptions.remove(subscription);
-            subscription.stop();
-            throw new HermesHttpException("Hermes SSE executor is full", error);
-        }
-    }
-
-    // ============================================================
-    // Internals — POST SSE（手动解析 BufferedSource）
-    // ============================================================
-
-    private void doSubscribePost(String url,
-                                 Object requestBody,
-                                 Map<String, String> headers,
-                                 Consumer<SseEvent> consumer,
-                                 Runnable onComplete,
-                                 Consumer<Throwable> onError,
-                                 Subscription sub) {
-        AtomicBoolean completionSent = new AtomicBoolean();
-        Runnable completeOnce = () -> {
-            if (completionSent.compareAndSet(false, true)) {
-                onComplete.run();
-            }
-        };
-        try {
-            Request request = buildPostSseRequest(url, requestBody, headers);
-            long startedAt = System.nanoTime();
-            log.debug("SSE chat subscription started: url={}", url);
-            Call call = httpClient.newCall(request);
-            sub.callRef.set(call);
-            try (Response response = call.execute()) {
-                if (!response.isSuccessful()) {
-                    String body = response.body() != null ? response.body().string() : "";
-                    onError.accept(new HermesHttpException(response.code(), body));
-                    return;
-                }
-                log.info("SSE chat connected: url={}, status={}, elapsedMs={}", url, response.code(),
-                        (System.nanoTime() - startedAt) / 1_000_000L);
-                if (response.body() != null) {
-                    parseSseSource(response.body().source(), consumer, completeOnce, sub);
-                }
-            }
-            completeOnce.run();
-        } catch (Exception e) {
-            if (sub.running) {
-                log.warn("SSE chat error", e);
-                onError.accept(e);
-            }
-        } finally {
-            activeSubscriptions.remove(sub);
-        }
-    }
-
-    private void doSubscribeSessionStream(String sessionId, String input,
-                                          Consumer<SseEvent> consumer, Subscription sub) {
-        while (sub.running) {
-            try {
-                String url = config.getBaseUrl() + PATH_SESSIONS + "/" + sessionId + "/chat/stream";
-                Request request = buildPostSseRequest(url, Collections.singletonMap("input", input), null);
-                Call call = httpClient.newCall(request);
-                sub.callRef.set(call);
-                try (Response response = call.execute()) {
-                    if (!response.isSuccessful()) {
-                        String body = response.body() != null ? response.body().string() : "";
-                        log.warn("SSE session stream failed status={}, retrying", response.code());
-                        Thread.sleep(DEFAULT_CONNECT_TIMEOUT_MS / 3);
-                        continue;
-                    }
-                    if (response.body() != null) {
-                        parseSseSource(response.body().source(), consumer, () -> {}, sub);
-                    }
-                }
-            } catch (InterruptedException e) {
-                Thread.currentThread().interrupt();
-                break;
-            } catch (Exception e) {
-                if (sub.running) {
-                    log.warn("SSE session stream lost, retrying", e);
-                    try { Thread.sleep(DEFAULT_CONNECT_TIMEOUT_MS / 3); }
-                    catch (InterruptedException ie) { Thread.currentThread().interrupt(); break; }
-                }
-            }
-        }
-        activeSubscriptions.remove(sub);
-    }
-
-    private void doSubscribeRun(String runId, Consumer<SseEvent> consumer, Subscription sub) {
-        while (sub.running) {
-            try {
-                String url = config.getBaseUrl() + PATH_RUNS + "/" + runId + "/events";
-                Request request = buildGetSseRequest(url);
-                Call call = httpClient.newCall(request);
-                sub.callRef.set(call);
-                try (Response response = call.execute()) {
-                    if (!response.isSuccessful()) {
-                        log.warn("SSE run events failed status={}, retrying", response.code());
-                        Thread.sleep(DEFAULT_CONNECT_TIMEOUT_MS / 3);
-                        continue;
-                    }
-                    log.info("SSE connected to run events {}", runId);
-                    if (response.body() != null) {
-                        parseSseSource(response.body().source(), consumer, () -> {}, sub);
-                    }
-                }
-            } catch (InterruptedException e) {
-                Thread.currentThread().interrupt();
-                break;
-            } catch (Exception e) {
-                if (sub.running) {
-                    log.warn("SSE connection lost, retrying", e);
-                    try { Thread.sleep(DEFAULT_CONNECT_TIMEOUT_MS / 3); }
-                    catch (InterruptedException ie) { Thread.currentThread().interrupt(); break; }
-                }
-            }
-        }
-        activeSubscriptions.remove(sub);
-    }
-
-    // ============================================================
-    // SSE 解析（从 OkHttp BufferedSource 逐行读）
-    // ============================================================
-
-    private void parseSseSource(okio.BufferedSource source,
-                                Consumer<SseEvent> consumer,
-                                Runnable onComplete,
-                                Subscription sub) throws IOException {
-        String currentEvent = null;
-        while (sub.running && !source.exhausted()) {
-            String line = source.readUtf8Line();
-            if (line == null) break;
-            if (line.isEmpty()) { currentEvent = null; continue; }
-            if (line.startsWith(SSE_EVENT_PREFIX)) {
-                currentEvent = line.substring(SSE_EVENT_PREFIX.length()).trim();
-                continue;
-            }
-            if (line.startsWith(SSE_DATA_PREFIX)) {
-                String json = line.substring(SSE_DATA_PREFIX.length()).trim();
-                if (SSE_DONE_MARKER.equals(json)) { onComplete.run(); return; }
-                if (!json.isEmpty()) {
-                    try {
-                        SseEvent event = mapper.readValue(json, SseEvent.class);
-                        event.setEvent(currentEvent);
-                        consumer.accept(event);
-                    } catch (Exception e) { log.debug("SSE parse: {}", json, e); }
-                }
-            }
-        }
-    }
-
-    // ============================================================
-    // Request builders
-    // ============================================================
 
     private Request.Builder authedBuilder(String url) {
         Request.Builder builder = new Request.Builder().url(url)
@@ -310,23 +312,29 @@ public class HermesSseClient implements AutoCloseable {
     }
 
     private Request buildPostSseRequest(String url, Object body, Map<String, String> headers) throws IOException {
-        Request.Builder builder = authedBuilder(url)
-                .header(HEADER_CONTENT_TYPE, CONTENT_TYPE_JSON);
-        if (headers != null) {
-            headers.forEach((k, v) -> { if (k != null && v != null) builder.header(k, v); });
+        Request.Builder builder = authedBuilder(url).header(HEADER_CONTENT_TYPE, CONTENT_TYPE_JSON);
+        if (Objects.nonNull(headers)) {
+            headers.forEach((name, value) -> {
+                if (Objects.nonNull(name) && Objects.nonNull(value)) {
+                    builder.header(name, value);
+                }
+            });
         }
         return builder.post(RequestBody.create(mapper.writeValueAsString(body), JSON)).build();
     }
 
-    // ============================================================
-    // Lifecycle
-    // ============================================================
+    private long elapsedMillis(long startedAt) {
+        return (System.nanoTime() - startedAt) / 1_000_000L;
+    }
 
-    public void stop() { stopCurrent(); }
+    private void finish(Subscription subscription) {
+        subscription.close();
+        activeSubscriptions.remove(subscription);
+    }
 
-    private void stopCurrent() {
+    public void stop() {
         for (Subscription subscription : activeSubscriptions) {
-            subscription.stop();
+            subscription.close();
         }
         activeSubscriptions.clear();
     }
@@ -334,27 +342,59 @@ public class HermesSseClient implements AutoCloseable {
     @Override
     public void close() {
         stop();
-        streamExecutor.shutdownNow();
+        reconnectScheduler.shutdownNow();
         if (ownsHttpClient) {
             HermesOkHttpClientFactory.shutdown(httpClient);
+        } else if (ownsDispatcher) {
+            httpClient.dispatcher().cancelAll();
+            httpClient.dispatcher().executorService().shutdown();
         }
     }
 
-    private static class Subscription {
-        volatile boolean running = true;
-        final AtomicReference<Call> callRef = new AtomicReference<>();
-        final AtomicReference<Future<?>> taskRef = new AtomicReference<>();
+    @FunctionalInterface
+    private interface RequestFactory {
+        Request create() throws IOException;
+    }
 
-        void stop() {
-            running = false;
-            Call call = callRef.get();
-            if (Objects.nonNull(call)) {
-                call.cancel();
+    /** 可显式取消的 SSE 订阅。 */
+    public final class Subscription implements AutoCloseable {
+        private final AtomicBoolean running = new AtomicBoolean(true);
+        private final AtomicInteger reconnectAttempts = new AtomicInteger();
+        private final AtomicReference<EventSource> sourceRef = new AtomicReference<>();
+        private final AtomicReference<ScheduledFuture<?>> retryRef = new AtomicReference<>();
+
+        @Override
+        public void close() {
+            running.set(false);
+            EventSource source = sourceRef.getAndSet(null);
+            if (Objects.nonNull(source)) {
+                source.cancel();
             }
-            Future<?> task = taskRef.get();
-            if (Objects.nonNull(task)) {
-                task.cancel(true);
+            ScheduledFuture<?> retry = retryRef.getAndSet(null);
+            if (Objects.nonNull(retry)) {
+                retry.cancel(false);
             }
+            activeSubscriptions.remove(this);
+        }
+    }
+
+    /** 队列与订阅生命周期的组合句柄。 */
+    public static final class QueueSubscription implements AutoCloseable {
+        private final BlockingQueue<SseEvent> queue;
+        private final Subscription subscription;
+
+        private QueueSubscription(BlockingQueue<SseEvent> queue, Subscription subscription) {
+            this.queue = queue;
+            this.subscription = subscription;
+        }
+
+        public BlockingQueue<SseEvent> getQueue() {
+            return queue;
+        }
+
+        @Override
+        public void close() {
+            subscription.close();
         }
     }
 }
