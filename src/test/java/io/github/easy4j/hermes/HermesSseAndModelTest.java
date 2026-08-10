@@ -295,9 +295,9 @@ class HermesSseAndModelTest {
                                 MediaType.get("text/event-stream"))).build()).build();
         HermesHttpClientConfig config = new HermesHttpClientConfig();
         ChatRequest request = new ChatRequest();
-        request.setMessages(List.of(new ChatRequest.Message("user", "hello")));
+        request.setMessages(list(new ChatRequest.Message("user", "hello")));
         try (HermesChatClient chat = new HermesChatClient(config, new ObjectMapper(), client)) {
-            assertEquals("", chat.chatCompletionStream(request, Map.of("X-Test", "true"))
+            assertEquals("", chat.chatCompletionStream(request, map("X-Test", "true"))
                     .get(3, TimeUnit.SECONDS));
             assertEquals("", chat.chatCompletionStreamWithSession(request, "key")
                     .get(3, TimeUnit.SECONDS));
