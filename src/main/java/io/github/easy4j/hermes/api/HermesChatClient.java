@@ -50,7 +50,10 @@ public class HermesChatClient extends HermesHttpClient {
         Objects.requireNonNull(request, "request");
         StreamingChatResponse stream = new StreamingChatResponse(
                 config.getStreamEventQueueCapacity()).onDelta(deltaConsumer);
-        eventClient.subscribeChat(request.withStream(), headers, stream::accept, stream::finish, stream::fail);
+        HermesSseClient.Subscription subscription = eventClient.subscribeChat(
+                request.withStream(), headers, stream::accept, stream::finish, stream::fail);
+        stream.onCancel(subscription::close);
+        stream.whenComplete((value, error) -> subscription.close());
         return stream;
     }
 

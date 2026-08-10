@@ -71,7 +71,7 @@ public class HermesHttpClientConfig {
     private int maxRequests = 128;
 
     /** 单主机异步请求最大并发数。 */
-    private int maxRequestsPerHost = 64;
+    private int maxRequestsPerHost = 128;
 
     /** 流式响应消费线程池核心线程数。 */
     private int streamCorePoolSize = 64;
@@ -87,6 +87,15 @@ public class HermesHttpClientConfig {
 
     /** 单个流式订阅的事件缓存上限。 */
     private int streamEventQueueCapacity = 1_024;
+
+    /** SSE 最大重连次数。 */
+    private int streamReconnectMaxAttempts = 5;
+
+    /** SSE 首次重连延迟（毫秒）。 */
+    private long streamReconnectInitialDelayMillis = 1_000L;
+
+    /** SSE 指数退避最大延迟（毫秒）。 */
+    private long streamReconnectMaxDelayMillis = 10_000L;
 
     /** 遇到失效连接等传输故障时是否允许 OkHttp 自动恢复。 */
     private boolean retryOnConnectionFailure = true;
