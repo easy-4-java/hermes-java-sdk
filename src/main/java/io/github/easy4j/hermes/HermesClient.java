@@ -1,8 +1,4 @@
 package io.github.easy4j.hermes;
-/**
- * @author <a href="https://github.com/loong10k">@Loong Wan</a>
- */
-
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.github.easy4j.hermes.api.model.*;
 import io.github.easy4j.hermes.cli.HermesCli;
@@ -26,31 +22,74 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.regex.Pattern;
 
 /**
- * Hermes 客户端门面：HTTP REST + SSE 事件流 + 本地 CLI。
+ * <p>Hermes SDK 统一客户端门面。</p>
+ *
+ * <p>统一管理 HTTP、SSE 与本地 CLI 通道，并负责共享传输、托管 profile 视图和资源关闭生命周期。</p>
+ *
+ * @author <a href="https://github.com/loong10k">Loong Wan</a>
+ * @since 1.0.0
  */
 @Slf4j
 public class HermesClient implements AutoCloseable {
 
+    /**
+     * 限制 Gateway profile 标识为 1 至 128 个安全字符的校验表达式。
+     */
     private static final Pattern PROFILE_ID_PATTERN =
             Pattern.compile("[A-Za-z0-9][A-Za-z0-9._-]{0,127}");
 
+    /**
+     * 当前客户端使用的配置快照。
+     */
     private final HermesClientConfig config;
+    /**
+     * 执行 HTTP 请求的 OkHttpClient。
+     */
     private final HermesHttpClient httpClient;
+    /**
+     * 聊天场景客户端。
+     */
     private final HermesChatClient chatClient;
+    /**
+     * SSE 事件流客户端。
+     */
     private final HermesSseClient sseClient;
+    /**
+     * 本地 Hermes CLI 客户端。
+     */
     private final HermesCli cli;
+    /**
+     * 仅在 SDK 自建传输时保存、并由根客户端关闭的 OkHttpClient。
+     */
     private final OkHttpClient ownedHttpClient;
+    /**
+     * JSON 序列化与反序列化使用的 ObjectMapper。
+     */
     private final ObjectMapper objectMapper;
+    /**
+     * 根客户端及 profile 视图共享的 OkHttpClient。
+     */
     private final OkHttpClient sharedHttpClient;
+    /**
+     * 当前实例是否为根客户端管理的 profile 视图。
+     */
     private final boolean managedProfileView;
+    /**
+     * 按 profile 标识缓存的托管客户端视图。
+     */
     private final ConcurrentMap<String, HermesClient> profileClients = new ConcurrentHashMap<>();
+    /**
+     * 根客户端是否已经关闭的原子标记。
+     */
     private final AtomicBoolean closed = new AtomicBoolean();
 
     /**
-     * 使用组合配置构造客户端（推荐方式）。
-     * <p>使用默认的 ObjectMapper 和 OkHttpClient。</p>
+     * <p>创建 HermesClient 实例。</p>
      *
-     * @param config 组合配置，不得为 null
+     * <p>依赖项和资源所有权由构造参数决定；必需参数为空时初始化失败。</p>
+     *
+     * @param config 客户端配置，不得为 {@code null}
+     * @since 1.0.0
      */
     public HermesClient(HermesClientConfig config) {
         this(Objects.requireNonNull(config, "config").getHttp(), config.getCli(), new ObjectMapper(),
@@ -58,22 +97,27 @@ public class HermesClient implements AutoCloseable {
     }
 
     /**
-     * 使用组合配置和调用方管理的共享 {@link OkHttpClient}。
-     * <p>适用于直接注入 Spring 容器中由 okhttp3-extension/starter 配置的客户端。</p>
+     * <p>创建 HermesClient 实例。</p>
      *
-     * @param config 组合配置
-     * @param httpClient 外部共享 OkHttpClient
+     * <p>依赖项和资源所有权由构造参数决定；必需参数为空时初始化失败。</p>
+     *
+     * @param config 客户端配置，不得为 {@code null}
+     * @param httpClient 调用方提供或 SDK 创建的 OkHttpClient
+     * @since 1.0.0
      */
     public HermesClient(HermesClientConfig config, OkHttpClient httpClient) {
         this(config, new ObjectMapper(), httpClient);
     }
 
     /**
-     * 使用组合配置构造客户端。
+     * <p>创建 HermesClient 实例。</p>
      *
-     * @param config        组合配置，不得为 null
-     * @param objectMapper  共享 ObjectMapper，不得为 null
-     * @param httpClient   共享 OkHttpClient，不得为 null
+     * <p>依赖项和资源所有权由构造参数决定；必需参数为空时初始化失败。</p>
+     *
+     * @param config 客户端配置，不得为 {@code null}
+     * @param objectMapper 用于 JSON 序列化和反序列化的共享 ObjectMapper
+     * @param httpClient 调用方提供或 SDK 创建的 OkHttpClient
+     * @since 1.0.0
      */
     public HermesClient(HermesClientConfig config, ObjectMapper objectMapper, OkHttpClient httpClient) {
         this(Objects.requireNonNull(config, "config").getHttp(),
@@ -84,64 +128,79 @@ public class HermesClient implements AutoCloseable {
     }
 
     /**
-     * 使用 HTTP 配置构造客户端（仅 HTTP，禁用 CLI）。
-     * <p>使用默认的 ObjectMapper 和 OkHttpClient。</p>
+     * <p>创建 HermesClient 实例。</p>
      *
-     * @param httpConfig HTTP 配置，不得为 null
+     * <p>依赖项和资源所有权由构造参数决定；必需参数为空时初始化失败。</p>
+     *
+     * @param httpConfig HTTP 配置，不得为 {@code null}
+     * @since 1.0.0
      */
     public HermesClient(HermesHttpClientConfig httpConfig) {
         this(httpConfig, new HermesCliConfig());
     }
 
     /**
-     * 使用 HTTP 配置构造客户端（仅 HTTP，禁用 CLI）。
+     * <p>创建 HermesClient 实例。</p>
      *
-     * @param httpConfig   HTTP 配置，不得为 null
-     * @param objectMapper 共享 ObjectMapper，不得为 null
-     * @param httpClient   共享 OkHttpClient，不得为 null
+     * <p>依赖项和资源所有权由构造参数决定；必需参数为空时初始化失败。</p>
+     *
+     * @param httpConfig HTTP 配置，不得为 {@code null}
+     * @param objectMapper 用于 JSON 序列化和反序列化的共享 ObjectMapper
+     * @param httpClient 调用方提供或 SDK 创建的 OkHttpClient
+     * @since 1.0.0
      */
     public HermesClient(HermesHttpClientConfig httpConfig, ObjectMapper objectMapper, OkHttpClient httpClient) {
         this(httpConfig, new HermesCliConfig(), objectMapper, httpClient);
     }
 
     /**
-     * 使用 CLI 配置构造客户端（仅 CLI，禁用 HTTP）。
-     * <p>使用默认的 ObjectMapper 和 OkHttpClient。</p>
+     * <p>创建 HermesClient 实例。</p>
      *
-     * @param cliConfig CLI 配置，不得为 null
+     * <p>依赖项和资源所有权由构造参数决定；必需参数为空时初始化失败。</p>
+     *
+     * @param cliConfig CLI 配置，不得为 {@code null}
+     * @since 1.0.0
      */
     public HermesClient(HermesCliConfig cliConfig) {
         this(new HermesHttpClientConfig(), cliConfig);
     }
 
     /**
-     * 使用 CLI 配置构造客户端（仅 CLI，禁用 HTTP）。
+     * <p>创建 HermesClient 实例。</p>
      *
-     * @param cliConfig    CLI 配置，不得为 null
-     * @param objectMapper 共享 ObjectMapper，不得为 null
-     * @param httpClient   共享 OkHttpClient，不得为 null
+     * <p>依赖项和资源所有权由构造参数决定；必需参数为空时初始化失败。</p>
+     *
+     * @param cliConfig CLI 配置，不得为 {@code null}
+     * @param objectMapper 用于 JSON 序列化和反序列化的共享 ObjectMapper
+     * @param httpClient 调用方提供或 SDK 创建的 OkHttpClient
+     * @since 1.0.0
      */
     public HermesClient(HermesCliConfig cliConfig, ObjectMapper objectMapper, OkHttpClient httpClient) {
         this(new HermesHttpClientConfig(), cliConfig, objectMapper, httpClient);
     }
 
     /**
-     * 使用 HTTP 与 CLI 独立配置构造客户端。
-     * <p>使用默认的 ObjectMapper 和 OkHttpClient。</p>
+     * <p>创建 HermesClient 实例。</p>
      *
-     * @param httpConfig HTTP 配置，不得为 null
-     * @param cliConfig  CLI 配置，不得为 null
+     * <p>依赖项和资源所有权由构造参数决定；必需参数为空时初始化失败。</p>
+     *
+     * @param httpConfig HTTP 配置，不得为 {@code null}
+     * @param cliConfig CLI 配置，不得为 {@code null}
+     * @since 1.0.0
      */
     public HermesClient(HermesHttpClientConfig httpConfig, HermesCliConfig cliConfig) {
         this(httpConfig, cliConfig, new ObjectMapper(), HermesOkHttpClientFactory.create(httpConfig), true);
     }
 
     /**
-     * 使用 HTTP/CLI 配置和调用方管理的共享 {@link OkHttpClient}。
+     * <p>创建 HermesClient 实例。</p>
      *
-     * @param httpConfig HTTP 配置
-     * @param cliConfig CLI 配置
-     * @param httpClient 外部共享 OkHttpClient
+     * <p>依赖项和资源所有权由构造参数决定；必需参数为空时初始化失败。</p>
+     *
+     * @param httpConfig HTTP 配置，不得为 {@code null}
+     * @param cliConfig CLI 配置，不得为 {@code null}
+     * @param httpClient 调用方提供或 SDK 创建的 OkHttpClient
+     * @since 1.0.0
      */
     public HermesClient(HermesHttpClientConfig httpConfig, HermesCliConfig cliConfig,
                         OkHttpClient httpClient) {
@@ -149,12 +208,15 @@ public class HermesClient implements AutoCloseable {
     }
 
     /**
-     * 使用 HTTP 与 CLI 独立配置构造客户端。
+     * <p>创建 HermesClient 实例。</p>
      *
-     * @param httpConfig   HTTP 配置，不得为 null
-     * @param cliConfig    CLI 配置，不得为 null
-     * @param objectMapper 共享 ObjectMapper，不得为 null
-     * @param httpClient   共享 OkHttpClient，不得为 null
+     * <p>依赖项和资源所有权由构造参数决定；必需参数为空时初始化失败。</p>
+     *
+     * @param httpConfig HTTP 配置，不得为 {@code null}
+     * @param cliConfig CLI 配置，不得为 {@code null}
+     * @param objectMapper 用于 JSON 序列化和反序列化的共享 ObjectMapper
+     * @param httpClient 调用方提供或 SDK 创建的 OkHttpClient
+     * @since 1.0.0
      */
     public HermesClient(HermesHttpClientConfig httpConfig, HermesCliConfig cliConfig,
                         ObjectMapper objectMapper, OkHttpClient httpClient) {
@@ -173,21 +235,24 @@ public class HermesClient implements AutoCloseable {
         Objects.requireNonNull(cliConfig, "cliConfig");
         Objects.requireNonNull(objectMapper, "objectMapper");
         Objects.requireNonNull(httpClient, "httpClient");
+        // 根客户端只关闭 SDK 自建传输；外部注入客户端及其连接池始终由调用方管理。
+        // profile 视图复用同一传输，不能取得共享资源的所有权。
         this.ownedHttpClient = ownsHttpClient ? httpClient : null;
         this.objectMapper = objectMapper;
         this.sharedHttpClient = httpClient;
         this.managedProfileView = managedProfileView;
         this.config = new HermesClientConfig();
+        // 保存配置快照，避免调用方后续修改原 POJO 导致门面与底层客户端行为分叉。
         copyHttpConfig(httpConfig);
         copyCliConfig(cliConfig);
 
-        // HTTP 客户端初始化
+        // HTTP、Chat 和 SSE 共享 OkHttpClient 与 ObjectMapper；初始化过程不创建每请求线程。
         if (httpConfig.isEnabled()) {
             this.sseClient = new HermesSseClient(httpConfig, objectMapper, httpClient);
             this.chatClient = new HermesChatClient(
                     httpConfig, objectMapper, httpClient, this.sseClient);
             this.httpClient = this.chatClient;
-            // HTTP 启动检查
+            // 启动检查是显式可选的同步探测；失败是否终止初始化由 fail-fast 配置决定。
             if (httpConfig.isStartupCheckEnabled()) {
                 try {
                     HealthStatus status = this.httpClient.health();
@@ -207,7 +272,7 @@ public class HermesClient implements AutoCloseable {
             this.sseClient = null;
         }
 
-        // CLI 初始化
+        // CLI 是独立通道，启停与 HTTP/SSE 生命周期互不绑定。
         if (cliConfig.isEnabled()) {
             HermesCliExecutor executor = new HermesCliExecutor(cliConfig);
             boolean cliAvailable = !cliConfig.isStartupCheckEnabled() || executor.probe();
@@ -221,13 +286,15 @@ public class HermesClient implements AutoCloseable {
     }
 
     /**
-     * 全量注入构造，供测试或高级定制使用。
-     * <p>使用此构造方法不会执行任何启动检查。</p>
+     * <p>创建 HermesClient 实例。</p>
      *
-     * @param config    组合配置，不得为 null
-     * @param httpClient HTTP 客户端实例，不得为 null
-     * @param sseClient SSE 客户端实例，不得为 null
-     * @param cli       CLI 实例，不得为 null
+     * <p>依赖项和资源所有权由构造参数决定；必需参数为空时初始化失败。</p>
+     *
+     * @param config 客户端配置，不得为 {@code null}
+     * @param httpClient 调用方提供或 SDK 创建的 OkHttpClient
+     * @param sseClient SSE 客户端
+     * @param cli 本地 CLI 客户端
+     * @since 1.0.0
      */
     public HermesClient(HermesClientConfig config, HermesHttpClient httpClient,
                         HermesSseClient sseClient, HermesCli cli) {
@@ -309,44 +376,133 @@ public class HermesClient implements AutoCloseable {
     // Status checks
     // ============================================================
 
+    /**
+     * <p>判断 HTTP 通道是否启用。</p>
+     *
+     * @return HTTP、Chat 与 SSE 客户端均已初始化时返回 {@code true}
+     * @since 1.0.0
+     */
     public boolean isHttpEnabled() { return httpClient != null; }
+    /**
+     * <p>判断 CLI 通道是否启用。</p>
+     *
+     * @return 本地 CLI 客户端已初始化时返回 {@code true}
+     * @since 1.0.0
+     */
     public boolean isCliEnabled() { return cli != null; }
 
     // ============================================================
     // Health
     // ============================================================
 
+    /**
+     * <p>查询 Hermes 基础健康状态。</p>
+     *
+     * <p>这是同步兼容入口，会在当前调用线程等待或执行底层 HTTP 请求。</p>
+     *
+     * @return Hermes 服务健康状态
+     * @since 1.0.0
+     */
     public HealthStatus health() { return httpClient.health(); }
+    /**
+     * <p>异步查询 Hermes 基础健康状态。</p>
+     *
+     * <p>请求通过 OkHttp enqueue 非阻塞提交；网络、状态码或反序列化失败通过 CompletableFuture 异常完成。</p>
+     *
+     * @return 异步承载服务健康状态的 CompletableFuture
+     * @since 1.0.0
+     */
     public CompletableFuture<HealthStatus> healthAsync() { return httpClient.healthAsync(); }
+    /**
+     * <p>查询 Hermes 详细健康状态。</p>
+     *
+     * <p>这是同步兼容入口，会在当前调用线程等待或执行底层 HTTP 请求。</p>
+     *
+     * @return Hermes 服务健康状态
+     * @since 1.0.0
+     */
     public HealthStatus healthDetailed() { return httpClient.healthDetailed(); }
+    /**
+     * <p>查询 Hermes V1 健康状态。</p>
+     *
+     * <p>这是同步兼容入口，会在当前调用线程等待或执行底层 HTTP 请求。</p>
+     *
+     * @return Hermes 服务健康状态
+     * @since 1.0.0
+     */
     public HealthStatus healthV1() { return httpClient.healthV1(); }
 
     // ============================================================
     // Chat Completions
     // ============================================================
 
+    /**
+     * <p>执行聊天补全请求。</p>
+     *
+     * <p>这是同步兼容入口，会在当前调用线程等待或执行底层 HTTP 请求。</p>
+     *
+     * @param request 请求对象，不得为 {@code null}
+     * @return 聊天补全响应
+     * @since 1.0.0
+     */
     public ChatResponse chatCompletion(ChatRequest request) {
        
         return httpClient.chatCompletion(request);
     }
 
+    /**
+     * <p>异步执行聊天补全请求。</p>
+     *
+     * <p>请求通过 OkHttp enqueue 非阻塞提交；网络、状态码或反序列化失败通过 CompletableFuture 异常完成。</p>
+     *
+     * @param request 请求对象，不得为 {@code null}
+     * @return 异步承载类型化聊天补全响应的 CompletableFuture
+     * @since 1.0.0
+     */
     public CompletableFuture<ChatResponse> chatCompletionAsync(ChatRequest request) {
         return httpClient.chatCompletionAsync(request);
     }
 
-    /** Chat completion with Hermes custom headers. */
+    /**
+     * <p>执行聊天补全请求。</p>
+     *
+     * <p>在基础鉴权请求头之外附加非空业务请求头；同步入口会等待底层请求完成。</p>
+     *
+     * @param request 请求对象，不得为 {@code null}
+     * @param headers 附加请求头；可以为 {@code null}
+     * @return 聊天补全响应
+     * @since 1.0.0
+     */
     public ChatResponse chatCompletion(ChatRequest request,
                                        Map<String, String> headers) {
        
         return httpClient.chatCompletion(request, headers);
     }
 
+    /**
+     * <p>异步执行聊天补全请求。</p>
+     *
+     * <p>附加非空业务请求头并通过 OkHttp enqueue 非阻塞提交；失败通过 CompletableFuture 异常完成。</p>
+     *
+     * @param request 请求对象，不得为 {@code null}
+     * @param headers 附加请求头；可以为 {@code null}
+     * @return 异步承载类型化聊天补全响应的 CompletableFuture
+     * @since 1.0.0
+     */
     public CompletableFuture<ChatResponse> chatCompletionAsync(ChatRequest request,
                                                                Map<String, String> headers) {
         return httpClient.chatCompletionAsync(request, headers, null);
     }
 
-    /** Convenience: chat with session key. */
+    /**
+     * <p>在指定 Hermes 会话上下文中执行聊天补全请求。</p>
+     *
+     * @param request 请求对象，不得为 {@code null}
+     * @param sessionKey 业务会话键
+     * @param sessionId 会话唯一标识
+     * @return 聊天补全响应
+     * @since 1.0.0
+     */
     public ChatResponse chatCompletionWithSession(ChatRequest request,
                                                   String sessionKey,
                                                   String sessionId) {
@@ -356,18 +512,28 @@ public class HermesClient implements AutoCloseable {
     }
 
     /**
-     * 按 sessionKey 发送消息并同步等待 AI 响应（2 参数版）。
-     * <p>与 OpenClaw/OpenCode 的 {@code chatCompletionWithSession(request, sessionKey)} 对称。</p>
+     * <p>在指定 Hermes 会话上下文中执行聊天补全请求。</p>
      *
-     * @param request    请求体
-     * @param sessionKey 会话路由 key
-     * @return Chat 响应
+     * @param request 请求对象，不得为 {@code null}
+     * @param sessionKey 业务会话键
+     * @return 聊天补全响应
+     * @since 1.0.0
      */
     public ChatResponse chatCompletionWithSession(ChatRequest request, String sessionKey) {
         return chatCompletionWithSession(request, sessionKey, (String) null);
     }
 
-    /** 按 sessionKey 调用，并将业务取消信号传播到底层 HTTP Call。 */
+    /**
+     * <p>在指定 Hermes 会话上下文中执行聊天补全请求。</p>
+     *
+     * <p>业务取消信号会传播到底层 OkHttp Call，避免已无消费者的请求继续占用连接。</p>
+     *
+     * @param request 请求对象，不得为 {@code null}
+     * @param sessionKey 业务会话键
+     * @param cancellation 调用取消信号；可以为 {@code null}
+     * @return 聊天补全响应
+     * @since 1.0.0
+     */
     public ChatResponse chatCompletionWithSession(ChatRequest request, String sessionKey,
                                                   HttpCallCancellation cancellation) {
         return httpClient.chatCompletion(request,
@@ -378,45 +544,177 @@ public class HermesClient implements AutoCloseable {
     // Responses API
     // ============================================================
 
+    /**
+     * <p>创建 Responses API 响应。</p>
+     *
+     * <p>这是同步兼容入口，会在当前调用线程等待或执行底层 HTTP 请求。</p>
+     *
+     * @param request 请求对象，不得为 {@code null}
+     * @return Responses API 响应
+     * @since 1.0.0
+     */
     public ResponseResult createResponse(ResponseRequest request) {
        
         return httpClient.createResponse(request);
     }
 
+    /**
+     * <p>异步创建 Responses API 响应。</p>
+     *
+     * <p>请求通过 OkHttp enqueue 非阻塞提交；网络、状态码或反序列化失败通过 CompletableFuture 异常完成。</p>
+     *
+     * @param request 请求对象，不得为 {@code null}
+     * @return 异步承载 Responses API 响应的 CompletableFuture
+     * @since 1.0.0
+     */
     public CompletableFuture<ResponseResult> createResponseAsync(ResponseRequest request) {
         return httpClient.createResponseAsync(request);
     }
 
+    /**
+     * <p>创建 Responses API 响应。</p>
+     *
+     * <p>在基础鉴权请求头之外附加非空业务请求头；同步入口会等待底层请求完成。</p>
+     *
+     * @param request 请求对象，不得为 {@code null}
+     * @param headers 附加请求头；可以为 {@code null}
+     * @return Responses API 响应
+     * @since 1.0.0
+     */
     public ResponseResult createResponse(ResponseRequest request, Map<String, String> headers) {
        
         return httpClient.createResponse(request, headers);
     }
 
+    /**
+     * <p>异步创建 Responses API 响应。</p>
+     *
+     * <p>附加非空业务请求头并通过 OkHttp enqueue 非阻塞提交；失败通过 CompletableFuture 异常完成。</p>
+     *
+     * @param request 请求对象，不得为 {@code null}
+     * @param headers 附加请求头；可以为 {@code null}
+     * @return 异步承载 Responses API 响应的 CompletableFuture
+     * @since 1.0.0
+     */
     public CompletableFuture<ResponseResult> createResponseAsync(ResponseRequest request,
                                                                  Map<String, String> headers) {
         return httpClient.createResponseAsync(request, headers);
     }
 
+    /**
+     * <p>按标识查询 Responses API 响应。</p>
+     *
+     * <p>这是同步兼容入口，会在当前调用线程等待或执行底层 HTTP 请求。</p>
+     *
+     * @param responseId 响应唯一标识
+     * @return Responses API 响应
+     * @since 1.0.0
+     */
     public ResponseResult getResponse(String responseId) { return httpClient.getResponse(responseId); }
+    /**
+     * <p>删除指定 Responses API 响应。</p>
+     *
+     * <p>这是同步兼容入口，会在当前调用线程等待或执行底层 HTTP 请求。</p>
+     *
+     * @param responseId 响应唯一标识
+     * @return 删除成功时返回 {@code true}
+     * @since 1.0.0
+     */
     public boolean deleteResponse(String responseId) { return httpClient.deleteResponse(responseId); }
 
     // ============================================================
     // Models & Capabilities & Skills
     // ============================================================
 
+    /**
+     * <p>列出 Hermes 可用模型。</p>
+     *
+     * <p>这是同步兼容入口，会在当前调用线程等待或执行底层 HTTP 请求。</p>
+     *
+     * @return 模型列表响应
+     * @since 1.0.0
+     */
     public ModelsResponse listModels() { return httpClient.listModels(); }
+    /**
+     * <p>异步列出 Hermes 可用模型。</p>
+     *
+     * <p>请求通过 OkHttp enqueue 非阻塞提交；网络、状态码或反序列化失败通过 CompletableFuture 异常完成。</p>
+     *
+     * @return 异步承载模型列表响应的 CompletableFuture
+     * @since 1.0.0
+     */
     public CompletableFuture<ModelsResponse> listModelsAsync() { return httpClient.listModelsAsync(); }
+    /**
+     * <p>查询 Hermes 服务能力。</p>
+     *
+     * <p>这是同步兼容入口，会在当前调用线程等待或执行底层 HTTP 请求。</p>
+     *
+     * @return Hermes 服务能力信息
+     * @since 1.0.0
+     */
     public CapabilityInfo getCapabilities() { return httpClient.getCapabilities(); }
+    /**
+     * <p>列出可用技能。</p>
+     *
+     * <p>这是同步兼容入口，会在当前调用线程等待或执行底层 HTTP 请求。</p>
+     *
+     * @return 服务端已加载技能的描述列表
+     * @since 1.0.0
+     */
     public List<Map<String, Object>> listSkills() { return httpClient.listSkills(); }
+    /**
+     * <p>列出可用工具集。</p>
+     *
+     * <p>这是同步兼容入口，会在当前调用线程等待或执行底层 HTTP 请求。</p>
+     *
+     * @return 服务端可用工具集的描述列表
+     * @since 1.0.0
+     */
     public List<Map<String, Object>> listToolsets() { return httpClient.listToolsets(); }
 
     // ============================================================
     // Run
     // ============================================================
 
+    /**
+     * <p>创建 Agent Run。</p>
+     *
+     * <p>这是同步兼容入口，会在当前调用线程等待或执行底层 HTTP 请求。</p>
+     *
+     * @param request 请求对象，不得为 {@code null}
+     * @return Agent Run 状态
+     * @since 1.0.0
+     */
     public RunStatus createRun(RunCreateRequest request) { return httpClient.createRun(request); }
+    /**
+     * <p>查询 Agent Run。</p>
+     *
+     * <p>这是同步兼容入口，会在当前调用线程等待或执行底层 HTTP 请求。</p>
+     *
+     * @param runId Run 唯一标识
+     * @return Agent Run 状态
+     * @since 1.0.0
+     */
     public RunStatus getRun(String runId) { return httpClient.getRun(runId); }
+    /**
+     * <p>停止 Agent Run。</p>
+     *
+     * <p>这是同步兼容入口，会在当前调用线程等待或执行底层 HTTP 请求。</p>
+     *
+     * @param runId Run 唯一标识
+     * @since 1.0.0
+     */
     public void stopRun(String runId) { httpClient.stopRun(runId); }
+    /**
+     * <p>提交 Agent Run 审批决定。</p>
+     *
+     * <p>这是同步兼容入口，会在当前调用线程等待或执行底层 HTTP 请求。</p>
+     *
+     * @param runId Run 唯一标识
+     * @param decision 审批决定数据
+     * @return 服务端确认审批后的 Run 数据
+     * @since 1.0.0
+     */
     public Map<String, Object> approveRun(String runId, Map<String, Object> decision) {
        
         return httpClient.approveRun(runId, decision);
@@ -427,20 +725,42 @@ public class HermesClient implements AutoCloseable {
     // ============================================================
 
     /**
-     * Streaming chat completion returning a {@link StreamingChatResponse} that accumulates
-     * delta text and completes when the stream ends.
+     * <p>创建聊天补全 SSE 流式响应。</p>
+     *
+     * @param request 请求对象，不得为 {@code null}
+     * @return 可消费增量并等待完整文本的流式响应
+     * @since 1.0.0
      */
     public StreamingChatResponse chatCompletionStream(ChatRequest request) {
         return chatCompletionStream(request, (Map<String, String>) null);
     }
 
-    /** Streaming chat completion with Hermes custom headers. */
+    /**
+     * <p>创建聊天补全 SSE 流式响应。</p>
+     *
+     * <p>在基础鉴权请求头之外附加非空业务请求头；同步入口会等待底层请求完成。</p>
+     *
+     * @param request 请求对象，不得为 {@code null}
+     * @param headers 附加请求头；可以为 {@code null}
+     * @return 可消费增量并等待完整文本的流式响应
+     * @since 1.0.0
+     */
     public StreamingChatResponse chatCompletionStream(ChatRequest request,
                                                       Map<String, String> headers) {
         return chatCompletionStream(request, headers, null);
     }
 
-    /** Streaming chat completion，订阅启动前绑定增量回调，避免丢失首批分片。 */
+    /**
+     * <p>创建聊天补全 SSE 流式响应。</p>
+     *
+     * <p>在基础鉴权请求头之外附加非空业务请求头；同步入口会等待底层请求完成。</p>
+     *
+     * @param request 请求对象，不得为 {@code null}
+     * @param headers 附加请求头；可以为 {@code null}
+     * @param deltaConsumer 文本增量消费者
+     * @return 可消费增量并等待完整文本的流式响应
+     * @since 1.0.0
+     */
     public StreamingChatResponse chatCompletionStream(ChatRequest request,
                                                       Map<String, String> headers,
                                                       Consumer<String> deltaConsumer) {
@@ -454,19 +774,41 @@ public class HermesClient implements AutoCloseable {
         return stream;
     }
 
-    /** Convenience: streaming chat with session key. */
+    /**
+     * <p>在指定会话上下文中创建聊天补全 SSE 流式响应。</p>
+     *
+     * @param request 请求对象，不得为 {@code null}
+     * @param sessionKey 业务会话键
+     * @param sessionId 会话唯一标识
+     * @return 可消费增量并等待完整文本的流式响应
+     * @since 1.0.0
+     */
     public StreamingChatResponse chatCompletionStreamWithSession(ChatRequest request, String sessionKey, String sessionId) {
         return chatCompletionStreamWithSession(request, sessionKey, sessionId, null);
     }
 
     /**
-     * 按 sessionKey 流式 chat completion（2 参数版，对齐 OpenClaw/OpenCode）。
+     * <p>在指定会话上下文中创建聊天补全 SSE 流式响应。</p>
+     *
+     * @param request 请求对象，不得为 {@code null}
+     * @param sessionKey 业务会话键
+     * @return 可消费增量并等待完整文本的流式响应
+     * @since 1.0.0
      */
     public StreamingChatResponse chatCompletionStreamWithSession(ChatRequest request, String sessionKey) {
         return chatCompletionStreamWithSession(request, sessionKey, null, null);
     }
 
-    /** 按 sessionKey 流式对话，并在订阅启动前绑定增量回调。 */
+    /**
+     * <p>在指定会话上下文中创建聊天补全 SSE 流式响应。</p>
+     *
+     * @param request 请求对象，不得为 {@code null}
+     * @param sessionKey 业务会话键
+     * @param sessionId 会话唯一标识
+     * @param deltaConsumer 文本增量消费者
+     * @return 可消费增量并等待完整文本的流式响应
+     * @since 1.0.0
+     */
     public StreamingChatResponse chatCompletionStreamWithSession(ChatRequest request, String sessionKey,
                                                                   String sessionId,
                                                                   Consumer<String> deltaConsumer) {
@@ -478,17 +820,92 @@ public class HermesClient implements AutoCloseable {
     // Session
     // ============================================================
 
+    /**
+     * <p>创建会话。</p>
+     *
+     * <p>这是同步兼容入口，会在当前调用线程等待或执行底层 HTTP 请求。</p>
+     *
+     * @param title 会话标题；可以为 {@code null}
+     * @return 会话对象或会话列表
+     * @since 1.0.0
+     */
     public Session createSession(String title) { return httpClient.createSession(title); }
+    /**
+     * <p>列出会话。</p>
+     *
+     * <p>这是同步兼容入口，会在当前调用线程等待或执行底层 HTTP 请求。</p>
+     *
+     * @return 会话对象或会话列表
+     * @since 1.0.0
+     */
     public List<Session> listSessions() { return httpClient.listSessions(); }
-    /** 分页列出 sessions。 */
+    /**
+     * <p>列出会话。</p>
+     *
+     * <p>这是同步兼容入口，会在当前调用线程等待或执行底层 HTTP 请求。</p>
+     *
+     * @param limit 最大返回数量；可以为 {@code null}
+     * @param offset 分页偏移量；可以为 {@code null}
+     * @param source 会话来源过滤条件；可以为 {@code null}
+     * @param includeChildren 是否包含子会话；可以为 {@code null}
+     * @return 会话对象或会话列表
+     * @since 1.0.0
+     */
     public List<Session> listSessions(Integer limit, Integer offset, String source, Boolean includeChildren) {
        
         return httpClient.listSessions(limit, offset, source, includeChildren);
     }
+    /**
+     * <p>查询会话。</p>
+     *
+     * <p>这是同步兼容入口，会在当前调用线程等待或执行底层 HTTP 请求。</p>
+     *
+     * @param sessionId 会话唯一标识
+     * @return 会话对象或会话列表
+     * @since 1.0.0
+     */
     public Session getSession(String sessionId) { return httpClient.getSession(sessionId); }
+    /**
+     * <p>查询会话消息。</p>
+     *
+     * <p>这是同步兼容入口，会在当前调用线程等待或执行底层 HTTP 请求。</p>
+     *
+     * @param id 对象唯一标识
+     * @return 按服务端顺序返回的会话消息列表
+     * @since 1.0.0
+     */
     public List<Map<String, Object>> getSessionMessages(String id) { return httpClient.getSessionMessages(id); }
+    /**
+     * <p>派生会话。</p>
+     *
+     * <p>这是同步兼容入口，会在当前调用线程等待或执行底层 HTTP 请求。</p>
+     *
+     * @param id 对象唯一标识
+     * @param title 会话标题；可以为 {@code null}
+     * @return 会话对象或会话列表
+     * @since 1.0.0
+     */
     public Session forkSession(String id, String title) { return httpClient.forkSession(id, title); }
+    /**
+     * <p>删除会话。</p>
+     *
+     * <p>这是同步兼容入口，会在当前调用线程等待或执行底层 HTTP 请求。</p>
+     *
+     * @param sessionId 会话唯一标识
+     * @return 删除成功时返回 {@code true}
+     * @since 1.0.0
+     */
     public boolean deleteSession(String sessionId) { return httpClient.deleteSession(sessionId); }
+    /**
+     * <p>在指定会话中发送聊天输入。</p>
+     *
+     * <p>这是同步兼容入口，会在当前调用线程等待或执行底层 HTTP 请求。</p>
+     *
+     * @param sessionId 会话唯一标识
+     * @param input 用户输入文本
+     * @return 聊天补全响应
+     * @since 1.0.0
+     */
     public ChatResponse sessionChat(String sessionId, String input) {
        
         return httpClient.sessionChat(sessionId, input);
@@ -498,29 +915,117 @@ public class HermesClient implements AutoCloseable {
     // Jobs
     // ============================================================
 
+    /**
+     * <p>列出任务。</p>
+     *
+     * <p>这是同步兼容入口，会在当前调用线程等待或执行底层 HTTP 请求。</p>
+     *
+     * @return 后台任务定义与状态列表
+     * @since 1.0.0
+     */
     public List<Map<String, Object>> listJobs() { return httpClient.listJobs(); }
+    /**
+     * <p>创建任务。</p>
+     *
+     * <p>这是同步兼容入口，会在当前调用线程等待或执行底层 HTTP 请求。</p>
+     *
+     * @param job 任务定义
+     * @return 服务端创建的任务数据
+     * @since 1.0.0
+     */
     public Map<String, Object> createJob(Map<String, Object> job) { return httpClient.createJob(job); }
+    /**
+     * <p>查询任务。</p>
+     *
+     * <p>这是同步兼容入口，会在当前调用线程等待或执行底层 HTTP 请求。</p>
+     *
+     * @param jobId 任务唯一标识
+     * @return 指定任务的定义与当前状态
+     * @since 1.0.0
+     */
     public Map<String, Object> getJob(String jobId) { return httpClient.getJob(jobId); }
+    /**
+     * <p>更新任务。</p>
+     *
+     * <p>这是同步兼容入口，会在当前调用线程等待或执行底层 HTTP 请求。</p>
+     *
+     * @param jobId 任务唯一标识
+     * @param patch 待更新字段集合
+     * @return 应用补丁后的任务数据
+     * @since 1.0.0
+     */
     public Map<String, Object> updateJob(String jobId, Map<String, Object> patch) { return httpClient.updateJob(jobId, patch); }
+    /**
+     * <p>删除任务。</p>
+     *
+     * <p>这是同步兼容入口，会在当前调用线程等待或执行底层 HTTP 请求。</p>
+     *
+     * @param jobId 任务唯一标识
+     * @return 删除成功时返回 {@code true}
+     * @since 1.0.0
+     */
     public boolean deleteJob(String jobId) { return httpClient.deleteJob(jobId); }
+    /**
+     * <p>暂停任务。</p>
+     *
+     * <p>这是同步兼容入口，会在当前调用线程等待或执行底层 HTTP 请求。</p>
+     *
+     * @param jobId 任务唯一标识
+     * @return 服务端确认暂停后的任务状态
+     * @since 1.0.0
+     */
     public Map<String, Object> pauseJob(String jobId) { return httpClient.pauseJob(jobId); }
+    /**
+     * <p>恢复任务。</p>
+     *
+     * <p>这是同步兼容入口，会在当前调用线程等待或执行底层 HTTP 请求。</p>
+     *
+     * @param jobId 任务唯一标识
+     * @return 服务端确认恢复后的任务状态
+     * @since 1.0.0
+     */
     public Map<String, Object> resumeJob(String jobId) { return httpClient.resumeJob(jobId); }
+    /**
+     * <p>立即执行任务。</p>
+     *
+     * <p>这是同步兼容入口，会在当前调用线程等待或执行底层 HTTP 请求。</p>
+     *
+     * @param jobId 任务唯一标识
+     * @return 本次立即执行的任务状态
+     * @since 1.0.0
+     */
     public Map<String, Object> runJobNow(String jobId) { return httpClient.runJobNow(jobId); }
 
     // ============================================================
     // SSE (raw access)
     // ============================================================
 
-    /** 获取统一的 Hermes 聊天场景客户端。 */
+    /**
+     * <p>返回聊天场景客户端。</p>
+     *
+     * @return 聊天场景客户端；HTTP 通道禁用时为 {@code null}
+     * @since 1.0.0
+     */
     public HermesChatClient chat() { return chatClient; }
 
-    /** 获取统一的 Hermes SSE 客户端。 */
+    /**
+     * <p>返回 SSE 客户端。</p>
+     *
+     * @return SSE 客户端；HTTP 通道禁用时为 {@code null}
+     * @since 1.0.0
+     */
     public HermesSseClient sse() { return sseClient; }
 
     // ============================================================
     // CLI
     // ============================================================
 
+    /**
+     * <p>返回本地 CLI 客户端。</p>
+     *
+     * @return 本地 CLI 客户端；CLI 通道禁用时为 {@code null}
+     * @since 1.0.0
+     */
     public HermesCli cli() {
         return cli;
     }
@@ -529,14 +1034,22 @@ public class HermesClient implements AutoCloseable {
     // Config & lifecycle
     // ============================================================
 
+    /**
+     * <p>返回当前客户端配置快照。</p>
+     *
+     * @return 当前客户端配置快照
+     * @since 1.0.0
+     */
     public HermesClientConfig getConfig() { return config; }
 
     /**
-     * 返回由当前根客户端托管的 Hermes multiplex profile 客户端。
-     * <p>profile 客户端复用根客户端的 OkHttp 连接池和 ObjectMapper，请只关闭根客户端。</p>
+     * <p>返回指定 Hermes Gateway profile 的托管客户端视图。</p>
      *
-     * @param profileId Hermes profile 标识，例如 {@code sales}
-     * @return 基础路径为 {@code /p/<profileId>} 的客户端
+     * <p>profile 视图复用根客户端的 OkHttpClient 与 ObjectMapper，并由根客户端统一关闭。</p>
+     *
+     * @param profileId Gateway profile 标识
+     * @return 复用根传输并由根客户端管理的 profile 客户端
+     * @since 1.0.0
      */
     public HermesClient forProfile(String profileId) {
         if (managedProfileView) {
@@ -549,12 +1062,14 @@ public class HermesClient implements AutoCloseable {
             throw new IllegalStateException("Hermes HTTP client is disabled");
         }
         String normalizedProfileId = normalizeProfileId(profileId);
+        // 并发访问同一 profile 时只发布一个托管视图。
         return profileClients.computeIfAbsent(normalizedProfileId, this::createProfileClient);
     }
 
     private HermesClient createProfileClient(String profileId) {
         HermesHttpClientConfig profileConfig = new HermesHttpClientConfig();
         copyHttpConfig(config.getHttp(), profileConfig);
+        // profile 只改变 URL 前缀并禁用重复探测，传输和 JSON 配置继续复用根客户端。
         profileConfig.setBaseUrl(profileServerUrl(config.getHttp().getBaseUrl(), profileId));
         profileConfig.setStartupCheckEnabled(false);
         HermesCliConfig disabledCli = new HermesCliConfig();
@@ -578,19 +1093,28 @@ public class HermesClient implements AutoCloseable {
     }
 
     /**
-     * 返回 HTTP 与 SSE 共用的 OkHttpClient；HTTP 未启用时返回 null。
+     * <p>返回底层 OkHttpClient。</p>
      *
-     * @return 实际使用的 OkHttpClient
+     * @return 由 SDK 管理生命周期的高并发 OkHttpClient
+     * @since 1.0.0
      */
     public OkHttpClient getOkHttpClient() {
         return httpClient != null ? httpClient.getOkHttpClient() : null;
     }
 
+    /**
+     * <p>关闭当前对象并释放其拥有的资源。</p>
+     *
+     * <p>重复关闭不会重复释放资源；调用方注入且不归当前对象所有的共享资源不会被关闭。</p>
+     *
+     * @since 1.0.0
+     */
     @Override
     public void close() {
         if (managedProfileView || !closed.compareAndSet(false, true)) {
             return;
         }
+        // 先停止所有托管视图，再释放根客户端拥有的共享连接资源。
         profileClients.values().forEach(HermesClient::closeManagedProfile);
         profileClients.clear();
         closeResources();
