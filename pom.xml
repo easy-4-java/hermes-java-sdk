@@ -353,7 +353,7 @@
                 <junit.version>4.13.2</junit.version>
                 <slf4j.version>2.0.18</slf4j.version>
                 <lombok.version>1.18.46</lombok.version>
-                <jackson.version>2.22.0</jackson.version>
+                <jackson.version>2.17.2</jackson.version>
                 <junit-jupiter.version>6.1.0</junit-jupiter.version>
                 <commons-lang.version>2.6</commons-lang.version>
             </properties>
@@ -504,6 +504,7 @@
         <junit.version>5.11.4</junit.version>
         <lombok.version>1.18.46</lombok.version>
         <okhttp3.version>5.4.0</okhttp3.version>
+        <okhttp3-extension.version>3.0.x.20260630-SNAPSHOT</okhttp3-extension.version>
         <slf4j.version>2.0.18</slf4j.version>
 
         <!-- Maven Plugin versions -->
@@ -528,6 +529,11 @@
     <!-- 依赖版本统一管理（dependencyManagement） -->
     <dependencyManagement>
         <dependencies>
+            <dependency>
+                <groupId>io.github.easy4j</groupId>
+                <artifactId>okhttp3-extension</artifactId>
+                <version>${okhttp3-extension.version}</version>
+            </dependency>
             <!-- For OkHttp -->
             <dependency>
                 <groupId>com.squareup.okhttp3</groupId>
@@ -546,6 +552,16 @@
                 <version>${okhttp3.version}</version>
             </dependency>
             <!-- For Jackson -->
+            <dependency>
+                <groupId>com.fasterxml.jackson.core</groupId>
+                <artifactId>jackson-annotations</artifactId>
+                <version>${jackson.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.fasterxml.jackson.core</groupId>
+                <artifactId>jackson-core</artifactId>
+                <version>${jackson.version}</version>
+            </dependency>
             <dependency>
                 <groupId>com.fasterxml.jackson.core</groupId>
                 <artifactId>jackson-databind</artifactId>
@@ -582,6 +598,10 @@
 
     <!-- 项目依赖（dependencies） -->
     <dependencies>
+        <dependency>
+            <groupId>io.github.easy4j</groupId>
+            <artifactId>okhttp3-extension</artifactId>
+        </dependency>
         <!-- For OkHttp -->
         <dependency>
             <groupId>com.squareup.okhttp3</groupId>
