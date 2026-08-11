@@ -337,8 +337,9 @@ public class HermesClient implements AutoCloseable {
         target.setStreamReconnectInitialDelayMillis(src.getStreamReconnectInitialDelayMillis());
         target.setStreamReconnectMaxDelayMillis(src.getStreamReconnectMaxDelayMillis());
         target.setRetryOnConnectionFailure(src.isRetryOnConnectionFailure());
-        target.setDetailedLoggingEnabled(src.isDetailedLoggingEnabled());
-        target.setMaxLoggedBodyLength(src.getMaxLoggedBodyLength());
+        target.getDebug().setEnabled(src.getDebug().isEnabled());
+        target.getDebug().setLevel(src.getDebug().getLevel());
+        target.getDebug().setMaxContentLength(src.getDebug().getMaxContentLength());
         target.setVerifySsl(src.isVerifySsl());
         target.setDefaultModel(src.getDefaultModel());
         target.setDefaultInstructions(src.getDefaultInstructions());

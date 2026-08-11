@@ -10,6 +10,7 @@ import io.github.easy4j.hermes.api.model.*;
 import io.github.easy4j.hermes.exception.HermesHttpException;
 import lombok.extern.slf4j.Slf4j;
 import okhttp3.*;
+import okhttp3.extension.logging.HttpLogLevel;
 
 import java.io.IOException;
 import java.util.*;
@@ -90,11 +91,13 @@ public class HermesHttpClient implements AutoCloseable {
                 .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false) : objectMapper;
         this.httpClient = Objects.requireNonNull(httpClient, "httpClient");
         this.ownsHttpClient = ownsHttpClient;
-        log.debug("Hermes HTTP client initialized: baseUrl={}, connectTimeoutMs={}, readTimeoutMs={}, "
-                        + "callTimeoutMs={}, retryOnConnectionFailure={}, detailedLoggingEnabled={}",
-                config.getBaseUrl(), config.getConnectTimeoutMillis(), config.getReadTimeoutMillis(),
-                config.getCallTimeoutMillis(), config.isRetryOnConnectionFailure(),
-                config.isDetailedLoggingEnabled());
+        if (allows(HttpLogLevel.BASIC)) {
+            log.debug("Hermes HTTP client initialized: baseUrl={}, connectTimeoutMs={}, readTimeoutMs={}, "
+                            + "callTimeoutMs={}, retryOnConnectionFailure={}, debugLevel={}",
+                    config.getBaseUrl(), config.getConnectTimeoutMillis(), config.getReadTimeoutMillis(),
+                    config.getCallTimeoutMillis(), config.isRetryOnConnectionFailure(),
+                    config.getDebug().getLevel());
+        }
     }
 
     // ============================================================
@@ -919,7 +922,9 @@ public class HermesHttpClient implements AutoCloseable {
         try {
             registration.close();
         } catch (Exception error) {
-            log.debug("Failed to unregister HTTP cancellation callback: {}", error.getMessage());
+            if (allows(HttpLogLevel.BASIC)) {
+                log.debug("Failed to unregister HTTP cancellation callback: {}", error.getMessage());
+            }
         }
     }
 
@@ -997,19 +1002,25 @@ public class HermesHttpClient implements AutoCloseable {
     private long beginTrace(Request request) {
         // 原子序列只用于 JVM 内关联请求生命周期日志，不改变协议与重试语义。
         long requestId = REQUEST_SEQUENCE.incrementAndGet();
-        log.debug("HTTP request started: requestId={}, method={}, url={}",
-                requestId, request.method(), request.url());
-        if (config.isDetailedLoggingEnabled()) {
-            log.debug("HTTP request details: requestId={}, headers={}, body={}", requestId,
-                    redactHeaders(request.headers()), requestBody(request));
+        if (allows(HttpLogLevel.BASIC)) {
+            log.debug("HTTP request started: requestId={}, method={}, url={}",
+                    requestId, request.method(), request.url());
+        }
+        if (allows(HttpLogLevel.HEADERS)) {
+            log.debug("HTTP request headers: requestId={}, headers={}", requestId, redactHeaders(request.headers()));
+        }
+        if (allows(HttpLogLevel.BODY)) {
+            log.debug("HTTP request body: requestId={}, body={}", requestId, requestBody(request));
         }
         return requestId;
     }
 
     private void logResponse(long requestId, Request request, int status, String body, long startedAt) {
-        log.debug("HTTP request completed: requestId={}, method={}, url={}, status={}, bodyLength={}, elapsedMs={}",
-                requestId, request.method(), request.url(), status, body.length(), elapsedMillis(startedAt));
-        if (config.isDetailedLoggingEnabled()) {
+        if (allows(HttpLogLevel.BASIC)) {
+            log.debug("HTTP request completed: requestId={}, method={}, url={}, status={}, bodyLength={}, elapsedMs={}",
+                    requestId, request.method(), request.url(), status, body.length(), elapsedMillis(startedAt));
+        }
+        if (allows(HttpLogLevel.BODY)) {
             log.debug("HTTP response body: requestId={}, body={}", requestId, truncate(body));
         }
     }
@@ -1037,8 +1048,12 @@ public class HermesHttpClient implements AutoCloseable {
     }
 
     private String truncate(String value) {
-        int limit = Math.max(0, config.getMaxLoggedBodyLength());
+        int limit = config.getDebug().resolveMaxContentLength();
         return value.length() <= limit ? value : value.substring(0, limit) + "...<truncated>";
+    }
+
+    private boolean allows(HttpLogLevel level) {
+        return config.getDebug().allows(level);
     }
 
     private Headers redactHeaders(Headers headers) {
@@ -1046,7 +1061,7 @@ public class HermesHttpClient implements AutoCloseable {
         for (String name : headers.names()) {
             String lowerName = name.toLowerCase();
             if ("authorization".equals(lowerName) || lowerName.contains("token") || lowerName.contains("key")) {
-                safe.set(name, "██");
+                safe.set(name, "<redacted>");
             }
         }
         return safe.build();

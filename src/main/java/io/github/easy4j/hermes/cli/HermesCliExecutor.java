@@ -1,5 +1,6 @@
 package io.github.easy4j.hermes.cli;
 import io.github.easy4j.hermes.HermesCliConfig;
+import okhttp3.extension.logging.HttpLogLevel;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.exec.CommandLine;
 import org.apache.commons.exec.DefaultExecutor;
@@ -71,7 +72,13 @@ public class HermesCliExecutor {
             int exitCode = executor.execute(cmd);
             String out = stdout.toString().trim();
             String err = stderr.toString().trim();
-            log.debug("hermes CLI executed: exitCode={}, stdout={}, stderr={}", exitCode, out, err);
+            if (config.getDebug().allows(HttpLogLevel.BASIC)) {
+                log.debug("Hermes CLI executed: exitCode={}, stdoutLength={}, stderrLength={}",
+                        exitCode, out.length(), err.length());
+            }
+            if (config.getDebug().allows(HttpLogLevel.BODY)) {
+                log.debug("Hermes CLI output: stdout={}, stderr={}", truncate(out), truncate(err));
+            }
             return new HermesCliResult(exitCode, out, err);
         } catch (IOException e) {
             log.warn("CLI execution failed", e);
@@ -96,7 +103,7 @@ public class HermesCliExecutor {
     }
 
     private static HermesCliConfig copyForProbe(HermesCliConfig source) {
-        HermesCliConfig copy = new HermesCliConfig();
+        HermesCliConfig copy = new HermesCliConfig(source.getDebug());
         copy.setExecutable(source.getExecutable());
         copy.setWorkingDirectory(source.getWorkingDirectory());
         copy.setMaxConcurrentExecutions(source.getMaxConcurrentExecutions());
@@ -107,6 +114,11 @@ public class HermesCliExecutor {
         copy.setTimeout(probeSec);
         copy.setProbeTimeoutSeconds(probeSec);
         return copy;
+    }
+
+    private String truncate(String content) {
+        int maxLength = config.getDebug().resolveMaxContentLength();
+        return content.length() <= maxLength ? content : content.substring(0, maxLength) + "...<truncated>";
     }
 
     private File resolveWorkingDirectory() {

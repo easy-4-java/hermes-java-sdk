@@ -54,7 +54,7 @@ public class HermesJsonParser {
             try {
                 return MAPPER.readValue(json, new TypeReference<Map<String, Object>>() {});
             } catch (Exception e) {
-                log.debug("Failed to parse JSON from code block: {}", json, e);
+                log.debug("Failed to parse JSON from code block: contentLength={}", json.length(), e);
             }
         }
 

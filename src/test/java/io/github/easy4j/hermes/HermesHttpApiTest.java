@@ -58,6 +58,8 @@ class HermesHttpApiTest {
                     .build();
         }).build();
         httpConfig = new HermesHttpClientConfig();
+        httpConfig.getDebug().setEnabled(true);
+        httpConfig.getDebug().setLevel(okhttp3.extension.logging.HttpLogLevel.BODY);
         httpConfig.setBaseUrl("http://localhost:8642");
         httpConfig.setApiKey("secret");
         http = new HermesHttpClient(httpConfig, new ObjectMapper(), okHttpClient);

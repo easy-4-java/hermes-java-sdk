@@ -15,6 +15,23 @@ import java.util.Objects;
 @Data
 public class HermesHttpClientConfig {
 
+    /** HTTP 与 SSE 通道共享的调试配置。 */
+    private final HermesDebugConfig debug;
+
+    /** 使用默认关闭的调试配置创建 HTTP 配置。 */
+    public HermesHttpClientConfig() {
+        this(new HermesDebugConfig());
+    }
+
+    /**
+     * 使用客户端级共享调试配置创建 HTTP 配置。
+     *
+     * @param debug 客户端级调试配置
+     */
+    public HermesHttpClientConfig(HermesDebugConfig debug) {
+        this.debug = Objects.requireNonNull(debug, "debug");
+    }
+
     /**
      * 对话响应模式，默认返回完整响应。
      */
@@ -129,16 +146,6 @@ public class HermesHttpClientConfig {
      * OkHttp 是否自动恢复可重试的连接故障。
      */
     private boolean retryOnConnectionFailure = true;
-
-    /**
-     * 是否输出脱敏后的请求头及截断后的请求响应体。
-     */
-    private boolean detailedLoggingEnabled = false;
-
-    /**
-     * 详细日志允许输出的正文最大字符数。
-     */
-    private int maxLoggedBodyLength = 2_000;
 
     /**
      * 是否校验 HTTPS 主机名和证书。
