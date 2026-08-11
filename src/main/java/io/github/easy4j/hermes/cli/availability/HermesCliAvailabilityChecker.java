@@ -133,7 +133,7 @@ public class HermesCliAvailabilityChecker {
     }
 
     private static HermesCliConfig copyForProbe(HermesCliConfig source) {
-        HermesCliConfig copy = new HermesCliConfig();
+        HermesCliConfig copy = new HermesCliConfig(source.getDebug());
         copy.setExecutable(source.getExecutable());
         copy.setWorkingDirectory(source.getWorkingDirectory());
         copy.setMaxConcurrentExecutions(source.getMaxConcurrentExecutions());

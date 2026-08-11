@@ -504,6 +504,7 @@
         <junit.version>5.11.4</junit.version>
         <lombok.version>1.18.46</lombok.version>
         <okhttp3.version>4.12.0</okhttp3.version>
+        <okhttp3-extension.version>1.0.x.20260630-SNAPSHOT</okhttp3-extension.version>
         <slf4j.version>2.0.18</slf4j.version>
         <!-- Maven Plugin versions -->
         <maven-central-publishing-plugin.version>0.11.0</maven-central-publishing-plugin.version>
@@ -527,6 +528,11 @@
     <!-- 依赖版本统一管理（dependencyManagement） -->
     <dependencyManagement>
         <dependencies>
+            <dependency>
+                <groupId>io.github.easy4j</groupId>
+                <artifactId>okhttp3-extension</artifactId>
+                <version>${okhttp3-extension.version}</version>
+            </dependency>
             <!-- For OkHttp -->
             <dependency>
                 <groupId>com.squareup.okhttp3</groupId>
@@ -581,6 +587,10 @@
 
     <!-- 项目依赖（dependencies） -->
     <dependencies>
+        <dependency>
+            <groupId>io.github.easy4j</groupId>
+            <artifactId>okhttp3-extension</artifactId>
+        </dependency>
         <!-- For OkHttp -->
         <dependency>
             <groupId>com.squareup.okhttp3</groupId>

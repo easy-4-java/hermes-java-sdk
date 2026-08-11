@@ -8,6 +8,8 @@ import io.github.easy4j.hermes.api.sse.StreamingChatResponse;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class HermesHttpClientConfigTest {
 
@@ -15,8 +17,9 @@ class HermesHttpClientConfigTest {
     void shouldExposeUnifiedHttpProperties() {
         HermesHttpClientConfig config = new HermesHttpClientConfig();
         assertEquals(HttpResponseMode.BLOCKING, config.getMode());
-        assertFalse(config.isDetailedLoggingEnabled());
-        assertEquals(2_000, config.getMaxLoggedBodyLength());
+        assertFalse(config.getDebug().isEnabled());
+        assertEquals(2_000, config.getDebug().getMaxContentLength());
+        assertEquals(okhttp3.extension.logging.HttpLogLevel.BASIC, config.getDebug().getLevel());
         config.setBaseUrl("http://hermes");
         assertEquals("http://hermes", config.getBaseUrl());
 
@@ -39,6 +42,17 @@ class HermesHttpClientConfigTest {
         try (HermesChatClient client = new HermesChatClient(config)) {
             assertEquals(HermesHttpClient.class, client.getClass().getSuperclass());
         }
+    }
+
+    @Test
+    void shouldShareClientLevelDebugConfig() {
+        HermesClientConfig config = new HermesClientConfig();
+        assertSame(config.getDebug(), config.getHttp().getDebug());
+        assertSame(config.getDebug(), config.getCli().getDebug());
+        config.getDebug().setEnabled(true);
+        config.getDebug().setLevel(okhttp3.extension.logging.HttpLogLevel.HEADERS);
+        assertTrue(config.getDebug().allows(okhttp3.extension.logging.HttpLogLevel.BASIC));
+        assertFalse(config.getDebug().allows(okhttp3.extension.logging.HttpLogLevel.BODY));
     }
 
     @Test

@@ -12,13 +12,16 @@ import lombok.Data;
 @Data
 public class HermesClientConfig {
 
+    /** 客户端所有通信通道共享的调试配置。 */
+    private final HermesDebugConfig debug = new HermesDebugConfig();
+
     /**
      * HTTP 与 SSE 通道配置。
      */
-    private final HermesHttpClientConfig http = new HermesHttpClientConfig();
+    private final HermesHttpClientConfig http = new HermesHttpClientConfig(debug);
 
     /**
      * 本地 Hermes CLI 客户端。
      */
-    private final HermesCliConfig cli = new HermesCliConfig();
+    private final HermesCliConfig cli = new HermesCliConfig(debug);
 }

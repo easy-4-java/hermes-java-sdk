@@ -17,6 +17,7 @@ import okhttp3.Response;
 import okhttp3.sse.EventSource;
 import okhttp3.sse.EventSourceListener;
 import okhttp3.sse.EventSources;
+import okhttp3.extension.logging.HttpLogLevel;
 
 import java.io.IOException;
 import java.util.Collections;
@@ -128,12 +129,11 @@ public class HermesSseClient implements AutoCloseable {
             thread.setDaemon(true);
             return thread;
         });
-        log.debug("Hermes SSE client initialized: baseUrl={}, reconnectMaxAttempts={}, "
-                        + "reconnectInitialDelayMs={}, reconnectMaxDelayMs={}, eventQueueCapacity={}, "
-                        + "detailedLoggingEnabled={}",
+        debug(HttpLogLevel.BASIC, "Hermes SSE client initialized: baseUrl={}, reconnectMaxAttempts={}, "
+                        + "reconnectInitialDelayMs={}, reconnectMaxDelayMs={}, eventQueueCapacity={}, debugLevel={}",
                 config.getBaseUrl(), config.getStreamReconnectMaxAttempts(),
                 config.getStreamReconnectInitialDelayMillis(), config.getStreamReconnectMaxDelayMillis(),
-                config.getStreamEventQueueCapacity(), config.isDetailedLoggingEnabled());
+                config.getStreamEventQueueCapacity(), config.getDebug().getLevel());
     }
 
     /**
@@ -251,7 +251,7 @@ public class HermesSseClient implements AutoCloseable {
                  */
                 @Override
                 public void onOpen(EventSource eventSource, Response response) {
-                    log.info("Hermes SSE connected: label={}, url={}, status={}, elapsedMs={}",
+                    debug(HttpLogLevel.BASIC, "Hermes SSE connected: label={}, url={}, status={}, elapsedMs={}",
                             label, request.url(), response.code(), elapsedMillis(startedAt));
                 }
 
@@ -280,7 +280,12 @@ public class HermesSseClient implements AutoCloseable {
                         event.setEvent(type);
                         consumer.accept(event);
                     } catch (Exception error) {
-                        log.debug("Hermes SSE parse failed: label={}, data={}", label, data, error);
+                        if (config.getDebug().allows(HttpLogLevel.BODY)) {
+                            log.debug("Hermes SSE parse failed: label={}, data={}", label, truncate(data), error);
+                        } else {
+                            debug(HttpLogLevel.BASIC, "Hermes SSE parse failed: label={}, dataLength={}, error={}",
+                                    label, data.length(), error.getMessage());
+                        }
                     }
                 }
 
@@ -433,6 +438,17 @@ public class HermesSseClient implements AutoCloseable {
 
     private long elapsedMillis(long startedAt) {
         return (System.nanoTime() - startedAt) / 1_000_000L;
+    }
+
+    private void debug(HttpLogLevel level, String message, Object... arguments) {
+        if (config.getDebug().allows(level)) {
+            log.debug(message, arguments);
+        }
+    }
+
+    private String truncate(String value) {
+        int limit = config.getDebug().resolveMaxContentLength();
+        return value.length() <= limit ? value : value.substring(0, limit) + "...<truncated>";
     }
 
     private void finish(SubscriptionState subscription) {

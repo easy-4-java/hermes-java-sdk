@@ -2,6 +2,8 @@ package io.github.easy4j.hermes;
 import io.github.easy4j.hermes.api.HermesApiConstants;
 import lombok.Data;
 
+import java.util.Objects;
+
 /**
  * <p>Hermes 本地 CLI 配置。</p>
  *
@@ -12,6 +14,23 @@ import lombok.Data;
  */
 @Data
 public class HermesCliConfig {
+
+    /** CLI 与 HTTP/SSE 通道共享的调试策略。 */
+    private final HermesDebugConfig debug;
+
+    /** 使用独立的默认调试策略创建配置。 */
+    public HermesCliConfig() {
+        this(new HermesDebugConfig());
+    }
+
+    /**
+     * 使用指定调试策略创建配置。
+     *
+     * @param debug 客户端共享调试策略
+     */
+    public HermesCliConfig(HermesDebugConfig debug) {
+        this.debug = Objects.requireNonNull(debug, "debug");
+    }
 
     /**
      * 是否启用对应客户端通道。
