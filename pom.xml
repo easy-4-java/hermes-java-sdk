@@ -5,7 +5,7 @@
     <artifactId>hermes-java-sdk</artifactId>
     <name>${project.groupId}:${project.artifactId}</name>
     <url>https://github.com/easy-4-java/${project.artifactId}</url>
-    <description>Hermes Agent Java SDK (HTTP API Server + SSE + local CLI) — JDK 17 line</description>
+    <description>Hermes Agent Java SDK (HTTP API Server + SSE + local CLI) — JDK 8 line</description>
     <version>2.0.x.20260730-SNAPSHOT</version>
     <packaging>jar</packaging>
 
@@ -62,7 +62,10 @@
                     <artifactId>maven-compiler-plugin</artifactId>
                     <version>${maven-compiler-plugin.version}</version>
                     <configuration>
-                        <release>${java.version}</release>
+                        <!-- 源代码编译版本 -->
+                        <source>${java.version}</source>
+                        <!-- 目标平台编译版本 -->
+                        <target>${java.version}</target>
                         <!-- 字符集编码 -->
                         <encoding>${project.build.sourceEncoding}</encoding>
                         <!-- 编译最大内存 -->
@@ -248,19 +251,16 @@
                     </executions>
                 </plugin>
 
-                <!-- https://mvnrepository.com/artifact/org.sonatype.plugins/nexus-staging-maven-plugin -->
+                <!-- https://mvnrepository.com/artifact/org.sonatype.central/central-publishing-maven-plugin -->
                 <plugin>
-                    <groupId>org.sonatype.plugins</groupId>
-                    <artifactId>nexus-staging-maven-plugin</artifactId>
-                    <version>${maven-nexus-staging-plugin.version}</version>
+                    <groupId>org.sonatype.central</groupId>
+                    <artifactId>central-publishing-maven-plugin</artifactId>
+                    <version>${maven-central-publishing-plugin.version}</version>
                     <extensions>true</extensions>
                     <configuration>
-                        <serverId>ossrh</serverId>
-                        <nexusUrl>https://oss.sonatype.org/</nexusUrl>
-                        <autoReleaseAfterClose>true</autoReleaseAfterClose>
-                        <stagingProgressPauseDurationSeconds>60</stagingProgressPauseDurationSeconds>
-                        <stagingProgressTimeoutMinutes>20</stagingProgressTimeoutMinutes>
-                        <detectBuildFailures>true</detectBuildFailures>
+                        <publishingServerId>central</publishingServerId>
+                        <autoPublish>true</autoPublish>
+                        <waitUntil>published</waitUntil>
                     </configuration>
                 </plugin>
             </plugins>
@@ -319,9 +319,7 @@
                 <artifactId>maven-compiler-plugin</artifactId>
                 <version>${maven-compiler-plugin.version}</version>
                 <configuration>
-                    <!-- 源代码编译版本 -->
                     <source>${java.version}</source>
-                    <!-- 目标平台编译版本 -->
                     <target>${java.version}</target>
                     <!-- 保留方法参数名，支持 Spring MVC 按参数名绑定 -->
                     <parameters>true</parameters>
@@ -353,8 +351,7 @@
                 <junit.version>4.13.2</junit.version>
                 <slf4j.version>2.0.18</slf4j.version>
                 <lombok.version>1.18.46</lombok.version>
-                <jackson.version>2.18.9</jackson.version>
-                <junit-jupiter.version>6.1.0</junit-jupiter.version>
+                <junit-jupiter.version>5.11.4</junit-jupiter.version>
                 <commons-lang.version>2.6</commons-lang.version>
             </properties>
         </profile>
@@ -442,10 +439,10 @@
                         <artifactId>maven-release-plugin</artifactId>
                     </plugin>
 
-                    <!-- https://mvnrepository.com/artifact/org.sonatype.plugins/nexus-staging-maven-plugin -->
+                    <!-- https://mvnrepository.com/artifact/org.sonatype.central/central-publishing-maven-plugin -->
                     <plugin>
-                        <groupId>org.sonatype.plugins</groupId>
-                        <artifactId>nexus-staging-maven-plugin</artifactId>
+                        <groupId>org.sonatype.central</groupId>
+                        <artifactId>central-publishing-maven-plugin</artifactId>
                     </plugin>
                 </plugins>
             </build>
@@ -504,7 +501,7 @@
         <junit.version>5.11.4</junit.version>
         <lombok.version>1.18.46</lombok.version>
         <okhttp3.version>4.12.0</okhttp3.version>
-        <okhttp3-extension.version>2.0.x.20260630-SNAPSHOT</okhttp3-extension.version>
+        <okhttp3-extension.version>1.0.x.20260630-SNAPSHOT</okhttp3-extension.version>
         <slf4j.version>2.0.18</slf4j.version>
         <!-- Maven Plugin versions -->
         <maven-central-publishing-plugin.version>0.11.0</maven-central-publishing-plugin.version>
@@ -519,11 +516,12 @@
         <maven-jar-plugin.version>3.5.0</maven-jar-plugin.version>
         <maven-javadoc-plugin.version>3.11.2</maven-javadoc-plugin.version>
         <maven-nexus-staging-plugin.version>1.7.0</maven-nexus-staging-plugin.version>
+        <!-- Deprecated: nexus-staging-maven-plugin 已被 central-publishing-maven-plugin 取代 -->
         <maven-release-plugin.version>3.3.1</maven-release-plugin.version>
         <maven-resources-plugin.version>3.5.0</maven-resources-plugin.version>
         <maven-source-plugin.version>3.4.0</maven-source-plugin.version>
         <maven-surefire-plugin.version>3.5.2</maven-surefire-plugin.version>
-        <junit-jupiter.version>6.1.0</junit-jupiter.version>
+        <junit-jupiter.version>5.11.4</junit-jupiter.version>
     </properties>
 
     <!-- 依赖版本统一管理（dependencyManagement） -->
@@ -552,16 +550,6 @@
                 <version>${okhttp3.version}</version>
             </dependency>
             <!-- For Jackson -->
-            <dependency>
-                <groupId>com.fasterxml.jackson.core</groupId>
-                <artifactId>jackson-annotations</artifactId>
-                <version>${jackson.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>com.fasterxml.jackson.core</groupId>
-                <artifactId>jackson-core</artifactId>
-                <version>${jackson.version}</version>
-            </dependency>
             <dependency>
                 <groupId>com.fasterxml.jackson.core</groupId>
                 <artifactId>jackson-databind</artifactId>
