@@ -497,7 +497,7 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <!-- Dependency versions -->
         <commons-exec.version>1.4.0</commons-exec.version>
-        <jackson.version>2.18.9</jackson.version>
+        <jackson-bom.version>2.22.1</jackson-bom.version>
         <junit.version>5.11.4</junit.version>
         <lombok.version>1.18.46</lombok.version>
         <okhttp3.version>4.12.0</okhttp3.version>
@@ -527,6 +527,14 @@
     <!-- 依赖版本统一管理（dependencyManagement） -->
     <dependencyManagement>
         <dependencies>
+            <!-- For Jackson BOM -->
+            <dependency>
+                <groupId>com.fasterxml.jackson</groupId>
+                <artifactId>jackson-bom</artifactId>
+                <version>${jackson-bom.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
             <dependency>
                 <groupId>io.github.easy4j</groupId>
                 <artifactId>okhttp3-extension</artifactId>
@@ -548,12 +556,6 @@
                 <groupId>com.squareup.okhttp3</groupId>
                 <artifactId>mockwebserver</artifactId>
                 <version>${okhttp3.version}</version>
-            </dependency>
-            <!-- For Jackson -->
-            <dependency>
-                <groupId>com.fasterxml.jackson.core</groupId>
-                <artifactId>jackson-databind</artifactId>
-                <version>${jackson.version}</version>
             </dependency>
             <!-- For Commons Exec -->
             <dependency>
