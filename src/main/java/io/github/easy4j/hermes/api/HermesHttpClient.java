@@ -1,8 +1,10 @@
 package io.github.easy4j.hermes.api;
 
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.DeserializationFeature;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.core.JacksonException;
+import tools.jackson.core.type.TypeReference;
+import tools.jackson.databind.DeserializationFeature;
+import tools.jackson.databind.ObjectMapper;
+import tools.jackson.databind.json.JsonMapper;
 import io.github.easy4j.hermes.HermesHttpClientConfig;
 import io.github.easy4j.hermes.HttpCallCancellation;
 import io.github.easy4j.hermes.HermesOkHttpClientFactory;
@@ -91,8 +93,7 @@ public class HermesHttpClient implements AutoCloseable {
     private HermesHttpClient(HermesHttpClientConfig config, ObjectMapper objectMapper,
                              OkHttpClient httpClient, boolean ownsHttpClient) {
         this.config = Objects.requireNonNull(config, "config");
-        this.objectMapper = Objects.isNull(objectMapper) ? new ObjectMapper()
-                .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false) : objectMapper;
+        this.objectMapper = Objects.isNull(objectMapper) ? JsonMapper.builder().disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES).build() : objectMapper;
         this.httpClient = Objects.requireNonNull(httpClient, "httpClient");
         this.ownsHttpClient = ownsHttpClient;
         if (allows(HttpLogLevel.BASIC)) {
@@ -840,7 +841,7 @@ public class HermesHttpClient implements AutoCloseable {
             }
             try {
                 return objectMapper.readValue(response.getBody(), type);
-            } catch (IOException error) {
+            } catch (JacksonException error) {
                 throw new HermesHttpException("Failed to parse response: " + error.getMessage(), error);
             }
         });
@@ -922,7 +923,7 @@ public class HermesHttpClient implements AutoCloseable {
             }
             try {
                 return objectMapper.readValue(response.getBody(), typeRef);
-            } catch (IOException error) {
+            } catch (JacksonException error) {
                 throw new HermesHttpException("Failed to parse response: " + error.getMessage(), error);
             }
         }));
@@ -1057,7 +1058,7 @@ public class HermesHttpClient implements AutoCloseable {
     private String toJson(Object body) {
         try {
             return objectMapper.writeValueAsString(body);
-        } catch (IOException e) {
+        } catch (JacksonException e) {
             throw new HermesHttpException("Failed to serialize request body: " + e.getMessage(), e);
         }
     }

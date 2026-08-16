@@ -1,6 +1,7 @@
 package io.github.easy4j.hermes.api;
-import com.fasterxml.jackson.databind.DeserializationFeature;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.databind.DeserializationFeature;
+import tools.jackson.databind.ObjectMapper;
+import tools.jackson.databind.json.JsonMapper;
 import io.github.easy4j.hermes.HermesHttpClientConfig;
 import io.github.easy4j.hermes.HermesOkHttpClientFactory;
 import io.github.easy4j.hermes.api.model.ChatRequest;
@@ -111,8 +112,7 @@ public class HermesSseClient implements AutoCloseable {
      */
     public HermesSseClient(HermesHttpClientConfig config, ObjectMapper objectMapper, OkHttpClient httpClient) {
         this.config = Objects.requireNonNull(config, "config");
-        this.mapper = Objects.isNull(objectMapper) ? new ObjectMapper()
-                .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false) : objectMapper;
+        this.mapper = Objects.isNull(objectMapper) ? JsonMapper.builder().disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES).build() : objectMapper;
         this.ownsHttpClient = Objects.isNull(httpClient);
         this.ownsDispatcher = Objects.nonNull(httpClient);
         OkHttpClient baseClient = this.ownsHttpClient ? HermesOkHttpClientFactory.create(config) : httpClient;

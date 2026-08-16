@@ -1,7 +1,7 @@
 package io.github.easy4j.hermes.api.sse;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.JsonNode;
+import tools.jackson.core.type.TypeReference;
+import tools.jackson.databind.JsonNode;
 import io.github.easy4j.hermes.util.HermesObjectMapper;
 import lombok.Data;
 

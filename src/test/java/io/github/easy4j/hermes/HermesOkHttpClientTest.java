@@ -1,6 +1,7 @@
 package io.github.easy4j.hermes;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.databind.ObjectMapper;
+import tools.jackson.databind.json.JsonMapper;
 import io.github.easy4j.hermes.api.model.ChatRequest;
 import io.github.easy4j.hermes.api.sse.StreamingChatResponse;
 import okhttp3.ConnectionPool;
@@ -54,7 +55,7 @@ class HermesOkHttpClientTest {
         HermesCliConfig cliConfig = new HermesCliConfig();
         cliConfig.setEnabled(false);
 
-        try (HermesClient client = new HermesClient(httpConfig, cliConfig, new ObjectMapper(), external)) {
+        try (HermesClient client = new HermesClient(httpConfig, cliConfig, new JsonMapper(), external)) {
             HermesClient sales = client.forProfile("sales");
             assertSame(sales, client.forProfile("sales"));
             assertSame(external, sales.getOkHttpClient());
@@ -162,7 +163,7 @@ class HermesOkHttpClientTest {
         request.setModel("hermes-agent");
         request.setMessages(List.of(new ChatRequest.Message("user", "ping")));
 
-        try (HermesClient client = new HermesClient(httpConfig, cliConfig, new ObjectMapper(), external)) {
+        try (HermesClient client = new HermesClient(httpConfig, cliConfig, new JsonMapper(), external)) {
             long startedAt = System.nanoTime();
             StreamingChatResponse first = client.chatCompletionStream(request);
             StreamingChatResponse second = client.chatCompletionStream(request);
@@ -222,7 +223,7 @@ class HermesOkHttpClientTest {
         request.setModel("hermes-agent");
         request.setMessages(List.of(new ChatRequest.Message("user", "ping")));
 
-        try (HermesClient client = new HermesClient(httpConfig, cliConfig, new ObjectMapper(), external)) {
+        try (HermesClient client = new HermesClient(httpConfig, cliConfig, new JsonMapper(), external)) {
             List<StreamingChatResponse> streams = new ArrayList<>(concurrency);
             for (int index = 0; index < concurrency; index++) {
                 streams.add(client.chatCompletionStream(request));

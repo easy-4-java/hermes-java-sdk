@@ -1,6 +1,7 @@
 package io.github.easy4j.hermes;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.databind.ObjectMapper;
+import tools.jackson.databind.json.JsonMapper;
 import io.github.easy4j.hermes.api.HermesHttpClient;
 import io.github.easy4j.hermes.api.model.ChatRequest;
 import io.github.easy4j.hermes.api.model.ResponseRequest;
@@ -62,7 +63,7 @@ class HermesHttpApiTest {
         httpConfig.getDebug().setLevel(okhttp3.extension.logging.HttpLogLevel.BODY);
         httpConfig.setBaseUrl("http://localhost:8642");
         httpConfig.setApiKey("secret");
-        http = new HermesHttpClient(httpConfig, new ObjectMapper(), okHttpClient);
+        http = new HermesHttpClient(httpConfig, new JsonMapper(), okHttpClient);
     }
 
     @AfterEach
@@ -171,7 +172,7 @@ class HermesHttpApiTest {
         ResponseRequest response = new ResponseRequest();
         RunCreateRequest run = new RunCreateRequest();
 
-        try (HermesClient client = new HermesClient(httpConfig, cliConfig, new ObjectMapper(), okHttpClient)) {
+        try (HermesClient client = new HermesClient(httpConfig, cliConfig, new JsonMapper(), okHttpClient)) {
             assertTrue(client.isHttpEnabled());
             assertFalse(client.isCliEnabled());
             assertNotNull(client.health());
@@ -231,7 +232,7 @@ class HermesHttpApiTest {
             assertFalse(value.isCliEnabled());
             assertNull(value.getOkHttpClient());
         }
-        try (HermesClient value = new HermesClient(disabledConfig, new ObjectMapper(), okHttpClient)) {
+        try (HermesClient value = new HermesClient(disabledConfig, new JsonMapper(), okHttpClient)) {
             assertFalse(value.isHttpEnabled());
         }
         try (HermesClient value = new HermesClient(disabledHttp, disabledCli)) {
@@ -240,10 +241,10 @@ class HermesHttpApiTest {
         try (HermesClient value = new HermesClient(disabledHttp, disabledCli, okHttpClient)) {
             assertFalse(value.isHttpEnabled());
         }
-        try (HermesClient value = new HermesClient(disabledHttp, new ObjectMapper(), okHttpClient)) {
+        try (HermesClient value = new HermesClient(disabledHttp, new JsonMapper(), okHttpClient)) {
             assertFalse(value.isHttpEnabled());
         }
-        try (HermesClient value = new HermesClient(disabledCli, new ObjectMapper(), okHttpClient)) {
+        try (HermesClient value = new HermesClient(disabledCli, new JsonMapper(), okHttpClient)) {
             assertTrue(value.isHttpEnabled());
         }
         try (HermesClient value = new HermesClient(disabledConfig)) {
@@ -257,7 +258,7 @@ class HermesHttpApiTest {
         checkedCli.setEnabled(true);
         checkedCli.setStartupCheckEnabled(true);
         checkedCli.setExecutable("/bin/echo");
-        try (HermesClient value = new HermesClient(checkedHttp, checkedCli, new ObjectMapper(), okHttpClient)) {
+        try (HermesClient value = new HermesClient(checkedHttp, checkedCli, new JsonMapper(), okHttpClient)) {
             assertTrue(value.isHttpEnabled());
             assertTrue(value.isCliEnabled());
             assertNotNull(value.cli());
@@ -270,24 +271,24 @@ class HermesHttpApiTest {
                         .body(ResponseBody.create("{\"status\":\"bad\"}", MediaType.get("application/json")))
                         .build()).build();
         checkedHttp.setFailFastOnUnavailable(false);
-        try (HermesClient value = new HermesClient(checkedHttp, disabledCli, new ObjectMapper(), unhealthyClient)) {
+        try (HermesClient value = new HermesClient(checkedHttp, disabledCli, new JsonMapper(), unhealthyClient)) {
             assertTrue(value.isHttpEnabled());
         }
         checkedHttp.setFailFastOnUnavailable(true);
         assertThrows(IllegalStateException.class,
-                () -> new HermesClient(checkedHttp, disabledCli, new ObjectMapper(), unhealthyClient));
+                () -> new HermesClient(checkedHttp, disabledCli, new JsonMapper(), unhealthyClient));
         HermesOkHttpClientFactory.shutdown(unhealthyClient);
 
         HermesCliConfig missingCli = new HermesCliConfig();
         missingCli.setStartupCheckEnabled(true);
         missingCli.setExecutable("/definitely/missing/hermes");
         missingCli.setFailFastOnUnavailable(false);
-        try (HermesClient value = new HermesClient(disabledHttp, missingCli, new ObjectMapper(), okHttpClient)) {
+        try (HermesClient value = new HermesClient(disabledHttp, missingCli, new JsonMapper(), okHttpClient)) {
             assertTrue(value.isCliEnabled());
         }
         missingCli.setFailFastOnUnavailable(true);
         assertThrows(IllegalStateException.class,
-                () -> new HermesClient(disabledHttp, missingCli, new ObjectMapper(), okHttpClient));
+                () -> new HermesClient(disabledHttp, missingCli, new JsonMapper(), okHttpClient));
     }
 
     private boolean isListRequest(Request request) {

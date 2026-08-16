@@ -1,5 +1,5 @@
 package io.github.easy4j.hermes.api;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.databind.ObjectMapper;
 import io.github.easy4j.hermes.HermesHttpClientConfig;
 import io.github.easy4j.hermes.api.model.ChatRequest;
 import io.github.easy4j.hermes.api.sse.SseSubscription;

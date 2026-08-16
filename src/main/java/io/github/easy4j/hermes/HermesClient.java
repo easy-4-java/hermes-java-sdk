@@ -1,5 +1,6 @@
 package io.github.easy4j.hermes;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.databind.ObjectMapper;
+import tools.jackson.databind.json.JsonMapper;
 import io.github.easy4j.hermes.api.model.*;
 import io.github.easy4j.hermes.cli.HermesCli;
 import io.github.easy4j.hermes.cli.HermesCliExecutor;
@@ -92,7 +93,7 @@ public class HermesClient implements AutoCloseable {
      * @since 1.0.0
      */
     public HermesClient(HermesClientConfig config) {
-        this(Objects.requireNonNull(config, "config").getHttp(), config.getCli(), new ObjectMapper(),
+        this(Objects.requireNonNull(config, "config").getHttp(), config.getCli(), new JsonMapper(),
                 HermesOkHttpClientFactory.create(config.getHttp()), true);
     }
 
@@ -106,7 +107,7 @@ public class HermesClient implements AutoCloseable {
      * @since 1.0.0
      */
     public HermesClient(HermesClientConfig config, OkHttpClient httpClient) {
-        this(config, new ObjectMapper(), httpClient);
+        this(config, new JsonMapper(), httpClient);
     }
 
     /**
@@ -189,7 +190,7 @@ public class HermesClient implements AutoCloseable {
      * @since 1.0.0
      */
     public HermesClient(HermesHttpClientConfig httpConfig, HermesCliConfig cliConfig) {
-        this(httpConfig, cliConfig, new ObjectMapper(), HermesOkHttpClientFactory.create(httpConfig), true);
+        this(httpConfig, cliConfig, new JsonMapper(), HermesOkHttpClientFactory.create(httpConfig), true);
     }
 
     /**
@@ -204,7 +205,7 @@ public class HermesClient implements AutoCloseable {
      */
     public HermesClient(HermesHttpClientConfig httpConfig, HermesCliConfig cliConfig,
                         OkHttpClient httpClient) {
-        this(httpConfig, cliConfig, new ObjectMapper(), httpClient);
+        this(httpConfig, cliConfig, new JsonMapper(), httpClient);
     }
 
     /**
@@ -304,7 +305,7 @@ public class HermesClient implements AutoCloseable {
         this.sseClient = Objects.requireNonNull(sseClient, "sseClient");
         this.cli = Objects.requireNonNull(cli, "cli");
         this.ownedHttpClient = null;
-        this.objectMapper = new ObjectMapper();
+        this.objectMapper = new JsonMapper();
         this.sharedHttpClient = httpClient.getOkHttpClient();
         this.managedProfileView = false;
     }

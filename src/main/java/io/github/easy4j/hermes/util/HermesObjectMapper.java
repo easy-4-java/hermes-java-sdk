@@ -1,6 +1,7 @@
 package io.github.easy4j.hermes.util;
-import com.fasterxml.jackson.databind.DeserializationFeature;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.databind.DeserializationFeature;
+import tools.jackson.databind.ObjectMapper;
+import tools.jackson.databind.json.JsonMapper;
 
 /**
  * <p>Hermes JSON ObjectMapper 工厂。</p>
@@ -15,8 +16,9 @@ public final class HermesObjectMapper {
     /**
      * 供 SDK 内部共享的预配置 ObjectMapper。
      */
-    public static final ObjectMapper INSTANCE = new ObjectMapper()
-            .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+    public static final ObjectMapper INSTANCE = JsonMapper.builder()
+            .disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES)
+            .build();
 
     private HermesObjectMapper() {}
 }

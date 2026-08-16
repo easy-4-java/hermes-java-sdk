@@ -1,6 +1,7 @@
 package io.github.easy4j.hermes;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.databind.ObjectMapper;
+import tools.jackson.databind.json.JsonMapper;
 import io.github.easy4j.hermes.api.HermesChatClient;
 import io.github.easy4j.hermes.api.HermesSseClient;
 import io.github.easy4j.hermes.api.model.ChatRequest;
@@ -294,7 +295,7 @@ class HermesSseAndModelTest {
         HermesHttpClientConfig config = new HermesHttpClientConfig();
         ChatRequest request = new ChatRequest();
         request.setMessages(List.of(new ChatRequest.Message("user", "hello")));
-        try (HermesChatClient chat = new HermesChatClient(config, new ObjectMapper(), client)) {
+        try (HermesChatClient chat = new HermesChatClient(config, new JsonMapper(), client)) {
             assertEquals("", chat.chatCompletionStream(request, Map.of("X-Test", "true"))
                     .get(3, TimeUnit.SECONDS));
             assertEquals("", chat.chatCompletionStreamWithSession(request, "key")

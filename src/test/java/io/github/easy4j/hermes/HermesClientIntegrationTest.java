@@ -1,6 +1,7 @@
 package io.github.easy4j.hermes;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.databind.ObjectMapper;
+import tools.jackson.databind.json.JsonMapper;
 import io.github.easy4j.hermes.api.HermesApiConstants;
 import io.github.easy4j.hermes.api.HermesHttpClient;
 import io.github.easy4j.hermes.api.sse.StreamingChatResponse;
@@ -191,7 +192,7 @@ class HermesClientIntegrationTest {
         req.setSeed(42);
         req.setUser("test-user");
 
-        ObjectMapper mapper = new ObjectMapper();
+        ObjectMapper mapper = new JsonMapper();
         String json = mapper.writeValueAsString(req);
         assertTrue(json.contains("\"model\":\"hermes-agent\""));
         assertTrue(json.contains("\"max_tokens\":100"));
