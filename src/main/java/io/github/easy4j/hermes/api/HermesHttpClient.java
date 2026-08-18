@@ -1,10 +1,10 @@
-package io.github.hiwepy.hermes.api;
+package io.github.easy4j.hermes.api;
 
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import io.github.hiwepy.hermes.HermesClientConfig;
-import io.github.hiwepy.hermes.api.model.*;
-import io.github.hiwepy.hermes.exception.HermesHttpException;
+import io.github.easy4j.hermes.HermesClientConfig;
+import io.github.easy4j.hermes.api.model.*;
+import io.github.easy4j.hermes.exception.HermesHttpException;
 import kong.unirest.core.*;
 import kong.unirest.modules.jackson.JacksonObjectMapper;
 import org.slf4j.Logger;

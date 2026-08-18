@@ -1,14 +1,14 @@
-package io.github.hiwepy.hermes;
+package io.github.easy4j.hermes;
 
-import io.github.hiwepy.hermes.api.model.*;
-import io.github.hiwepy.hermes.cli.HermesCli;
-import io.github.hiwepy.hermes.cli.HermesCliExecutor;
-import io.github.hiwepy.hermes.api.HermesHttpClient;
-import io.github.hiwepy.hermes.api.HermesSseClient;
+import io.github.easy4j.hermes.api.model.*;
+import io.github.easy4j.hermes.cli.HermesCli;
+import io.github.easy4j.hermes.cli.HermesCliExecutor;
+import io.github.easy4j.hermes.api.HermesHttpClient;
+import io.github.easy4j.hermes.api.HermesSseClient;
 <<<<<<< HEAD
-import io.github.hiwepy.hermes.api.StreamingResponse;
+import io.github.easy4j.hermes.api.StreamingResponse;
 =======
-import io.github.hiwepy.hermes.api.model.ChatStreamingResponse;
+import io.github.easy4j.hermes.api.model.ChatStreamingResponse;
 import lombok.extern.slf4j.Slf4j;
 import okhttp3.OkHttpClient;
 >>>>>>> ec61105 (feat: add startup check with httpEnabled/httpStartupCheckEnabled/httpFailFastOnUnavailable and cliEnabled/cliStartupCheckEnabled/cliFailFastOnUnavailable config)

@@ -55,9 +55,9 @@ COMMON_META = """    <licenses>
     </licenses>
 
     <scm>
-        <connection>scm:git:https://github.com/hiwepy/${project.artifactId}.git</connection>
-        <developerConnection>scm:git:https://github.com/hiwepy/${project.artifactId}.git</developerConnection>
-        <url>https://github.com/hiwepy/${project.artifactId}</url>
+        <connection>scm:git:https://github.com/easy-4-java/${project.artifactId}.git</connection>
+        <developerConnection>scm:git:https://github.com/easy-4-java/${project.artifactId}.git</developerConnection>
+        <url>https://github.com/easy-4-java/${project.artifactId}</url>
         <tag>${project.artifactId}</tag>
     </scm>
 
@@ -137,13 +137,13 @@ def write_slim_j17(version: str, slf4j: str, description_suffix: str) -> None:
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
-    <groupId>io.github.hiwepy</groupId>
+    <groupId>io.github.easy4j</groupId>
     <artifactId>hermes-java-sdk</artifactId>
     <version>{version}</version>
     <packaging>jar</packaging>
     <name>${{project.groupId}}:${{project.artifactId}}</name>
     <description>Hermes Agent Java SDK (HTTP API Server + SSE + local CLI) — {description_suffix}</description>
-    <url>https://github.com/hiwepy/${{project.artifactId}}</url>
+    <url>https://github.com/easy-4-java/${{project.artifactId}}</url>
 
 {COMMON_META}
     <properties>
@@ -199,13 +199,13 @@ def write_minimal_j8(version: str) -> None:
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
-    <groupId>io.github.hiwepy</groupId>
+    <groupId>io.github.easy4j</groupId>
     <artifactId>hermes-java-sdk</artifactId>
     <version>{version}</version>
     <packaging>jar</packaging>
     <name>${{project.groupId}}:${{project.artifactId}}</name>
     <description>Hermes Agent Java SDK (HTTP API Server + SSE + local CLI) — Spring Boot 2.3.x line (JDK 8)</description>
-    <url>https://github.com/hiwepy/${{project.artifactId}}</url>
+    <url>https://github.com/easy-4-java/${{project.artifactId}}</url>
 
 {COMMON_META}
     <properties>
@@ -261,13 +261,13 @@ def write_full_j8_27(version: str) -> None:
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
-    <groupId>io.github.hiwepy</groupId>
+    <groupId>io.github.easy4j</groupId>
     <artifactId>hermes-java-sdk</artifactId>
     <version>{version}</version>
     <packaging>jar</packaging>
     <name>${{project.groupId}}:${{project.artifactId}}</name>
     <description>Hermes Agent Java SDK (HTTP API Server + SSE + local CLI) — Spring Boot 2.7.x line (JDK 8)</description>
-    <url>https://github.com/hiwepy/${{project.artifactId}}</url>
+    <url>https://github.com/easy-4-java/${{project.artifactId}}</url>
 
 {COMMON_META}
     <distributionManagement>
