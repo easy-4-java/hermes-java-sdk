@@ -1,10 +1,10 @@
-package io.github.hiwepy.hermes.api;
+package io.github.easy4j.hermes.api;
 
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import io.github.hiwepy.hermes.HermesClientConfig;
-import io.github.hiwepy.hermes.api.model.ChatCompletionRequest;
-import io.github.hiwepy.hermes.api.model.SseEvent;
+import io.github.easy4j.hermes.HermesClientConfig;
+import io.github.easy4j.hermes.api.model.ChatCompletionRequest;
+import io.github.easy4j.hermes.api.model.SseEvent;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
