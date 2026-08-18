@@ -6,7 +6,10 @@
 
     <groupId>io.github.easy4j</groupId>
     <artifactId>hermes-java-sdk</artifactId>
-
+    <version>3.4.x.20260605-SNAPSHOT</version>
+    <packaging>jar</packaging>
+    <name>${project.groupId}:${project.artifactId}</name>
+    <description>Hermes Agent Java SDK (HTTP API Server + SSE + local CLI) — Spring Boot 3 line (JDK 17)</description>
     <url>https://github.com/easy-4-java/${project.artifactId}</url>
 
     <licenses>
@@ -62,9 +65,43 @@
 
     <properties>
         <java.version>17</java.version>
+        <maven.compiler.release>${java.version}</maven.compiler.release>
+        <maven.compiler.source>${java.version}</maven.compiler.source>
+        <maven.compiler.target>${java.version}</maven.compiler.target>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <slf4j.version>1.7.36</slf4j.version>
+        <jackson.version>2.17.2</jackson.version>
+        <junit.version>5.11.4</junit.version>
+        <lombok.version>1.18.36</lombok.version>
+        <unirest.version>4.4.5</unirest.version>
+        <commons-exec.version>1.4.0</commons-exec.version>
 
+        <maven-compiler-plugin.version>3.13.0</maven-compiler-plugin.version>
+        <maven-surefire-plugin.version>3.5.2</maven-surefire-plugin.version>
+        <maven-install-plugin.version>2.5.2</maven-install-plugin.version>
+        <maven-deploy-plugin.version>2.8.2</maven-deploy-plugin.version>
+        <maven-release-plugin.version>2.5.3</maven-release-plugin.version>
+        <maven-source-plugin.version>3.0.1</maven-source-plugin.version>
+        <maven-javadoc-plugin.version>3.0.1</maven-javadoc-plugin.version>
+        <maven-jar-plugin.version>3.1.1</maven-jar-plugin.version>
+    </properties>
+
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <version>${maven-compiler-plugin.version}</version>
+                <configuration>
+                    <release>${java.version}</release>
+                    <encoding>${project.build.sourceEncoding}</encoding>
+                </configuration>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-surefire-plugin</artifactId>
+                <version>${maven-surefire-plugin.version}</version>
+            </plugin>
         </plugins>
     </build>
 
@@ -73,7 +110,7 @@
         <dependency>
             <groupId>com.konghq</groupId>
             <artifactId>unirest-java-core</artifactId>
-            <version>3.4.x.20260527-SNAPSHOT</version>
+            <version>${unirest.version}</version>
         </dependency>
         <dependency>
             <groupId>com.konghq</groupId>
