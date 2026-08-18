@@ -5,13 +5,8 @@ import io.github.easy4j.hermes.cli.HermesCli;
 import io.github.easy4j.hermes.cli.HermesCliExecutor;
 import io.github.easy4j.hermes.api.HermesHttpClient;
 import io.github.easy4j.hermes.api.HermesSseClient;
-<<<<<<< HEAD
 import io.github.easy4j.hermes.api.StreamingResponse;
-=======
-import io.github.easy4j.hermes.api.model.ChatStreamingResponse;
 import lombok.extern.slf4j.Slf4j;
-import okhttp3.OkHttpClient;
->>>>>>> ec61105 (feat: add startup check with httpEnabled/httpStartupCheckEnabled/httpFailFastOnUnavailable and cliEnabled/cliStartupCheckEnabled/cliFailFastOnUnavailable config)
 
 import java.util.List;
 import java.util.Map;
@@ -35,31 +30,12 @@ public class HermesClient implements AutoCloseable {
      * @param config 配置，不得为 null
      */
     public HermesClient(HermesClientConfig config) {
-<<<<<<< HEAD
         this.config = Objects.requireNonNull(config, "config");
-        this.httpClient = new HermesHttpClient(config);
-        this.sseClient = new HermesSseClient(config);
-        this.cli = new HermesCli(new HermesCliExecutor(config));
-=======
-        this(config, new ObjectMapper(), new OkHttpClient());
-    }
-
-    /**
-     * 使用配置构造客户端。
-     *
-     * @param config        配置，不得为 null
-     * @param objectMapper 共享 ObjectMapper，不得为 null
-     * @param httpClient   共享 OkHttpClient，不得为 null
-     */
-    public HermesClient(HermesClientConfig config, ObjectMapper objectMapper, OkHttpClient httpClient) {
-        this.config = Objects.requireNonNull(config, "config");
-        Objects.requireNonNull(objectMapper, "objectMapper");
-        Objects.requireNonNull(httpClient, "httpClient");
 
         // HTTP 客户端初始化
         if (config.isHttpEnabled()) {
-            this.httpClient = new HermesHttpClient(config, objectMapper, httpClient);
-            this.sseClient = new HermesSseClient(config, objectMapper, httpClient);
+            this.httpClient = new HermesHttpClient(config);
+            this.sseClient = new HermesSseClient(config);
             // HTTP 启动检查
             if (config.isHttpStartupCheckEnabled()) {
                 try {
@@ -87,7 +63,6 @@ public class HermesClient implements AutoCloseable {
         } else {
             this.cli = null;
         }
->>>>>>> ec61105 (feat: add startup check with httpEnabled/httpStartupCheckEnabled/httpFailFastOnUnavailable and cliEnabled/cliStartupCheckEnabled/cliFailFastOnUnavailable config)
     }
 
     /**
@@ -154,37 +129,22 @@ public class HermesClient implements AutoCloseable {
     // Chat Completions
     // ============================================================
 
-<<<<<<< HEAD
     public ChatCompletionResponse chatCompletion(ChatCompletionRequest request) {
-=======
-    public ChatResponse chatCompletion(ChatRequest request) {
         checkHttpEnabled();
->>>>>>> ec61105 (feat: add startup check with httpEnabled/httpStartupCheckEnabled/httpFailFastOnUnavailable and cliEnabled/cliStartupCheckEnabled/cliFailFastOnUnavailable config)
         return httpClient.chatCompletion(request);
     }
 
     /** Chat completion with Hermes custom headers. */
-<<<<<<< HEAD
     public ChatCompletionResponse chatCompletion(ChatCompletionRequest request,
                                                   Map<String, String> headers) {
-=======
-    public ChatResponse chatCompletion(ChatRequest request,
-                                       Map<String, String> headers) {
         checkHttpEnabled();
->>>>>>> ec61105 (feat: add startup check with httpEnabled/httpStartupCheckEnabled/httpFailFastOnUnavailable and cliEnabled/cliStartupCheckEnabled/cliFailFastOnUnavailable config)
         return httpClient.chatCompletion(request, headers);
     }
 
     /** Convenience: chat with session key. */
-<<<<<<< HEAD
     public ChatCompletionResponse chatCompletionWithSession(
             ChatCompletionRequest request, String sessionKey, String sessionId) {
-=======
-    public ChatResponse chatCompletionWithSession(ChatRequest request,
-                                                  String sessionKey,
-                                                  String sessionId) {
         checkHttpEnabled();
->>>>>>> ec61105 (feat: add startup check with httpEnabled/httpStartupCheckEnabled/httpFailFastOnUnavailable and cliEnabled/cliStartupCheckEnabled/cliFailFastOnUnavailable config)
         return httpClient.chatCompletion(request,
                 HermesHttpClient.hermesHeaders(sessionKey, sessionId, null));
     }
@@ -235,18 +195,8 @@ public class HermesClient implements AutoCloseable {
      * Streaming chat completion returning a {@link StreamingResponse} that accumulates
      * delta text and completes when the stream ends.
      */
-<<<<<<< HEAD
     public StreamingResponse chatCompletionStream(ChatCompletionRequest request) {
-=======
-    public ChatStreamingResponse chatCompletionStream(ChatRequest request) {
-        return chatCompletionStream(request, (Map<String, String>) null);
-    }
-
-    /** Streaming chat completion with Hermes custom headers. */
-    public ChatStreamingResponse chatCompletionStream(ChatRequest request,
-                                                      Map<String, String> headers) {
         checkHttpEnabled();
->>>>>>> ec61105 (feat: add startup check with httpEnabled/httpStartupCheckEnabled/httpFailFastOnUnavailable and cliEnabled/cliStartupCheckEnabled/cliFailFastOnUnavailable config)
         request.setStream(true);
         StreamingResponse stream = new StreamingResponse();
         sseClient.subscribeChat(request, event -> stream.accept(event),
@@ -258,29 +208,14 @@ public class HermesClient implements AutoCloseable {
     // Session
     // ============================================================
 
-<<<<<<< HEAD
-    public Session createSession(String title) { return httpClient.createSession(title); }
-    public List<Session> listSessions() { return httpClient.listSessions(); }
-    public Session getSession(String sessionId) { return httpClient.getSession(sessionId); }
-    public List<Map<String, Object>> getSessionMessages(String id) { return httpClient.getSessionMessages(id); }
-    public Session forkSession(String id, String title) { return httpClient.forkSession(id, title); }
-    public boolean deleteSession(String sessionId) { return httpClient.deleteSession(sessionId); }
-    public ChatCompletionResponse sessionChat(String sessionId, String input) {
-=======
     public Session createSession(String title) { checkHttpEnabled(); return httpClient.createSession(title); }
     public List<Session> listSessions() { checkHttpEnabled(); return httpClient.listSessions(); }
-    /** 分页列出 sessions。 */
-    public List<Session> listSessions(Integer limit, Integer offset, String source, Boolean includeChildren) {
-        checkHttpEnabled();
-        return httpClient.listSessions(limit, offset, source, includeChildren);
-    }
     public Session getSession(String sessionId) { checkHttpEnabled(); return httpClient.getSession(sessionId); }
     public List<Map<String, Object>> getSessionMessages(String id) { checkHttpEnabled(); return httpClient.getSessionMessages(id); }
     public Session forkSession(String id, String title) { checkHttpEnabled(); return httpClient.forkSession(id, title); }
     public boolean deleteSession(String sessionId) { checkHttpEnabled(); return httpClient.deleteSession(sessionId); }
-    public ChatResponse sessionChat(String sessionId, String input) {
+    public ChatCompletionResponse sessionChat(String sessionId, String input) {
         checkHttpEnabled();
->>>>>>> ec61105 (feat: add startup check with httpEnabled/httpStartupCheckEnabled/httpFailFastOnUnavailable and cliEnabled/cliStartupCheckEnabled/cliFailFastOnUnavailable config)
         return httpClient.sessionChat(sessionId, input);
     }
 
@@ -323,6 +258,4 @@ public class HermesClient implements AutoCloseable {
         if (httpClient != null) httpClient.close();
         if (sseClient != null) sseClient.close();
     }
-}
-    public void close() { httpClient.close(); sseClient.close(); }
 }
