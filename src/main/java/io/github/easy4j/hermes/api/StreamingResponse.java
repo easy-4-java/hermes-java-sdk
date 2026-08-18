@@ -1,6 +1,6 @@
-package io.github.hiwepy.hermes.api;
+package io.github.easy4j.hermes.api;
 
-import io.github.hiwepy.hermes.api.model.SseEvent;
+import io.github.easy4j.hermes.api.model.SseEvent;
 
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.CompletableFuture;
