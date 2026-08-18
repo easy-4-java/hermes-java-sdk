@@ -1,6 +1,6 @@
-package io.github.hiwepy.hermes.cli;
+package io.github.easy4j.hermes.cli;
 
-import io.github.hiwepy.hermes.HermesClientConfig;
+import io.github.easy4j.hermes.HermesClientConfig;
 import org.apache.commons.exec.CommandLine;
 import org.apache.commons.exec.DefaultExecuteResultHandler;
 import org.apache.commons.exec.DefaultExecutor;
