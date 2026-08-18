@@ -95,8 +95,12 @@ public class HermesHttpClient implements AutoCloseable {
     public ModelsResponse listModels() { return get(PATH_MODELS, ModelsResponse.class); }
 
     public ModelsResponse.ModelData getModel(String modelId) {
-        return get(PATH_MODELS + "/" + java.net.URLEncoder.encode(modelId, java.nio.charset.StandardCharsets.UTF_8),
-                ModelsResponse.ModelData.class);
+        try {
+            return get(PATH_MODELS + "/" + java.net.URLEncoder.encode(modelId, "UTF-8"),
+                    ModelsResponse.ModelData.class);
+        } catch (java.io.UnsupportedEncodingException e) {
+            throw new java.io.UncheckedIOException(e);
+        }
     }
 
     public CapabilityInfo getCapabilities() { return get(PATH_CAPABILITIES, CapabilityInfo.class); }

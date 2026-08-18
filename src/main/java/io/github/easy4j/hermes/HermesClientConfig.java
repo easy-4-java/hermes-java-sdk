@@ -12,12 +12,8 @@ import lombok.Data;
 @Data
 public class HermesClientConfig {
 
-<<<<<<< HEAD
-    /** HTTP/API Server 相关配置 */
-    private final HermesHttpClientConfig http = new HermesHttpClientConfig();
-=======
     // ============================================================
-    // HTTP 相关配置
+    // 启动检查相关配置
     // ============================================================
 
     /**
@@ -36,10 +32,6 @@ public class HermesClientConfig {
      */
     private boolean httpFailFastOnUnavailable = false;
 
-    // ============================================================
-    // CLI 相关配置
-    // ============================================================
-
     /**
      * 是否启用本地 CLI 功能。
      * <p>为 false 时跳过 CLI 相关初始化和检查。</p>
@@ -56,15 +48,8 @@ public class HermesClientConfig {
      */
     private boolean cliFailFastOnUnavailable = false;
 
-    // ============================================================
-    // Server & Auth
-    // ============================================================
-
-    /**
-     * Hermes API Server 根地址，例如 {@code http://localhost:8642}。
-     */
-    private String serverUrl = HermesApiConstants.DEFAULT_SERVER_URL;
->>>>>>> ec61105 (feat: add startup check with httpEnabled/httpStartupCheckEnabled/httpFailFastOnUnavailable and cliEnabled/cliStartupCheckEnabled/cliFailFastOnUnavailable config)
+    /** HTTP/API Server 相关配置 */
+    private final HermesHttpClientConfig http = new HermesHttpClientConfig();
 
     /** 本地 CLI 相关配置 */
     private final HermesCliConfig cli = new HermesCliConfig();

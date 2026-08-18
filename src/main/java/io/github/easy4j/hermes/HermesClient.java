@@ -26,7 +26,6 @@ public class HermesClient implements AutoCloseable {
     private final HermesCli cli;
 
     /**
-<<<<<<< HEAD
      * 使用 HTTP 与 CLI 独立配置构造客户端。
      */
     public HermesClient(HermesHttpClientConfig httpConfig, HermesCliConfig cliConfig) {
@@ -61,43 +60,27 @@ public class HermesClient implements AutoCloseable {
     }
 
     /**
-     * 使用组合配置构造客户端。
-=======
-     * 使用配置构造客户端（推荐方式）。
+     * 使用组合配置构造客户端（推荐方式）。
      * <p>使用默认的 ObjectMapper 和 OkHttpClient。</p>
      *
      * @param config 配置，不得为 null
->>>>>>> ec61105 (feat: add startup check with httpEnabled/httpStartupCheckEnabled/httpFailFastOnUnavailable and cliEnabled/cliStartupCheckEnabled/cliFailFastOnUnavailable config)
      */
     public HermesClient(HermesClientConfig config) {
         this(config, new ObjectMapper(), new OkHttpClient());
     }
 
     /**
-<<<<<<< HEAD
      * 使用组合配置构造客户端，可注入共享 OkHttp 与 ObjectMapper。
-     */
-    public HermesClient(HermesClientConfig config, ObjectMapper objectMapper, OkHttpClient httpClient) {
-        this(Objects.requireNonNull(config, "config").getHttp(),
-                config.getCli(),
-                objectMapper,
-                httpClient);
-=======
-     * 使用配置构造客户端。
-     *
-     * @param config        配置，不得为 null
-     * @param objectMapper 共享 ObjectMapper，不得为 null
-     * @param httpClient   共享 OkHttpClient，不得为 null
      */
     public HermesClient(HermesClientConfig config, ObjectMapper objectMapper, OkHttpClient httpClient) {
         this.config = Objects.requireNonNull(config, "config");
         Objects.requireNonNull(objectMapper, "objectMapper");
-        Objects.requireNonNull(httpClient, "httpClient");
 
         // HTTP 客户端初始化
         if (config.isHttpEnabled()) {
-            this.httpClient = new HermesHttpClient(config, objectMapper, httpClient);
-            this.sseClient = new HermesSseClient(config, objectMapper, httpClient);
+            this.httpClient = new HermesHttpClient(config.getHttp(), objectMapper, httpClient);
+            this.sseClient = new HermesSseClient(config.getHttp(), objectMapper,
+                    httpClient != null ? httpClient : this.httpClient.getOkHttpClient());
             // HTTP 启动检查
             if (config.isHttpStartupCheckEnabled()) {
                 try {
@@ -116,7 +99,7 @@ public class HermesClient implements AutoCloseable {
 
         // CLI 初始化
         if (config.isCliEnabled()) {
-            HermesCliExecutor executor = new HermesCliExecutor(config);
+            HermesCliExecutor executor = new HermesCliExecutor(config.getCli());
             boolean cliAvailable = !config.isCliStartupCheckEnabled() || executor.probe();
             if (!cliAvailable) {
                 handleCliCheckFailed(config);
@@ -125,20 +108,16 @@ public class HermesClient implements AutoCloseable {
         } else {
             this.cli = null;
         }
->>>>>>> ec61105 (feat: add startup check with httpEnabled/httpStartupCheckEnabled/httpFailFastOnUnavailable and cliEnabled/cliStartupCheckEnabled/cliFailFastOnUnavailable config)
     }
 
     /**
      * 全量注入构造，供测试或高级定制使用。
-<<<<<<< HEAD
-=======
      * <p>使用此构造方法不会执行任何启动检查。</p>
      *
      * @param config    配置，不得为 null
      * @param httpClient HTTP 客户端实例，不得为 null
      * @param sseClient SSE 客户端实例，不得为 null
      * @param cli       CLI 实例，不得为 null
->>>>>>> ec61105 (feat: add startup check with httpEnabled/httpStartupCheckEnabled/httpFailFastOnUnavailable and cliEnabled/cliStartupCheckEnabled/cliFailFastOnUnavailable config)
      */
     public HermesClient(HermesClientConfig config, HermesHttpClient httpClient,
                         HermesSseClient sseClient, HermesCli cli) {
@@ -158,10 +137,10 @@ public class HermesClient implements AutoCloseable {
 
     private void handleCliCheckFailed(HermesClientConfig config) {
         if (config.isCliFailFastOnUnavailable()) {
-            throw new IllegalStateException("Hermes CLI is not available: " + config.getLocalExecutable()
+            throw new IllegalStateException("Hermes CLI is not available: " + config.getCli().getExecutable()
                     + ". Set cliEnabled=false or cliStartupCheckEnabled=false to disable.");
         }
-        log.warn("Hermes CLI is not available: {} (continuing without CLI support)", config.getLocalExecutable());
+        log.warn("Hermes CLI is not available: {} (continuing without CLI support)", config.getCli().getExecutable());
     }
 
     // ============================================================
@@ -360,6 +339,4 @@ public class HermesClient implements AutoCloseable {
         if (httpClient != null) httpClient.close();
         if (sseClient != null) sseClient.close();
     }
-}
-    public void close() { httpClient.close(); sseClient.close(); }
 }
