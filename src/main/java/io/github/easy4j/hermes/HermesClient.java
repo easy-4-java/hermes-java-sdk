@@ -310,5 +310,3 @@ public class HermesClient implements AutoCloseable {
         if (sseClient != null) sseClient.close();
     }
 }
-    public void close() { httpClient.close(); sseClient.close(); }
-}
