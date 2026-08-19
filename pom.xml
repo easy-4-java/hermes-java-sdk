@@ -73,6 +73,7 @@
         <maven-source-plugin.version>3.4.0</maven-source-plugin.version>
         <maven-surefire-plugin.version>3.5.2</maven-surefire-plugin.version>
         <junit-jupiter.version>5.11.4</junit-jupiter.version>
+    
     </properties>
 
     <!-- 依赖版本统一管理（dependencyManagement） -->
@@ -494,7 +495,8 @@
                 <lombok.version>1.18.46</lombok.version>
                 <junit-jupiter.version>5.11.4</junit-jupiter.version>
                 <commons-lang.version>2.6</commons-lang.version>
-            </properties>
+            
+    </properties>
         </profile>
         <!-- 发布到 Maven Central Portal：mvn -Prelease deploy（GPG 签名 + 源码 + Javadoc + Central 发布插件） -->
 
