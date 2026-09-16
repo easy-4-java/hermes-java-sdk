@@ -63,11 +63,12 @@ Typical use cases:
 | Responses API | Available | `createResponse` / `getResponse` / `deleteResponse` |
 | Models & capabilities | Available | `listModels()`, `getModel(modelId)`, `getCapabilities()`, `listSkills()`, `listToolsets()` |
 | Jobs | Available | List / create / get / update / delete / pause / resume / run-now |
-| Local CLI | Available | `HermesCli` + `HermesCliExecutor.execute(...)`, `probe()` |
+| Local CLI | Available | `HermesCli` full command surface: chat / sessions / config / gateway / skills (browse, search, install, opt-in, remove) / cron / mcp / lsp / security / hooks / secrets / memory / tools / backup, import / update (with options) / acp / serve / desktop / egress (setup, start) / pairing / login, logout / dashboard / tui / completion / plugins / bundles / curator; `probe()`, `executeWithStdin(...)` |
 | Startup probes | Available | HTTP and CLI availability checkers; `failFastOnUnavailable` flags |
 | Health endpoints | Available | `/health`, `/health/detailed`, `/v1/health` |
 | Integration test | Available | `HermesClientIntegrationTest` (test sources) |
-| CI pipeline | Not configured | No CI workflow files in the repository |
+| Executor hardening | Available | Raw argv (no embedded quoting), UTF-8 explicit output decoding, real exit code + `isTimeout()` with deadline detection, closed stdin pipe |
+| CI pipeline | Available | GitHub Actions (`ci.yml`) on the three feature branches |
 
 ## 3. Requirements & Compatibility
 
