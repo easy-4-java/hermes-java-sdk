@@ -176,6 +176,9 @@
         <dependency>
             <groupId>com.squareup.okhttp3</groupId>
             <artifactId>mockwebserver</artifactId>
+            <!-- 直接依赖显式钉版本：Maven 4 对 BOM 管理的裁决与 Maven 3 不同，
+                 不钉死存在解析到 5.x mockwebserver 的风险。 -->
+            <version>${okhttp3.version}</version>
             <scope>test</scope>
         </dependency>
     </dependencies>
