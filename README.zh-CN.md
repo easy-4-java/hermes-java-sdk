@@ -28,7 +28,7 @@
 |:---|:---|:---|
 | **HTTP** | 健康检查、聊天补全、Responses、Runs、Sessions、Models、Capabilities、Skills、Toolsets、Jobs 的 REST API | `HermesHttpClient` |
 | **SSE** | Server-Sent Events 流式（聊天、运行事件、会话流） | `HermesSseClient` |
-| **CLI** | 本地 `hermes` 命令执行与结构化输出解析 | `HermesCli` |
+| **CLI** | 本地 `hermes` 命令执行与结构化输出解析：chat / sessions / config / gateway / skills（browse/search/install/opt-in/remove）/ cron / mcp / lsp / security / hooks / secrets / memory / tools / backup、import / update（含选项）/ acp / serve / desktop / egress（setup、start）/ pairing / login、logout / dashboard / tui / completion / plugins / bundles / curator | `HermesCli` |
 
 | 是什么 | 不是什么 |
 |:---|:---|
@@ -47,6 +47,9 @@
 | 会话 | `createSession(title)`、`listSessions()`、`sessionChat(sessionId, input)`、`forkSession`、`deleteSession` |
 | Responses API | `createResponse(ResponseRequest)`、`getResponse`、`deleteResponse` |
 | 本地 CLI | `cli().chatOneShot(query)`、`cli().worktreeOneShot(query)`、`cli().version()` |
+| ACP / 后端服务 / 桌面 | `cli().acp(...)`、`cli().serve(...)`、`cli().desktop()` |
+| 出口代理 | `cli().egressSetup(...)`、`cli().egressStart()` |
+| 技能目录与启用 | `cli().skillsBrowse(...)`、`cli().skillsOptIn(skill)` |
 | Jobs | `listJobs()`、`createJob`、`getJob`、`updateJob`、`pauseJob`、`resumeJob`、`runJobNow` |
 
 **项目状态：** 活跃开发。
