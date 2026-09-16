@@ -34,4 +34,16 @@ public class HermesCliResult {
     public boolean isSuccess() {
         return exitCode == 0;
     }
+
+    /**
+     * <p>判断本次调用是否因超时被 watchdog 终止。</p>
+     *
+     * @return 退出码为 {@code -1} 且标准错误携带超时说明时返回 {@code true}
+     * @since 1.0.0
+     */
+    public boolean isTimeout() {
+        return exitCode == -1 && stderr != null && stderr.startsWith(TIMEOUT_PREFIX);
+    }
+
+    private static final String TIMEOUT_PREFIX = "hermes CLI timed out after ";
 }
