@@ -634,6 +634,96 @@ public class HermesCli {
      * @since 1.0.0
      */
     public HermesCliResult update() { return executor.execute("update"); }
+
+    /**
+     * <p>执行 Hermes CLI 的 {@code update} 命令并附带更新选项。</p>
+     *
+     * <p>文档化选项包括 {@code --check}、{@code --plan}、{@code --branch}、
+     * {@code --backup}、{@code --force}、{@code --force-venv}、
+     * {@code --no-gateway-restart}、{@code --keep-stash}、{@code --switch-branch}。</p>
+     *
+     * @param args 更新选项
+     * @return 包含退出码、标准输出和标准错误的命令结果
+     * @since 1.0.0
+     */
+    public HermesCliResult update(String... args) { return executor.execute(prefix("update", args)); }
+
+    /**
+     * <p>执行 Hermes CLI 的 {@code acp} 子命令（编辑器 ACP 模式）。</p>
+     *
+     * @param args 附加参数
+     * @return 包含退出码、标准输出和标准错误的命令结果
+     * @since 1.0.0
+     */
+    public HermesCliResult acp(String... args) { return executor.execute(prefix("acp", args)); }
+
+    /**
+     * <p>执行 Hermes CLI 的 {@code serve} 子命令（远程 Desktop 后端服务）。</p>
+     *
+     * @param args 附加参数
+     * @return 包含退出码、标准输出和标准错误的命令结果
+     * @since 1.0.0
+     */
+    public HermesCliResult serve(String... args) { return executor.execute(prefix("serve", args)); }
+
+    /**
+     * <p>执行 Hermes CLI 的 {@code desktop} 子命令。</p>
+     *
+     * @return 包含退出码、标准输出和标准错误的命令结果
+     * @since 1.0.0
+     */
+    public HermesCliResult desktop() { return executor.execute("desktop"); }
+
+    /**
+     * <p>执行 Hermes CLI 的 {@code skills browse} 子命令（浏览技能目录）。</p>
+     *
+     * @param args 附加参数
+     * @return 包含退出码、标准输出和标准错误的命令结果
+     * @since 1.0.0
+     */
+    public HermesCliResult skillsBrowse(String... args) { return executor.execute(prefix("skills", prefixArgs("browse", args))); }
+
+    /**
+     * <p>执行 Hermes CLI 的 {@code skills opt-in <skill>} 子命令。</p>
+     *
+     * @param skill 要启用的技能名
+     * @return 包含退出码、标准输出和标准错误的命令结果
+     * @since 1.0.0
+     */
+    public HermesCliResult skillsOptIn(String skill) { return executor.execute("skills", "opt-in", skill); }
+
+    /**
+     * <p>执行 Hermes CLI 的 {@code egress setup} 子命令（出口代理初始化）。</p>
+     *
+     * @param args 附加参数
+     * @return 包含退出码、标准输出和标准错误的命令结果
+     * @since 1.0.0
+     */
+    public HermesCliResult egressSetup(String... args) { return executor.execute(prefix("egress", prefixArgs("setup", args))); }
+
+    /**
+     * <p>执行 Hermes CLI 的 {@code egress start} 子命令（启动出口代理）。</p>
+     *
+     * @return 包含退出码、标准输出和标准错误的命令结果
+     * @since 1.0.0
+     */
+    public HermesCliResult egressStart() { return executor.execute("egress", "start"); }
+
+    /**
+     * <p>执行 Hermes CLI 的 {@code import} 子命令（导入备份）。</p>
+     *
+     * @param args 附加参数
+     * @return 包含退出码、标准输出和标准错误的命令结果
+     * @since 1.0.0
+     */
+    public HermesCliResult importData(String... args) { return executor.execute(prefix("import", args)); }
+
+    private static String[] prefixArgs(String head, String... tail) {
+        String[] all = new String[tail.length + 1];
+        all[0] = head;
+        System.arraycopy(tail, 0, all, 1, tail.length);
+        return all;
+    }
     /**
      * <p>执行 Hermes CLI 的 {@code uninstall} 命令。</p>
      *
