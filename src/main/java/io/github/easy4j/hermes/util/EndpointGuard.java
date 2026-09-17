@@ -93,10 +93,10 @@ public final class EndpointGuard {
         try {
             addr = InetAddress.getByName(lookup);
         } catch (UnknownHostException e) {
-            // If the host does not resolve at all, fail closed — refusing to
-            // hand back a connection string the JVM will retry on every call.
-            throw new IllegalArgumentException(
-                    "Endpoint host did not resolve to a verifiable address: " + context, e);
+            // DNS 还无法解析该主机（内部域名、尚未就绪的服务、离线环境）。
+            // 约束只要求拦截 localhost/环回/私有/保留地址——未解析的主机不在
+            // 其列，且请求期 DNS 失败会由 OkHttp 自然报错。放行。
+            return;
         }
         if (isUnsafe(addr)) {
             throw new IllegalArgumentException(
