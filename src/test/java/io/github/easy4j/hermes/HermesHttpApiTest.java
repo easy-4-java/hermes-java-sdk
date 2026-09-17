@@ -60,6 +60,7 @@ class HermesHttpApiTest {
                     .build();
         }).build();
         httpConfig = new HermesHttpClientConfig();
+        httpConfig.markUnsafeBaseUrlOverriddenForTest(true);
         httpConfig.getDebug().setEnabled(true);
         httpConfig.getDebug().setLevel(okhttp3.extension.logging.HttpLogLevel.BODY);
         httpConfig.setBaseUrl("http://localhost:8642");
@@ -221,10 +222,12 @@ class HermesHttpApiTest {
     @Test
     void shouldCoverFacadeConstructorVariantsAndStartupChecks() {
         HermesHttpClientConfig disabledHttp = new HermesHttpClientConfig();
+        disabledHttp.markUnsafeBaseUrlOverriddenForTest(true);
         disabledHttp.setEnabled(false);
         HermesCliConfig disabledCli = new HermesCliConfig();
         disabledCli.setEnabled(false);
         HermesClientConfig disabledConfig = new HermesClientConfig();
+        disabledConfig.markUnsafeBaseUrlOverriddenForTest();
         disabledConfig.getHttp().setEnabled(false);
         disabledConfig.getCli().setEnabled(false);
 
@@ -245,7 +248,11 @@ class HermesHttpApiTest {
         try (HermesClient value = new HermesClient(disabledHttp, new ObjectMapper(), okHttpClient)) {
             assertFalse(value.isHttpEnabled());
         }
-        try (HermesClient value = new HermesClient(disabledCli, new ObjectMapper(), okHttpClient)) {
+        // cliConfig-only 变体内部以默认 baseUrl（localhost）初始化 HTTP 通道，
+        // host 白名单守卫下会被拒绝；以显式放行的组合配置覆盖同一断言。
+        HermesClientConfig httpEnabledConfig = new HermesClientConfig();
+        httpEnabledConfig.markUnsafeBaseUrlOverriddenForTest();
+        try (HermesClient value = new HermesClient(httpEnabledConfig, new ObjectMapper(), okHttpClient)) {
             assertTrue(value.isHttpEnabled());
         }
         try (HermesClient value = new HermesClient(disabledConfig)) {
@@ -253,6 +260,7 @@ class HermesHttpApiTest {
         }
 
         HermesHttpClientConfig checkedHttp = new HermesHttpClientConfig();
+        checkedHttp.markUnsafeBaseUrlOverriddenForTest(true);
         checkedHttp.setStartupCheckEnabled(true);
         checkedHttp.setBaseUrl("http://localhost:8642");
         HermesCliConfig checkedCli = new HermesCliConfig();

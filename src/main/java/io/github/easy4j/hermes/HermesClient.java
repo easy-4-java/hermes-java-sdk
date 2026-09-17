@@ -314,6 +314,8 @@ public class HermesClient implements AutoCloseable {
     }
 
     private static void copyHttpConfig(HermesHttpClientConfig src, HermesHttpClientConfig target) {
+        // 把测试用的 host 白名单旁路标志也复制过来。
+        target.markUnsafeBaseUrlOverriddenForTest(src.isUnsafeBaseUrlOverriddenForTest());
         target.setMode(src.getMode());
         target.setEnabled(src.isEnabled());
         target.setStartupCheckEnabled(src.isStartupCheckEnabled());

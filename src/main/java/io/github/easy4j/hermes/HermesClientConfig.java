@@ -12,6 +12,18 @@ import lombok.Data;
 @Data
 public class HermesClientConfig {
 
+    /**
+     * <p>仅供测试代码使用——将内部 HermesHttpClientConfig 的 unsafe bypass 标志
+     * 一并打开。生产代码不应调用此方法。</p>
+     *
+     * @return 当前配置（链式）
+     * @since 1.0.0
+     */
+    public HermesClientConfig markUnsafeBaseUrlOverriddenForTest() {
+        this.http.markUnsafeBaseUrlOverriddenForTest(true);
+        return this;
+    }
+
     /** 客户端所有通信通道共享的调试配置。 */
     private final HermesDebugConfig debug = new HermesDebugConfig();
 

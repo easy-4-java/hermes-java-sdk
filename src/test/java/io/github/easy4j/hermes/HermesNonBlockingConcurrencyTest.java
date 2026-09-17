@@ -76,6 +76,8 @@ class HermesNonBlockingConcurrencyTest {
 
     private HermesHttpClientConfig config(MockWebServer server) {
         HermesHttpClientConfig config = new HermesHttpClientConfig();
+        // MockWebServer 默认绑定 127.0.0.1：测试场景下绕开 EndpointGuard。
+        config.markUnsafeBaseUrlOverriddenForTest(true);
         config.setBaseUrl(server.url("").toString().replaceAll("/+$", ""));
         config.setStartupCheckEnabled(false);
         config.setMaxRequests(64);

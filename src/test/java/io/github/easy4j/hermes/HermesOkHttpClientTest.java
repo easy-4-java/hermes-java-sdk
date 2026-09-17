@@ -51,6 +51,7 @@ class HermesOkHttpClientTest {
                 })
                 .build();
         HermesHttpClientConfig httpConfig = new HermesHttpClientConfig();
+        httpConfig.markUnsafeBaseUrlOverriddenForTest(true);
         httpConfig.setBaseUrl("http://127.0.0.1:8642/");
         HermesCliConfig cliConfig = new HermesCliConfig();
         cliConfig.setEnabled(false);
@@ -81,6 +82,7 @@ class HermesOkHttpClientTest {
                 .connectionPool(connectionPool)
                 .build();
         HermesHttpClientConfig httpConfig = new HermesHttpClientConfig();
+        httpConfig.markUnsafeBaseUrlOverriddenForTest(true);
         httpConfig.setStartupCheckEnabled(false);
         HermesCliConfig cliConfig = new HermesCliConfig();
         cliConfig.setEnabled(false);
@@ -96,6 +98,7 @@ class HermesOkHttpClientTest {
     @Test
     void shouldBuildConfiguredHighConcurrencyClientAndCloseOwnedResources() {
         HermesClientConfig config = new HermesClientConfig();
+        config.markUnsafeBaseUrlOverriddenForTest();
         config.getHttp().setStartupCheckEnabled(false);
         config.getHttp().setConnectTimeoutMillis(1_500);
         config.getHttp().setReadTimeoutMillis(90_000);
@@ -156,6 +159,7 @@ class HermesOkHttpClientTest {
                 })
                 .build();
         HermesHttpClientConfig httpConfig = new HermesHttpClientConfig();
+        httpConfig.markUnsafeBaseUrlOverriddenForTest(true);
         httpConfig.setStartupCheckEnabled(false);
         HermesCliConfig cliConfig = new HermesCliConfig();
         cliConfig.setEnabled(false);
@@ -216,6 +220,7 @@ class HermesOkHttpClientTest {
                 })
                 .build();
         HermesHttpClientConfig httpConfig = new HermesHttpClientConfig();
+        httpConfig.markUnsafeBaseUrlOverriddenForTest(true);
         httpConfig.setStartupCheckEnabled(false);
         HermesCliConfig cliConfig = new HermesCliConfig();
         cliConfig.setEnabled(false);

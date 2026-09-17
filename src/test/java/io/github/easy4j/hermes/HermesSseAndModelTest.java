@@ -121,6 +121,7 @@ class HermesSseAndModelTest {
                     .body(ResponseBody.create(body, MediaType.get("text/event-stream"))).build();
         }).build();
         HermesHttpClientConfig config = new HermesHttpClientConfig();
+        config.markUnsafeBaseUrlOverriddenForTest(true);
         config.setApiKey("key");
         ChatRequest request = new ChatRequest();
         request.setMessages(list(new ChatRequest.Message("user", "hello")));
@@ -160,6 +161,7 @@ class HermesSseAndModelTest {
                                 MediaType.get("text/event-stream")))
                         .build()).build();
         HermesHttpClientConfig config = new HermesHttpClientConfig();
+        config.markUnsafeBaseUrlOverriddenForTest(true);
 
         try (HermesSseClient sse = new HermesSseClient(config, null, client)) {
             try (SseQueueSubscription subscription = sse.subscribeRunEventsQueue("run-id")) {
@@ -197,6 +199,7 @@ class HermesSseAndModelTest {
             server.enqueue(new MockResponse().setResponseCode(500).setBody("first failure"));
             server.enqueue(new MockResponse().setResponseCode(500).setBody("second failure"));
             HermesHttpClientConfig config = new HermesHttpClientConfig();
+        config.markUnsafeBaseUrlOverriddenForTest(true);
             config.setBaseUrl(server.url("").toString().replaceAll("/+$", ""));
             config.setStreamReconnectMaxAttempts(1);
             config.setStreamReconnectInitialDelayMillis(1);
@@ -216,6 +219,7 @@ class HermesSseAndModelTest {
         }
 
         HermesHttpClientConfig invalidConfig = new HermesHttpClientConfig();
+        invalidConfig.markUnsafeBaseUrlOverriddenForTest(true);
         invalidConfig.setBaseUrl("not-a-url");
         AtomicReference<Throwable> error = new AtomicReference<>();
         try (HermesSseClient sse = new HermesSseClient(invalidConfig, null, null)) {
@@ -234,6 +238,7 @@ class HermesSseAndModelTest {
                     .setBody("data: {\"data\":\"{\\\"delta\\\":\\\"first\\\"}\"}\n\n"
                             + "data: {\"data\":\"{\\\"delta\\\":\\\"latest\\\"}\"}\n\n"));
             HermesHttpClientConfig config = new HermesHttpClientConfig();
+        config.markUnsafeBaseUrlOverriddenForTest(true);
             config.setBaseUrl(server.url("").toString().replaceAll("/+$", ""));
             config.setStreamEventQueueCapacity(1);
             config.setStreamReconnectMaxAttempts(0);
@@ -294,6 +299,7 @@ class HermesSseAndModelTest {
                         .body(ResponseBody.create("data: [DONE]\n\n",
                                 MediaType.get("text/event-stream"))).build()).build();
         HermesHttpClientConfig config = new HermesHttpClientConfig();
+        config.markUnsafeBaseUrlOverriddenForTest(true);
         ChatRequest request = new ChatRequest();
         request.setMessages(list(new ChatRequest.Message("user", "hello")));
         try (HermesChatClient chat = new HermesChatClient(config, new ObjectMapper(), client)) {
