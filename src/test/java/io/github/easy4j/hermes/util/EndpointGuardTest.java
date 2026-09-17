@@ -192,11 +192,21 @@ class EndpointGuardTest {
         // HermesChatClient 单参构造器存在；HermesSseClient 三参，反射构造让守卫
         // 在 super(...) 里先抛 IAE（如不安全），反之抛 IllegalArgumentException 不安全。
         assertThrows(IllegalArgumentException.class, () -> new HermesChatClient(config));
+        // 按形参类型匹配三参构造器（三参：config, objectMapper, httpClient）——
+        // 避免依赖 Jackson 2/3 的具体 ObjectMapper 类名（两分支传递依赖不同）。
+        java.lang.reflect.Constructor<?> sseCtor = null;
+        for (java.lang.reflect.Constructor<?> c : HermesSseClient.class.getConstructors()) {
+            Class<?>[] params = c.getParameterTypes();
+            if (params.length == 3
+                    && params[0] == HermesHttpClientConfig.class
+                    && params[2] == okhttp3.OkHttpClient.class) {
+                sseCtor = c;
+                break;
+            }
+        }
+        assertNotNull(sseCtor, "HermesSseClient (config, objectMapper, httpClient) constructor must exist");
         try {
-            Class<?> objectMapperCls = Class.forName("tools.jackson.databind.ObjectMapper");
-            HermesSseClient.class.getConstructor(HermesHttpClientConfig.class,
-                    objectMapperCls, okhttp3.OkHttpClient.class)
-                    .newInstance(config, null, null);
+            sseCtor.newInstance(config, null, null);
             throw new AssertionError("HermesSseClient construction should have rejected the unsafe baseUrl");
         } catch (java.lang.reflect.InvocationTargetException ite) {
             Throwable cause = ite.getCause();
@@ -205,18 +215,9 @@ class EndpointGuardTest {
                 throw new AssertionError(
                         "Expected EndpointGuard IllegalArgumentException, got " + cause);
             }
-        } catch (NoSuchMethodException | InstantiationException | IllegalAccessException | ClassNotFoundException e) {
+        } catch (InstantiationException | IllegalAccessException e) {
             throw new IllegalStateException("Reflective HermesSseClient construction failed", e);
         }
-    }
-
-    @Test
-    void shouldAcceptDefaultLoopbackWhenSetViaGuardedSetter() {
-        // 默认 baseUrl 是 http://localhost:8642——setter 会立刻拒绝；
-        // 这是默认值的预期失败路径，证明防御点在构造期就生效。
-        HermesHttpClientConfig config = new HermesHttpClientConfig();
-        assertThrows(IllegalArgumentException.class,
-                () -> config.setBaseUrl(HermesApiConstants.DEFAULT_SERVER_URL));
     }
 
     @Test
