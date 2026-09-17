@@ -120,7 +120,6 @@ class HermesSseAndModelTest {
                     .body(ResponseBody.create(body, MediaType.get("text/event-stream"))).build();
         }).build();
         HermesHttpClientConfig config = new HermesHttpClientConfig();
-        config.markUnsafeBaseUrlOverriddenForTest(true);
         config.setApiKey("key");
         ChatRequest request = new ChatRequest();
         request.setMessages(List.of(new ChatRequest.Message("user", "hello")));
@@ -160,7 +159,6 @@ class HermesSseAndModelTest {
                                 MediaType.get("text/event-stream")))
                         .build()).build();
         HermesHttpClientConfig config = new HermesHttpClientConfig();
-        config.markUnsafeBaseUrlOverriddenForTest(true);
 
         try (HermesSseClient sse = new HermesSseClient(config, null, client)) {
             try (SseQueueSubscription subscription = sse.subscribeRunEventsQueue("run-id")) {
@@ -218,7 +216,6 @@ class HermesSseAndModelTest {
         }
 
         HermesHttpClientConfig invalidConfig = new HermesHttpClientConfig();
-        invalidConfig.markUnsafeBaseUrlOverriddenForTest(true);
         invalidConfig.setBaseUrl("not-a-url");
         AtomicReference<Throwable> error = new AtomicReference<>();
         try (HermesSseClient sse = new HermesSseClient(invalidConfig, null, null)) {
@@ -298,7 +295,6 @@ class HermesSseAndModelTest {
                         .body(ResponseBody.create("data: [DONE]\n\n",
                                 MediaType.get("text/event-stream"))).build()).build();
         HermesHttpClientConfig config = new HermesHttpClientConfig();
-        config.markUnsafeBaseUrlOverriddenForTest(true);
         ChatRequest request = new ChatRequest();
         request.setMessages(List.of(new ChatRequest.Message("user", "hello")));
         try (HermesChatClient chat = new HermesChatClient(config, new JsonMapper(), client)) {

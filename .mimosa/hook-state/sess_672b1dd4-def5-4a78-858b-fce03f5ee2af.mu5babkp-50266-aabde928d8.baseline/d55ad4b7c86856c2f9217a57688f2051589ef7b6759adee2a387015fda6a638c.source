@@ -39,8 +39,6 @@ class HermesHttpClientConfigTest {
     @Test
     void shouldExposeChatClientAsHttpClientScenario() {
         HermesHttpClientConfig config = new HermesHttpClientConfig();
-        // 默认 baseUrl 为 localhost：本用例只断言类型层级，无需真实出站。
-        config.markUnsafeBaseUrlOverriddenForTest(true);
         try (HermesChatClient client = new HermesChatClient(config)) {
             assertEquals(HermesHttpClient.class, client.getClass().getSuperclass());
         }
