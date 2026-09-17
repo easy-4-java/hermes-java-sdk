@@ -128,6 +128,32 @@ class EndpointGuardTest {
     }
 
     @Test
+    void shouldAllowPublicIpv6Literal() {
+        // Cloudflare 公共 DNS IPv6（2606:4700:4700::1111）——IP 字面量不经 DNS。
+        assertDoesNotThrow(() -> EndpointGuard.require("http://[2606:4700:4700::1111]/dns-query"));
+    }
+
+    @Test
+    void shouldAllowWhenDnsCannotResolve() {
+        // DNS 未解析主机放行：CI（严格 DNS）走 UnknownHostException 分支，
+        // 本地（通配 DNS）走解析后非公网判定——两条路径都不抛异常。
+        assertDoesNotThrow(() -> EndpointGuard.require("https://api.example.com/v1"));
+    }
+
+    @Test
+    void shouldCoverRequireSafeHostEdgeBranches() {
+        // 空 host 直接拒绝；带方括号的 IPv6 环回经 stripBrackets 后命中守卫。
+        assertThrows(IllegalArgumentException.class,
+                () -> EndpointGuard.requireSafeHost(null, "ctx"));
+        assertThrows(IllegalArgumentException.class,
+                () -> EndpointGuard.requireSafeHost("", "ctx"));
+        assertThrows(IllegalArgumentException.class,
+                () -> EndpointGuard.requireSafeHost("[::1]", "ctx"));
+        // 带方括号的公网 IPv6 放行（覆盖 stripBrackets 正常剥离路径）。
+        assertDoesNotThrow(() -> EndpointGuard.requireSafeHost("[2606:4700:4700::1111]", "ctx"));
+    }
+
+    @Test
     void shouldReturnSameUrlOnSuccess() {
         assertEquals("https://api.example.com/v1", EndpointGuard.require("https://api.example.com/v1"));
     }
@@ -167,12 +193,7 @@ class EndpointGuardTest {
         // 在 super(...) 里先抛 IAE（如不安全），反之抛 IllegalArgumentException 不安全。
         assertThrows(IllegalArgumentException.class, () -> new HermesChatClient(config));
         try {
-            Class<?> objectMapperCls = null;
-            try {
-                objectMapperCls = Class.forName("tools.jackson.databind.ObjectMapper");
-            } catch (ClassNotFoundException cnfe) {
-                objectMapperCls = Class.forName("com.fasterxml.jackson.databind.ObjectMapper");
-            }
+            Class<?> objectMapperCls = Class.forName("tools.jackson.databind.ObjectMapper");
             HermesSseClient.class.getConstructor(HermesHttpClientConfig.class,
                     objectMapperCls, okhttp3.OkHttpClient.class)
                     .newInstance(config, null, null);
