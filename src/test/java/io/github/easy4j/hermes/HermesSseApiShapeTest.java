@@ -54,6 +54,7 @@ class HermesSseApiShapeTest {
     @Test
     void shouldExposeChatAndSseClientsFromRootFacade() {
         HermesHttpClientConfig config = new HermesHttpClientConfig();
+        config.markUnsafeBaseUrlOverriddenForTest(true);
         config.setStartupCheckEnabled(false);
         try (HermesClient client = new HermesClient(config)) {
             assertNotNull(client.chat());

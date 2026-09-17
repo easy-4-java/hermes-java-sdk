@@ -314,6 +314,9 @@ public class HermesClient implements AutoCloseable {
     }
 
     private static void copyHttpConfig(HermesHttpClientConfig src, HermesHttpClientConfig target) {
+        // 把测试用的 host 白名单旁路标志也复制过来——门面内部快照在 copy 期间
+        // 会经 setter 重新校验 URL，漏掉此标志会让 MockWebServer 测试抛 IAE。
+        target.markUnsafeBaseUrlOverriddenForTest(src.isUnsafeBaseUrlOverriddenForTest());
         target.setMode(src.getMode());
         target.setEnabled(src.isEnabled());
         target.setStartupCheckEnabled(src.isStartupCheckEnabled());

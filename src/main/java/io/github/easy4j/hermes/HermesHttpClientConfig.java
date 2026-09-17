@@ -58,6 +58,13 @@ public class HermesHttpClientConfig {
     private String baseUrl = HermesApiConstants.DEFAULT_SERVER_URL;
 
     /**
+     * 仅供测试代码使用——调用 {@link #markUnsafeBaseUrlOverriddenForTest(boolean)}
+     * 打开后，{@link #setBaseUrl(String)} 跳过 {@link io.github.easy4j.hermes.util.EndpointGuard}
+     * 的 host 白名单校验。生产代码不应设置此字段。
+     */
+    private boolean unsafeBaseUrlOverriddenForTest;
+
+    /**
      * Bearer 鉴权密钥；为空时不发送 Authorization 请求头。
      */
     private String apiKey;
@@ -173,6 +180,35 @@ public class HermesHttpClientConfig {
      * @return 配置的 API key；未配置时返回空字符串
      * @since 1.0.0
      */
+
+    /**
+     * <p>设置基础 URL 并强制 host 白名单校验：仅接受 {@code http} / {@code https}，
+     * 拒绝 localhost、环回、私有与保留地址。测试可经
+     * {@link #markUnsafeBaseUrlOverriddenForTest(boolean)} 放行。</p>
+     *
+     * @param baseUrl 服务基础 URL
+     * @return 当前配置（链式）
+     * @since 1.0.0
+     */
+    public HermesHttpClientConfig setBaseUrl(String baseUrl) {
+        if (!this.unsafeBaseUrlOverriddenForTest) {
+            this.baseUrl = io.github.easy4j.hermes.util.EndpointGuard.require(baseUrl);
+        } else {
+            this.baseUrl = baseUrl;
+        }
+        return this;
+    }
+
+    /**
+     * <p>仅供测试代码使用——绕开 host 白名单。</p>
+     *
+     * @param value true 跳过下一次 setter 调用的 host 校验
+     * @since 1.0.0
+     */
+    public void markUnsafeBaseUrlOverriddenForTest(boolean value) {
+        this.unsafeBaseUrlOverriddenForTest = value;
+    }
+
     public String resolveApiKey() {
         return Objects.toString(apiKey, "");
     }
