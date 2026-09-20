@@ -131,4 +131,31 @@ class SseLifecycleContractTest {
             }
         }
     }
+
+    @Test
+    void runIdentifierIsEncodedAsOneSsePathSegment() throws Exception {
+        try (MockWebServer server = new MockWebServer()) {
+            server.enqueue(new MockResponse()
+                    .setResponseCode(200)
+                    .setHeader("Content-Type", "text/event-stream")
+                    .setBody("data: [DONE]\\n\\n"));
+            server.start();
+
+            HermesHttpClientConfig config = new HermesHttpClientConfig()
+                    .setEndpointPolicy(io.github.easy4j.hermes.security.EndpointPolicy
+                            .trustedLocal("127.0.0.1", server.getPort()))
+                    .setBaseUrl("http://127.0.0.1:" + server.getPort());
+
+            try (HermesSseClient sse = new HermesSseClient(config, null, null)) {
+                SseSubscription subscription =
+                        sse.subscribeRunEvents("run/alpha?x=1", ignored -> { });
+                okhttp3.mockwebserver.RecordedRequest request =
+                        server.takeRequest(3, TimeUnit.SECONDS);
+                assertNotNull(request);
+                assertEquals("/v1/runs/run%2Falpha%3Fx%3D1/events", request.getPath());
+                subscription.cancel();
+            }
+        }
+    }
+
 }
