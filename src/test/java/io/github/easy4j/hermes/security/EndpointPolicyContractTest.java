@@ -39,4 +39,11 @@ class EndpointPolicyContractTest {
                     "http://127.0.0.1:" + (allowedPort + 1)));
         }
     }
+    @Test
+    void testEp002S2() {
+        EndpointPolicy policy = EndpointPolicy.strictPublic();
+        assertThrows(IllegalArgumentException.class, () ->
+                policy.require("https://hermes-endpoint-does-not-exist.invalid"));
+    }
+
 }
