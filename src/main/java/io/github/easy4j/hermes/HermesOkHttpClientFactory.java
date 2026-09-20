@@ -43,7 +43,9 @@ public final class HermesOkHttpClientFactory {
                 .readTimeout(Math.max(0, config.getReadTimeoutMillis()), TimeUnit.MILLISECONDS)
                 .writeTimeout(Math.max(1, config.getWriteTimeoutMillis()), TimeUnit.MILLISECONDS)
                 .callTimeout(Math.max(0, config.getCallTimeoutMillis()), TimeUnit.MILLISECONDS)
-                .retryOnConnectionFailure(config.isRetryOnConnectionFailure());
+                .retryOnConnectionFailure(config.isRetryOnConnectionFailure())
+                .followRedirects(false)
+                .followSslRedirects(false);
         if (!config.isVerifySsl()) {
             builder.hostnameVerifier((hostname, session) -> true);
         }
