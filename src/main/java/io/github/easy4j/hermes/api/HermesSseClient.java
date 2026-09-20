@@ -182,7 +182,7 @@ public class HermesSseClient implements AutoCloseable {
      * @since 1.0.0
      */
     public SseSubscription subscribeRunEvents(String runId, Consumer<SseEvent> consumer) {
-        String url = config.getBaseUrl() + PATH_RUNS + "/" + runId + "/events";
+        String url = config.getBaseUrl() + PATH_RUNS + "/" + HermesHttpClient.encodePathSegment(runId) + "/events";
         return start(() -> buildGetSseRequest(url), consumer, () -> { },
                 error -> log.warn("Hermes run SSE stopped: runId={}, error={}", runId, error.getMessage()),
                 true, "run:" + runId);
@@ -215,7 +215,7 @@ public class HermesSseClient implements AutoCloseable {
      */
     public SseSubscription subscribeSessionEvents(String sessionId, String input,
                                                   Consumer<SseEvent> consumer) {
-        String url = config.getBaseUrl() + PATH_SESSIONS + "/" + sessionId + "/chat/stream";
+        String url = config.getBaseUrl() + PATH_SESSIONS + "/" + HermesHttpClient.encodePathSegment(sessionId) + "/chat/stream";
         return start(() -> buildPostSseRequest(url, Collections.singletonMap("input", input), null),
                 consumer, () -> { },
                 error -> log.warn("Hermes session SSE stopped: sessionId={}, error={}",

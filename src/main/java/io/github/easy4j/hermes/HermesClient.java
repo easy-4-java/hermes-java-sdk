@@ -323,6 +323,7 @@ public class HermesClient implements AutoCloseable {
         target.setEnabled(src.isEnabled());
         target.setStartupCheckEnabled(src.isStartupCheckEnabled());
         target.setFailFastOnUnavailable(src.isFailFastOnUnavailable());
+        target.setEndpointPolicy(src.getEndpointPolicy());
         target.setBaseUrl(src.getBaseUrl());
         target.setApiKey(src.getApiKey());
         target.setConnectTimeoutMillis(src.getConnectTimeoutMillis());

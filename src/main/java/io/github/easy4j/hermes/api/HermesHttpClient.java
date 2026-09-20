@@ -297,7 +297,7 @@ public class HermesHttpClient implements AutoCloseable {
      * @since 1.0.0
      */
     public ResponseResult getResponse(String responseId) {
-        return get("/v1/responses/" + responseId, ResponseResult.class);
+        return get(PATH_RESPONSES + "/" + encodePathSegment(responseId), ResponseResult.class);
     }
 
     /**
@@ -310,7 +310,7 @@ public class HermesHttpClient implements AutoCloseable {
      * @since 1.0.0
      */
     public boolean deleteResponse(String responseId) {
-        return deleteBoolean(PATH_RESPONSES + "/" + responseId);
+        return deleteBoolean(PATH_RESPONSES + "/" + encodePathSegment(responseId));
     }
 
     // ============================================================
@@ -336,8 +336,25 @@ public class HermesHttpClient implements AutoCloseable {
      */
     public CompletableFuture<ModelsResponse> listModelsAsync() { return getAsync(PATH_MODELS, ModelsResponse.class); }
 
-    private static String encodePathSegment(String value) {
-        return java.net.URLEncoder.encode(value, StandardCharsets.UTF_8);
+    static String encodePathSegment(String value) {
+        Objects.requireNonNull(value, "path segment");
+        byte[] bytes = value.getBytes(java.nio.charset.StandardCharsets.UTF_8);
+        char[] hex = "0123456789ABCDEF".toCharArray();
+        StringBuilder encoded = new StringBuilder(bytes.length);
+        for (byte raw : bytes) {
+            int valueByte = raw & 0xFF;
+            if ((valueByte >= 'a' && valueByte <= 'z')
+                    || (valueByte >= 'A' && valueByte <= 'Z')
+                    || (valueByte >= '0' && valueByte <= '9')
+                    || valueByte == '-' || valueByte == '.' || valueByte == '_' || valueByte == '~') {
+                encoded.append((char) valueByte);
+            } else {
+                encoded.append('%')
+                        .append(hex[(valueByte >>> 4) & 0x0F])
+                        .append(hex[valueByte & 0x0F]);
+            }
+        }
+        return encoded.toString();
     }
 
     /**
@@ -418,7 +435,7 @@ public class HermesHttpClient implements AutoCloseable {
      * @return Agent Run 状态
      * @since 1.0.0
      */
-    public RunStatus getRun(String runId) { return get("/v1/runs/" + runId, RunStatus.class); }
+    public RunStatus getRun(String runId) { return get(PATH_RUNS + "/" + encodePathSegment(runId), RunStatus.class); }
 
     /**
      * <p>停止 Agent Run。</p>
@@ -442,7 +459,7 @@ public class HermesHttpClient implements AutoCloseable {
      * @since 1.0.0
      */
     public CompletableFuture<Void> stopRunAsync(String runId) {
-        Request request = authedRequest(url(PATH_RUNS + "/" + runId + "/stop"))
+        Request request = authedRequest(url(PATH_RUNS + "/" + encodePathSegment(runId) + "/stop"))
                 .post(RequestBody.create(new byte[0], null)).build();
         return executeResponseAsync(request, null).thenApply(response -> {
             if (!response.isSuccessful()) {
@@ -463,7 +480,7 @@ public class HermesHttpClient implements AutoCloseable {
      * @since 1.0.0
      */
     public Map<String, Object> approveRun(String runId, Map<String, Object> decision) {
-        return postMap(PATH_RUNS + "/" + runId + "/approval", decision);
+        return postMap(PATH_RUNS + "/" + encodePathSegment(runId) + "/approval", decision);
     }
 
     // ============================================================
@@ -527,7 +544,7 @@ public class HermesHttpClient implements AutoCloseable {
      * @return 会话对象或会话列表
      * @since 1.0.0
      */
-    public Session getSession(String id) { return get(PATH_SESSIONS + "/" + id, Session.class); }
+    public Session getSession(String id) { return get(PATH_SESSIONS + "/" + encodePathSegment(id), Session.class); }
 
     /**
      * <p>查询会话消息。</p>
@@ -539,7 +556,7 @@ public class HermesHttpClient implements AutoCloseable {
      * @since 1.0.0
      */
     public List<Map<String, Object>> getSessionMessages(String id) {
-        return getList(PATH_SESSIONS + "/" + id + "/messages",
+        return getList(PATH_SESSIONS + "/" + encodePathSegment(id) + "/messages",
                 new TypeReference<List<Map<String, Object>>>() {});
     }
 
@@ -556,7 +573,7 @@ public class HermesHttpClient implements AutoCloseable {
     public Session forkSession(String id, String title) {
         Map<String, Object> body = new LinkedHashMap<>();
         if (title != null) body.put("title", title);
-        return post(PATH_SESSIONS + "/" + id + "/fork", body, Session.class);
+        return post(PATH_SESSIONS + "/" + encodePathSegment(id) + "/fork", body, Session.class);
     }
 
     /**
@@ -569,7 +586,7 @@ public class HermesHttpClient implements AutoCloseable {
      * @since 1.0.0
      */
     public boolean deleteSession(String id) {
-        return deleteBoolean(PATH_SESSIONS + "/" + id);
+        return deleteBoolean(PATH_SESSIONS + "/" + encodePathSegment(id));
     }
 
     /**
@@ -583,7 +600,7 @@ public class HermesHttpClient implements AutoCloseable {
      * @since 1.0.0
      */
     public Session updateSession(String id, Map<String, Object> patch) {
-        Request request = authedRequest(url(PATH_SESSIONS + "/" + id))
+        Request request = authedRequest(url(PATH_SESSIONS + "/" + encodePathSegment(id)))
                 .patch(RequestBody.create(toJson(patch), JSON)).build();
         return execute(request, Session.class);
     }
@@ -599,7 +616,7 @@ public class HermesHttpClient implements AutoCloseable {
      * @since 1.0.0
      */
     public ChatResponse sessionChat(String id, String input) {
-        return post(PATH_SESSIONS + "/" + id + "/chat", Collections.singletonMap("input", input), ChatResponse.class);
+        return post(PATH_SESSIONS + "/" + encodePathSegment(id) + "/chat", Collections.singletonMap("input", input), ChatResponse.class);
     }
 
     // ============================================================
@@ -641,7 +658,7 @@ public class HermesHttpClient implements AutoCloseable {
      * @since 1.0.0
      */
     public Map<String, Object> getJob(String jobId) {
-        Request request = authedRequest(url(PATH_JOBS + "/" + jobId)).get().build();
+        Request request = authedRequest(url(PATH_JOBS + "/" + encodePathSegment(jobId))).get().build();
         return executeList(request, new TypeReference<Map<String, Object>>() {});
     }
 
@@ -656,7 +673,7 @@ public class HermesHttpClient implements AutoCloseable {
      * @since 1.0.0
      */
     public Map<String, Object> updateJob(String jobId, Map<String, Object> patch) {
-        Request request = authedRequest(url(PATH_JOBS + "/" + jobId))
+        Request request = authedRequest(url(PATH_JOBS + "/" + encodePathSegment(jobId)))
                 .patch(RequestBody.create(toJson(patch), JSON)).build();
         return executeList(request, new TypeReference<Map<String, Object>>() {});
     }
@@ -671,7 +688,7 @@ public class HermesHttpClient implements AutoCloseable {
      * @since 1.0.0
      */
     public boolean deleteJob(String jobId) {
-        Request request = authedRequest(url(PATH_JOBS + "/" + jobId)).delete().build();
+        Request request = authedRequest(url(PATH_JOBS + "/" + encodePathSegment(jobId))).delete().build();
         return awaitFuture(executeResponseAsync(request, null).thenApply(response -> {
             if (!response.isSuccessful() && response.getStatusCode() != 404) {
                 log.warn("deleteJob {} failed: {}", jobId, response.getStatusCode());
@@ -690,7 +707,7 @@ public class HermesHttpClient implements AutoCloseable {
      * @since 1.0.0
      */
     public Map<String, Object> pauseJob(String jobId) {
-        return postMap("/api/jobs/" + jobId + "/pause", Collections.emptyMap());
+        return postMap("/api/jobs/" + encodePathSegment(jobId) + "/pause", Collections.emptyMap());
     }
 
     /**
@@ -703,7 +720,7 @@ public class HermesHttpClient implements AutoCloseable {
      * @since 1.0.0
      */
     public Map<String, Object> resumeJob(String jobId) {
-        return postMap("/api/jobs/" + jobId + "/resume", Collections.emptyMap());
+        return postMap("/api/jobs/" + encodePathSegment(jobId) + "/resume", Collections.emptyMap());
     }
 
     /**
@@ -716,7 +733,7 @@ public class HermesHttpClient implements AutoCloseable {
      * @since 1.0.0
      */
     public Map<String, Object> runJobNow(String jobId) {
-        return postMap("/api/jobs/" + jobId + "/run", Collections.emptyMap());
+        return postMap("/api/jobs/" + encodePathSegment(jobId) + "/run", Collections.emptyMap());
     }
 
     // ============================================================
