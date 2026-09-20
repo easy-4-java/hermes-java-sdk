@@ -3,8 +3,8 @@
 
 import argparse
 import csv
+import itertools
 from pathlib import Path
-
 
 CONCURRENCY_LEVELS = {"100", "300", "500", "800", "1000"}
 WORKLOADS = {"http", "sse"}
@@ -72,10 +72,10 @@ def verify_benchmarks(sdk, path):
         intervals.append((start, end, row))
 
     intervals.sort(key=lambda value: value[0])
-    for previous, current in zip(intervals, intervals[1:]):
+    for previous, current in itertools.pairwise(intervals):
         if current[0] < previous[1]:
             raise SystemExit(
-                f"FAIL overlapping benchmark runs: {previous[2]} and {current[2]}"
+                f"FAIL overlapping benchmark runs: {previous[2]} and {current[2]}",
             )
 
 

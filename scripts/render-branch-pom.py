@@ -1,17 +1,15 @@
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*-
-"""
-按 hermes-java-sdk 分支名写入对应的 pom.xml。
+"""按 hermes-java-sdk 分支名写入对应的 pom.xml。
 
 用法: python3 scripts/render-branch-pom.py <branch>
 """
 from __future__ import annotations
 
+import datetime
 import os
 import pathlib
 import re
 import sys
-from datetime import date
 
 ROOT = pathlib.Path(__file__).resolve().parents[1]
 POM = ROOT / "pom.xml"
@@ -131,7 +129,7 @@ DEPS_BLOCK_TEMPLATE = """
 
 
 def write_slim_j17(version: str, slf4j: str, description_suffix: str) -> None:
-    body = f'''<?xml version="1.0" encoding="UTF-8"?>
+    body = f"""<?xml version="1.0" encoding="UTF-8"?>
 <project xmlns="http://maven.apache.org/POM/4.0.0"
          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
@@ -188,12 +186,12 @@ def write_slim_j17(version: str, slf4j: str, description_suffix: str) -> None:
 
 {DEPS_BLOCK_TEMPLATE}
 </project>
-'''
+"""
     POM.write_text(body, encoding="utf-8")
 
 
 def write_minimal_j8(version: str) -> None:
-    body = f'''<?xml version="1.0" encoding="UTF-8"?>
+    body = f"""<?xml version="1.0" encoding="UTF-8"?>
 <project xmlns="http://maven.apache.org/POM/4.0.0"
          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
@@ -249,13 +247,13 @@ def write_minimal_j8(version: str) -> None:
 
 {DEPS_BLOCK_TEMPLATE}
 </project>
-'''
+"""
     POM.write_text(body, encoding="utf-8")
 
 
 def write_full_j8_27(version: str) -> None:
     """对齐 openclaw-java-sdk 2.7.x 插件矩阵，JDK 8。"""
-    body = f'''<?xml version="1.0" encoding="UTF-8"?>
+    body = f"""<?xml version="1.0" encoding="UTF-8"?>
 <project xmlns="http://maven.apache.org/POM/4.0.0"
          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
@@ -333,7 +331,7 @@ def write_full_j8_27(version: str) -> None:
 
 {DEPS_BLOCK_TEMPLATE}
 </project>
-'''
+"""
     POM.write_text(body, encoding="utf-8")
 
 
@@ -350,7 +348,7 @@ def apply_aliyun_distribution_management() -> None:
 def version_date_suffix() -> str:
     """SNAPSHOT: {date}-SNAPSHOT；RELEASE(RELEASE=1): 仅 {date}。"""
     raw = os.environ.get("RELEASE_DATE", "").strip()
-    day = raw if raw else date.today().strftime("%Y%m%d")
+    day = raw or datetime.datetime.now(tz=datetime.timezone.utc).strftime("%Y%m%d")
     if os.environ.get("RELEASE", "").strip().lower() in ("1", "true", "yes"):
         return day
     return f"{day}-SNAPSHOT"
