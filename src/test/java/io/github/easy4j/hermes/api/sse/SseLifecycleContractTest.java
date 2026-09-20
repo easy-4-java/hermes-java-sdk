@@ -60,9 +60,9 @@ class SseLifecycleContractTest {
     @Test
     void malformedJsonAndConsumerFailureRemainIsolated() throws Exception {
         OkHttpClient client = new OkHttpClient.Builder().addInterceptor(chain -> {
-            String body = "data: invalid\\n\\n"
-                    + "data: {\\\"delta\\\":\\\"hello\\\"}\\n\\n"
-                    + "data: [DONE]\\n\\n";
+            String body = "data: invalid\n\n"
+                    + "data: {\"delta\":\"hello\"}\n\n"
+                    + "data: [DONE]\n\n";
             return new Response.Builder()
                     .request(chain.request())
                     .protocol(Protocol.HTTP_1_1)
