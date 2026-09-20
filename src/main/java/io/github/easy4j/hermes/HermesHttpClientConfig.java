@@ -1,5 +1,6 @@
 package io.github.easy4j.hermes;
 import io.github.easy4j.hermes.api.HermesApiConstants;
+import io.github.easy4j.hermes.security.EndpointPolicy;
 import lombok.Data;
 
 import java.util.Objects;
@@ -56,6 +57,9 @@ public class HermesHttpClientConfig {
      * Hermes Server 根地址，不包含具体 API 路径。
      */
     private String baseUrl = HermesApiConstants.DEFAULT_SERVER_URL;
+
+    /** Explicit endpoint trust policy. Defaults to the historical strict public-host policy. */
+    private EndpointPolicy endpointPolicy = EndpointPolicy.strictPublic();
 
     /**
      * 仅供测试代码使用——调用 {@link #markUnsafeBaseUrlOverriddenForTest(boolean)}
@@ -207,10 +211,21 @@ public class HermesHttpClientConfig {
 
     public HermesHttpClientConfig setBaseUrl(String baseUrl) {
         if (!this.unsafeBaseUrlOverriddenForTest) {
-            this.baseUrl = io.github.easy4j.hermes.util.EndpointGuard.require(baseUrl);
+            this.baseUrl = this.endpointPolicy.require(baseUrl);
         } else {
             this.baseUrl = baseUrl;
         }
         return this;
+    }
+
+    public HermesHttpClientConfig setEndpointPolicy(EndpointPolicy endpointPolicy) {
+        this.endpointPolicy = Objects.requireNonNull(endpointPolicy, "endpointPolicy");
+        return this;
+    }
+
+    public String requireBaseUrl() {
+        return this.unsafeBaseUrlOverriddenForTest
+                ? this.baseUrl
+                : this.endpointPolicy.require(this.baseUrl);
     }
 }
