@@ -59,7 +59,7 @@ class EndpointPolicyContractTest {
 
             origin.enqueue(new MockResponse()
                     .setResponseCode(302)
-                    .setHeader("Location", redirected.url("/redirected-health")));
+                    .setHeader("Location", "http://127.0.0.1:" + redirected.getPort() + "/redirected-health"));
             redirected.enqueue(new MockResponse()
                     .setResponseCode(200)
                     .setHeader("Content-Type", "application/json")
@@ -67,7 +67,7 @@ class EndpointPolicyContractTest {
 
             HermesHttpClientConfig config = new HermesHttpClientConfig()
                     .setEndpointPolicy(EndpointPolicy.trustedLocal("127.0.0.1", origin.getPort()))
-                    .setBaseUrl(origin.url("").toString().replaceAll("/+$", ""));
+                    .setBaseUrl("http://127.0.0.1:" + origin.getPort());
             config.setApiKey("profile-secret");
 
             try (HermesHttpClient client = new HermesHttpClient(config)) {
