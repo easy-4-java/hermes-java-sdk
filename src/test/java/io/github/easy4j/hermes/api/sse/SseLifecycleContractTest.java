@@ -15,7 +15,10 @@ import org.junit.jupiter.api.Test;
 import java.util.Collections;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
+
+import okhttp3.extension.logging.HttpLogLevel;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -51,6 +54,44 @@ class SseLifecycleContractTest {
             assertTrue(complete.await(3, TimeUnit.SECONDS));
             assertNotNull(received.get());
             assertEquals("hello", received.get().deltaText());
+        }
+    }
+
+    @Test
+    void malformedJsonAndConsumerFailureRemainIsolated() throws Exception {
+        OkHttpClient client = new OkHttpClient.Builder().addInterceptor(chain -> {
+            String body = "data: invalid\n\n"
+                    + "data: {\"delta\":\"hello\"}\n\n"
+                    + "data: [DONE]\n\n";
+            return new Response.Builder()
+                    .request(chain.request())
+                    .protocol(Protocol.HTTP_1_1)
+                    .code(200)
+                    .message("OK")
+                    .body(ResponseBody.create(body, MediaType.get("text/event-stream")))
+                    .build();
+        }).build();
+
+        HermesHttpClientConfig config = new HermesHttpClientConfig();
+        config.markUnsafeBaseUrlOverriddenForTest(true);
+        config.getDebug().setEnabled(true);
+        config.getDebug().setLevel(HttpLogLevel.BODY);
+        config.getDebug().setMaxContentLength(4);
+
+        ChatRequest request = new ChatRequest();
+        request.setMessages(Collections.singletonList(new ChatRequest.Message("user", "hello")));
+        AtomicInteger consumerCalls = new AtomicInteger();
+
+        try (HermesSseClient sse = new HermesSseClient(config, null, client)) {
+            CountDownLatch complete = new CountDownLatch(1);
+            sse.subscribeChat(request, ignored -> {
+                consumerCalls.incrementAndGet();
+                throw new IllegalStateException("consumer failure");
+            }, complete::countDown, ignored -> { });
+
+            assertTrue(complete.await(3, TimeUnit.SECONDS));
+            assertEquals(1, consumerCalls.get(),
+                    "malformed JSON must not be delivered to the business consumer");
         }
     }
 
