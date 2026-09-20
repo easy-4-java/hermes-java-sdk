@@ -86,11 +86,8 @@ public class HermesHttpClient implements AutoCloseable {
 
     private HermesHttpClient(HermesHttpClientConfig config, ObjectMapper objectMapper,
                              OkHttpClient httpClient, boolean ownsHttpClient) {
-        // host 白名单守卫：构造期拒绝 localhost/环回/私有/保留地址；
-        // 测试可经 markUnsafeBaseUrlOverriddenForTest(true) 放行。
-        if (!config.isUnsafeBaseUrlOverriddenForTest()) {
-            io.github.easy4j.hermes.util.EndpointGuard.require(config.getBaseUrl());
-        }
+        // 构造期按显式策略再次校验，避免通过字段注入绕过配置期约束。
+        config.requireBaseUrl();
         this.config = Objects.requireNonNull(config, "config");
         this.objectMapper = Objects.isNull(objectMapper) ? new ObjectMapper()
                 .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false) : objectMapper;
