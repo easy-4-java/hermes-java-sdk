@@ -328,7 +328,7 @@ public class HermesHttpClient implements AutoCloseable {
      */
     public CompletableFuture<ModelsResponse> listModelsAsync() { return getAsync(PATH_MODELS, ModelsResponse.class); }
 
-    private static String encodePathSegment(String value) {
+    static String encodePathSegment(String value) {
         Objects.requireNonNull(value, "path segment");
         byte[] bytes = value.getBytes(java.nio.charset.StandardCharsets.UTF_8);
         char[] hex = "0123456789ABCDEF".toCharArray();
