@@ -842,7 +842,8 @@ public class HermesHttpClient implements AutoCloseable {
      */
     protected <T> CompletableFuture<T> executeAsync(Request request, Class<T> type,
                                                     HttpCallCancellation cancellation) {
-        return executeResponseAsync(request, cancellation).thenApply(response -> {
+        CompletableFuture<HttpResponseData> source = executeResponseAsync(request, cancellation);
+        CompletableFuture<T> mapped = source.thenApply(response -> {
             if (!response.isSuccessful()) {
                 throw new HermesHttpException(response.getStatusCode(), response.getBody());
             }
@@ -852,6 +853,12 @@ public class HermesHttpClient implements AutoCloseable {
                 throw new HermesHttpException("Failed to parse response: " + error.getMessage(), error);
             }
         });
+        mapped.whenComplete((value, error) -> {
+            if (mapped.isCancelled()) {
+                source.cancel(true);
+            }
+        });
+        return mapped;
     }
 
     private CompletableFuture<HttpResponseData> executeResponseAsync(Request request,
