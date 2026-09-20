@@ -3,6 +3,9 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import io.github.easy4j.hermes.api.model.*;
 import io.github.easy4j.hermes.cli.HermesCli;
 import io.github.easy4j.hermes.cli.HermesCliExecutor;
+import io.github.easy4j.hermes.security.ProfileBinding;
+import io.github.easy4j.hermes.security.ProfileCredentialResolver;
+import io.github.easy4j.hermes.security.ProfileIdentity;
 import io.github.easy4j.hermes.api.HermesHttpClient;
 import io.github.easy4j.hermes.api.HermesChatClient;
 import io.github.easy4j.hermes.api.HermesSseClient;
@@ -94,6 +97,7 @@ public class HermesClient implements AutoCloseable {
     public HermesClient(HermesClientConfig config) {
         this(Objects.requireNonNull(config, "config").getHttp(), config.getCli(), new ObjectMapper(),
                 HermesOkHttpClientFactory.create(config.getHttp()), true);
+        this.config.setProfileCredentialResolver(config.getProfileCredentialResolver());
     }
 
     /**
@@ -125,6 +129,7 @@ public class HermesClient implements AutoCloseable {
                 objectMapper,
                 httpClient,
                 false);
+        this.config.setProfileCredentialResolver(config.getProfileCredentialResolver());
     }
 
     /**
@@ -324,6 +329,8 @@ public class HermesClient implements AutoCloseable {
         target.setEndpointPolicy(src.getEndpointPolicy());
         target.setBaseUrl(src.getBaseUrl());
         target.setApiKey(src.getApiKey());
+        target.setCredentialProvider(src.getCredentialProvider());
+        target.setProfileIdentity(src.getProfileIdentity());
         target.setConnectTimeoutMillis(src.getConnectTimeoutMillis());
         target.setReadTimeoutMillis(src.getReadTimeoutMillis());
         target.setWriteTimeoutMillis(src.getWriteTimeoutMillis());
@@ -1067,17 +1074,47 @@ public class HermesClient implements AutoCloseable {
             throw new IllegalStateException("Hermes HTTP client is disabled");
         }
         String normalizedProfileId = normalizeProfileId(profileId);
-        throw new IllegalStateException(
-                "No credential is configured for Hermes profile " + normalizedProfileId
-                        + "; root credentials are never inherited by named profiles");
+        ProfileCredentialResolver resolver = config.getProfileCredentialResolver();
+        if (resolver == null) {
+            throw new IllegalStateException("No credential is configured for Hermes profile "
+                    + normalizedProfileId + "; root credentials are never inherited by named profiles");
+        }
+        ProfileBinding binding = resolver.resolve(normalizedProfileId);
+        if (binding == null) {
+            throw new IllegalStateException("No credential is configured for Hermes profile " + normalizedProfileId);
+        }
+        if (!normalizedProfileId.equals(binding.getProfileId())) {
+            throw new IllegalStateException("Profile credential resolver returned a binding for "
+                    + binding.getProfileId() + " instead of " + normalizedProfileId);
+        }
+        return forProfile(binding);
     }
 
-    private HermesClient createProfileClient(String profileId) {
+    public HermesClient forProfile(ProfileBinding binding) {
+        Objects.requireNonNull(binding, "binding");
+        if (managedProfileView) {
+            throw new IllegalStateException("Cannot create a profile client from another profile client");
+        }
+        if (closed.get()) {
+            throw new IllegalStateException("HermesClient is closed");
+        }
+        if (!isHttpEnabled()) {
+            throw new IllegalStateException("Hermes HTTP client is disabled");
+        }
+        String profileId = normalizeProfileId(binding.getProfileId());
+        String cacheKey = config.getHttp().getBaseUrl() + "|" + profileId + "|" + binding.getCredentialIdentity();
+        return profileClients.computeIfAbsent(cacheKey, ignored -> createProfileClient(binding, profileId));
+    }
+
+    private HermesClient createProfileClient(ProfileBinding binding, String profileId) {
         HermesHttpClientConfig profileConfig = new HermesHttpClientConfig();
         copyHttpConfig(config.getHttp(), profileConfig);
-        // profile 只改变 URL 前缀并禁用重复探测，传输和 JSON 配置继续复用根客户端。
         profileConfig.setBaseUrl(profileServerUrl(config.getHttp().getBaseUrl(), profileId));
         profileConfig.setStartupCheckEnabled(false);
+        profileConfig.setApiKey(null);
+        profileConfig.setProfileIdentity(new ProfileIdentity(
+                config.getHttp().getBaseUrl(), profileId, binding.getCredentialIdentity()));
+        profileConfig.setCredentialProvider(binding.getCredentialProvider());
         HermesCliConfig disabledCli = new HermesCliConfig();
         disabledCli.setEnabled(false);
         return new HermesClient(profileConfig, disabledCli, objectMapper, sharedHttpClient, false, true);
