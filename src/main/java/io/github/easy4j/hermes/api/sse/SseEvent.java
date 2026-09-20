@@ -73,24 +73,37 @@ public class SseEvent {
             return null;
         }
         try {
-            JsonNode root = HermesObjectMapper.INSTANCE.readTree(data);
-            JsonNode choices = root.path("choices");
-            if (choices.isArray() && !choices.isEmpty()) {
-                JsonNode content = choices.get(0).path("delta").path("content");
-                if (!content.isMissingNode() && !content.isNull()) {
-                    return content.asText();
-                }
-            }
-            JsonNode delta = root.path("delta");
-            if (delta.isTextual()) {
-                return delta.asText();
-            }
-            if (delta.isObject() && delta.path("text").isTextual()) {
-                return delta.path("text").asText();
-            }
-            return null;
+            return extractDeltaText(HermesObjectMapper.INSTANCE.readTree(data));
         } catch (Exception error) {
             return null;
         }
+    }
+
+    private String extractDeltaText(JsonNode root) {
+        JsonNode choices = root.path("choices");
+        if (choices.isArray() && !choices.isEmpty()) {
+            JsonNode content = choices.get(0).path("delta").path("content");
+            if (!content.isMissingNode() && !content.isNull()) {
+                return content.asText();
+            }
+        }
+
+        JsonNode delta = root.path("delta");
+        if (delta.isTextual()) {
+            return delta.asText();
+        }
+        if (delta.isObject() && delta.path("text").isTextual()) {
+            return delta.path("text").asText();
+        }
+
+        JsonNode nestedData = root.path("data");
+        if (nestedData.isTextual()) {
+            try {
+                return extractDeltaText(HermesObjectMapper.INSTANCE.readTree(nestedData.asText()));
+            } catch (Exception ignored) {
+                return null;
+            }
+        }
+        return null;
     }
 }
