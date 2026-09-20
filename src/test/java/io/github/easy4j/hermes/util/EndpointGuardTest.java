@@ -155,7 +155,7 @@ class EndpointGuardTest {
 
     @Test
     void shouldReturnSameUrlOnSuccess() {
-        assertEquals("https://api.example.com/v1", EndpointGuard.require("https://api.example.com/v1"));
+        assertEquals("https://1.1.1.1/v1", EndpointGuard.require("https://1.1.1.1/v1"));
     }
 
     // ----- 集成点：所有出站客户端都套同一守卫 -----
