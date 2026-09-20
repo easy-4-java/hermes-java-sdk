@@ -1,5 +1,7 @@
 package io.github.easy4j.hermes.security;
 
+import io.github.easy4j.hermes.HermesClient;
+import io.github.easy4j.hermes.HermesCliConfig;
 import io.github.easy4j.hermes.HermesHttpClientConfig;
 import io.github.easy4j.hermes.api.HermesHttpClient;
 import io.github.easy4j.hermes.exception.HermesHttpException;
@@ -140,6 +142,25 @@ class EndpointPolicyContractTest {
             assertNotNull(request);
             org.junit.jupiter.api.Assertions.assertEquals(
                     "/v1/runs/run%2Falpha%3Fx%3D1", request.getPath());
+        }
+    }
+
+
+    @Test
+    void trustedLocalPolicySurvivesHermesClientConfigSnapshot() throws Exception {
+        try (MockWebServer server = new MockWebServer()) {
+            server.start();
+            HermesHttpClientConfig config = new HermesHttpClientConfig()
+                    .setEndpointPolicy(EndpointPolicy.trustedLocal("127.0.0.1", server.getPort()))
+                    .setBaseUrl("http://127.0.0.1:" + server.getPort());
+            HermesCliConfig cliConfig = new HermesCliConfig();
+            cliConfig.setEnabled(false);
+
+            assertDoesNotThrow(() -> {
+                try (HermesClient ignored = new HermesClient(config, cliConfig)) {
+                    // Construction is the contract: the copied config must retain the policy.
+                }
+            });
         }
     }
 
