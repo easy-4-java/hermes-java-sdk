@@ -191,11 +191,22 @@ public class HermesHttpClientConfig {
      */
     public HermesHttpClientConfig setBaseUrl(String baseUrl) {
         if (!this.unsafeBaseUrlOverriddenForTest) {
-            this.baseUrl = io.github.easy4j.hermes.util.EndpointGuard.require(baseUrl);
+            this.baseUrl = this.endpointPolicy.require(baseUrl);
         } else {
             this.baseUrl = baseUrl;
         }
         return this;
+    }
+
+    public HermesHttpClientConfig setEndpointPolicy(EndpointPolicy endpointPolicy) {
+        this.endpointPolicy = Objects.requireNonNull(endpointPolicy, "endpointPolicy");
+        return this;
+    }
+
+    public String requireBaseUrl() {
+        return this.unsafeBaseUrlOverriddenForTest
+                ? this.baseUrl
+                : this.endpointPolicy.require(this.baseUrl);
     }
 
     /**
