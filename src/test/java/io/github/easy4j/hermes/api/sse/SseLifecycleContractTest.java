@@ -38,6 +38,7 @@ class SseLifecycleContractTest {
         }).build();
 
         HermesHttpClientConfig config = new HermesHttpClientConfig();
+        config.markUnsafeBaseUrlOverriddenForTest(true);
         ChatRequest request = new ChatRequest();
         request.setMessages(Collections.singletonList(new ChatRequest.Message("user", "hello")));
 
