@@ -33,22 +33,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 class HermesOkHttpClientTest {
 
     @Test
-    void shouldRouteManagedProfilesThroughOneSharedTransport() {
-        AtomicReference<String> requestedPath = new AtomicReference<>();
-        OkHttpClient external = new OkHttpClient.Builder()
-                .addInterceptor(chain -> {
-                    requestedPath.set(chain.request().url().encodedPath());
-                    return new Response.Builder()
-                            .request(chain.request())
-                            .protocol(Protocol.HTTP_1_1)
-                            .code(200)
-                            .message("OK")
-                            .body(ResponseBody.create(
-                                    "{\"id\":\"response-1\",\"choices\":[]}",
-                                    MediaType.get("application/json")))
-                            .build();
-                })
-                .build();
+    void shouldNotDeriveNamedProfileFromUncredentialedExternalTransport() {
+        OkHttpClient external = new OkHttpClient.Builder().build();
         HermesHttpClientConfig httpConfig = new HermesHttpClientConfig();
         httpConfig.markUnsafeBaseUrlOverriddenForTest(true);
         httpConfig.setBaseUrl("http://127.0.0.1:8642/");
@@ -56,17 +42,9 @@ class HermesOkHttpClientTest {
         cliConfig.setEnabled(false);
 
         try (HermesClient client = new HermesClient(httpConfig, cliConfig, new ObjectMapper(), external)) {
-            HermesClient sales = client.forProfile("sales");
-            assertSame(sales, client.forProfile("sales"));
-            assertSame(external, sales.getOkHttpClient());
-            assertFalse(sales.isCliEnabled());
-            sales.chatCompletion(new ChatRequest());
-            assertEquals("/p/sales/v1/chat/completions", requestedPath.get());
+            assertSame(external, client.getOkHttpClient());
+            assertThrows(IllegalStateException.class, () -> client.forProfile("sales"));
             assertThrows(IllegalArgumentException.class, () -> client.forProfile("../sales"));
-            assertThrows(IllegalStateException.class, () -> sales.forProfile("care"));
-
-            sales.close();
-            assertSame(sales, client.forProfile("sales"));
         } finally {
             HermesOkHttpClientFactory.shutdown(external);
         }
