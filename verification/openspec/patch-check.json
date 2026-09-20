@@ -1,0 +1,10 @@
+{
+  "scope": "add-only overlay in empty isolated Git repository",
+  "git_apply_check_exit_code": 0,
+  "git_apply_exit_code": 0,
+  "byte_comparison_passed": true,
+  "verified_file_count": 59,
+  "user_checkout_applied": false,
+  "remote_push": false,
+  "note": "Not checked against the user's real three branch checkouts; rebase if paths already exist."
+}

@@ -1,0 +1,13 @@
+{
+  "scope": "supplemental-yaml-syntax-check",
+  "passed": true,
+  "parser": "PyYAML 6.0.3",
+  "files": [
+    "openspec/changes/add-hermes-acp-client/.openspec.yaml",
+    "openspec/changes/complete-hermes-http-runtime/.openspec.yaml",
+    "openspec/changes/enhance-hermes-cli-runtime/.openspec.yaml",
+    "openspec/changes/harden-hermes-transport/.openspec.yaml",
+    "openspec/config.yaml"
+  ],
+  "official_openspec_schema_validation": false
+}

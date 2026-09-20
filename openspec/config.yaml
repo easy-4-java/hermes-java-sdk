@@ -1,0 +1,31 @@
+schema: spec-driven
+
+context: |
+  项目：easy-4-java/hermes-java-sdk。输出语言：简体中文；保留 OpenSpec 固定英文标题与 MUST/SHALL、GIVEN/WHEN/THEN。
+  这是基于既有优化方案的待实施变更集，不是已完成 SDK 实现；本次不修改、发布 SDK，不预先归档未来规范。
+  三版本线：feature/1.0.x Java 8；feature/2.0.x Java 17；feature/3.0.x Java 21。
+  已观察基线见 docs/openspec/source-manifest.json。实现前重新核对各分支 HEAD、POM 与目标 Hermes commit。
+  保留现有 Maven 坐标及兼容门面，先逻辑分层，不因协议修复捆绑 Jackson/OkHttp 升级。
+  新公共基础 API 使用 Java 8 可表达类型；不新增 Spring/Reactor 强制依赖；可选协议不提高核心 JDK 基线。
+  不把 SSE 断线变成聊天 POST 重放；取消观察不等于停止远端；默认不批准权限；不自动跨协议重做工作。
+  对照文档：docs/design/hermes-java-sdk-optimization-plan-v1.0.md。
+  变更依赖和发布门禁：docs/openspec/README.md；可追溯关系：docs/openspec/traceability.md。
+  验证分开记录：离线结构检查、官方 OpenSpec CLI、SDK 单测、真实 Hermes 互操作、平台资源测试。
+  目标服务版本尚未固定；协议映射必须由任务采证，UNKNOWN 不得冒充支持；不杜撰已采集报文或已通过测试。
+
+rules:
+  proposal:
+    - 使用 Why、What Changes、Capabilities、Impact；行为不兼容标记 BREAKING。
+    - 区分新增规范能力与已有源码功能；依赖记录在正文，不把项目依赖表冒充 OpenSpec 原生调度。
+  specs:
+    - 每个新能力有不少于 50 字符的 Purpose；Requirement 使用 MUST/SHALL；每条至少一个四级 Scenario。
+    - 只定义外部可观察行为；内部类名、算法与文件布局写入 design，不放入行为要求。
+    - 所有 Scenario 给出 GIVEN、WHEN、THEN；覆盖失败和边界；标识唯一。
+    - 已有规范使用完整 MODIFIED；当前空规范基线使用 ADDED，不写入 openspec/specs 伪装已实施。
+  design:
+    - 列出上下文、目标和非目标、选择及替代方案、文件变更、接口契约、风险和迁移回滚。
+    - 具体协议版本及 wire 映射通过前置采证门禁确认，未确认能力不可宣传为支持。
+  tasks:
+    - 使用编号二级标题和 - [ ] N.M；每项任务写明验证命令、可观察结果或交付证据。
+    - 标注原 H 编号、关联 Requirement/Scenario、精确源码/测试路径；先回归测试后实现。
+    - 每批三分支真实 JDK、协议来源、资源和迁移证据齐全才完成；规划文件写好不等于实现任务完成。
