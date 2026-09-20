@@ -96,9 +96,7 @@ public class HermesHttpClient implements AutoCloseable {
         // 构造时也拒绝 localhost/环回/私有地址——出站请求的最终防御点。
         // 仅当测试代码通过 markUnsafeBaseUrlOverriddenForTest(true) 明确放行时
         // 才跳过此检查；该字段只能由测试设置。
-        if (!config.isUnsafeBaseUrlOverriddenForTest()) {
-            io.github.easy4j.hermes.util.EndpointGuard.require(config.getBaseUrl());
-        }
+        config.requireBaseUrl();
         this.config = Objects.requireNonNull(config, "config");
         this.objectMapper = Objects.isNull(objectMapper) ? JsonMapper.builder().disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES).build() : objectMapper;
         this.httpClient = Objects.requireNonNull(httpClient, "httpClient");
