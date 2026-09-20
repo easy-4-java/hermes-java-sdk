@@ -135,10 +135,9 @@ class EndpointGuardTest {
     }
 
     @Test
-    void shouldAllowWhenDnsCannotResolve() {
-        // DNS 未解析主机放行：CI（严格 DNS）走 UnknownHostException 分支，
-        // 本地（通配 DNS）走解析后非公网判定——两条路径都不抛异常。
-        assertDoesNotThrow(() -> EndpointGuard.require("https://api.example.com/v1"));
+    void shouldRejectWhenDnsCannotResolve() {
+        assertThrows(IllegalArgumentException.class,
+                () -> EndpointGuard.require("https://hermes-endpoint-does-not-exist.invalid/v1"));
     }
 
     @Test
@@ -156,7 +155,7 @@ class EndpointGuardTest {
 
     @Test
     void shouldReturnSameUrlOnSuccess() {
-        assertEquals("https://api.example.com/v1", EndpointGuard.require("https://api.example.com/v1"));
+        assertEquals("https://1.1.1.1/v1", EndpointGuard.require("https://1.1.1.1/v1"));
     }
 
     // ----- 集成点：所有出站客户端都套同一守卫 -----
