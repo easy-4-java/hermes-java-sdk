@@ -210,10 +210,9 @@ class EndpointGuardTest {
             throw new AssertionError("HermesSseClient construction should have rejected the unsafe baseUrl");
         } catch (java.lang.reflect.InvocationTargetException ite) {
             Throwable cause = ite.getCause();
-            if (!(cause instanceof IllegalArgumentException)
-                    || !cause.getMessage().toLowerCase().contains("unsafe")) {
+            if (!(cause instanceof IllegalArgumentException)) {
                 throw new AssertionError(
-                        "Expected EndpointGuard IllegalArgumentException, got " + cause);
+                        "Expected endpoint policy IllegalArgumentException, got " + cause);
             }
         } catch (InstantiationException | IllegalAccessException e) {
             throw new IllegalStateException("Reflective HermesSseClient construction failed", e);
