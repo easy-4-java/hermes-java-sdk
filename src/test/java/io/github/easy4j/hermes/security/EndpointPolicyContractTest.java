@@ -2,12 +2,16 @@ package io.github.easy4j.hermes.security;
 
 import io.github.easy4j.hermes.HermesHttpClientConfig;
 import io.github.easy4j.hermes.api.HermesHttpClient;
+import io.github.easy4j.hermes.exception.HermesHttpException;
 import okhttp3.mockwebserver.MockResponse;
 import okhttp3.mockwebserver.MockWebServer;
 import org.junit.jupiter.api.Test;
 
+import java.util.concurrent.TimeUnit;
+
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class EndpointPolicyContractTest {
@@ -44,6 +48,36 @@ class EndpointPolicyContractTest {
         EndpointPolicy policy = EndpointPolicy.strictPublic();
         assertThrows(IllegalArgumentException.class, () ->
                 policy.require("https://hermes-endpoint-does-not-exist.invalid"));
+    }
+
+    @Test
+    void testEp003S1() throws Exception {
+        try (MockWebServer origin = new MockWebServer();
+             MockWebServer redirected = new MockWebServer()) {
+            origin.start();
+            redirected.start();
+
+            origin.enqueue(new MockResponse()
+                    .setResponseCode(302)
+                    .setHeader("Location", redirected.url("/redirected-health")));
+            redirected.enqueue(new MockResponse()
+                    .setResponseCode(200)
+                    .setHeader("Content-Type", "application/json")
+                    .setBody("{}"));
+
+            HermesHttpClientConfig config = new HermesHttpClientConfig()
+                    .setEndpointPolicy(EndpointPolicy.trustedLocal("127.0.0.1", origin.getPort()))
+                    .setBaseUrl(origin.url("").toString().replaceAll("/+$", ""));
+            config.setApiKey("profile-secret");
+
+            try (HermesHttpClient client = new HermesHttpClient(config)) {
+                assertThrows(HermesHttpException.class, client::health);
+            }
+
+            assertNotNull(origin.takeRequest(1, TimeUnit.SECONDS));
+            assertNull(redirected.takeRequest(250, TimeUnit.MILLISECONDS),
+                    "cross-origin redirect must not be followed");
+        }
     }
 
 }
