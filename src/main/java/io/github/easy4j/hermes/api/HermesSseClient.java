@@ -280,9 +280,21 @@ public class HermesSseClient implements AutoCloseable {
                         return;
                     }
                     try {
-                        SseEvent event = new SseEvent();
-                        event.setEvent(type);
-                        event.setData(data);
+                        mapper.readTree(data);
+                    } catch (Exception error) {
+                        if (config.getDebug().allows(HttpLogLevel.BODY)) {
+                            log.debug("Hermes SSE parse failed: label={}, data={}", label, truncate(data), error);
+                        } else {
+                            debug(HttpLogLevel.BASIC, "Hermes SSE parse failed: label={}, dataLength={}, error={}",
+                                    label, data.length(), error.getMessage());
+                        }
+                        return;
+                    }
+
+                    SseEvent event = new SseEvent();
+                    event.setEvent(type);
+                    event.setData(data);
+                    try {
                         consumer.accept(event);
                     } catch (Exception error) {
                         if (config.getDebug().allows(HttpLogLevel.BODY)) {
