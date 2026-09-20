@@ -1,6 +1,9 @@
 package io.github.easy4j.hermes;
 import io.github.easy4j.hermes.api.HermesApiConstants;
+import io.github.easy4j.hermes.security.CredentialProvider;
+import io.github.easy4j.hermes.security.CredentialSnapshot;
 import io.github.easy4j.hermes.security.EndpointPolicy;
+import io.github.easy4j.hermes.security.ProfileIdentity;
 import lombok.Data;
 
 import java.util.Objects;
@@ -72,6 +75,12 @@ public class HermesHttpClientConfig {
      * Bearer 鉴权密钥；为空时不发送 Authorization 请求头。
      */
     private String apiKey;
+
+    /** 命名 Profile 的每请求凭据提供器；设置后优先于静态 apiKey。 */
+    private CredentialProvider credentialProvider;
+
+    /** 当前命名 Profile 的非秘密身份。 */
+    private ProfileIdentity profileIdentity;
 
     /**
      * 建立连接的超时时间，单位为毫秒。
@@ -236,6 +245,17 @@ public class HermesHttpClientConfig {
     }
 
     public String resolveApiKey() {
+        if (credentialProvider != null) {
+            if (profileIdentity == null) {
+                throw new IllegalStateException("Profile identity is required for dynamic credentials");
+            }
+            CredentialSnapshot snapshot = credentialProvider.resolve(profileIdentity);
+            if (snapshot == null) {
+                throw new IllegalStateException("No credential is available for Hermes profile "
+                        + profileIdentity.getProfileId());
+            }
+            return Objects.toString(snapshot.getToken(), "");
+        }
         return Objects.toString(apiKey, "");
     }
 }
