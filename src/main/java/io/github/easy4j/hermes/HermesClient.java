@@ -1067,8 +1067,9 @@ public class HermesClient implements AutoCloseable {
             throw new IllegalStateException("Hermes HTTP client is disabled");
         }
         String normalizedProfileId = normalizeProfileId(profileId);
-        // 并发访问同一 profile 时只发布一个托管视图。
-        return profileClients.computeIfAbsent(normalizedProfileId, this::createProfileClient);
+        throw new IllegalStateException(
+                "No credential is configured for Hermes profile " + normalizedProfileId
+                        + "; root credentials are never inherited by named profiles");
     }
 
     private HermesClient createProfileClient(String profileId) {
