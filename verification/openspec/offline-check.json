@@ -1,0 +1,23 @@
+{
+  "scope": "limited-offline-document-check",
+  "passed": true,
+  "counts": {
+    "changes": 4,
+    "capabilities": 17,
+    "requirements": 53,
+    "scenarios": 107,
+    "tasks": 92,
+    "checked_tasks": 0,
+    "legacy_tasks": 28,
+    "legacy_acceptance": 28
+  },
+  "errors": [],
+  "official_cli_executed": false,
+  "sdk_tests_executed": false,
+  "limitations": [
+    "Not the official OpenSpec parser or schema validator",
+    "Does not simulate archive merges or verify Markdown anchors",
+    "Does not execute SDK, JDK, Hermes or platform tests",
+    "No proof of semantic completeness beyond the explicitly checked mappings"
+  ]
+}

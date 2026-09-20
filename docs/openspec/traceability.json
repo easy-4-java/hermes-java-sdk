@@ -1,0 +1,2145 @@
+{
+  "schema": "hermes-openspec-traceability/v1",
+  "state": "planning-only",
+  "legacy_tasks": {
+    "H-001": [
+      "harden-hermes-transport:1.1"
+    ],
+    "H-002": [
+      "harden-hermes-transport:1.2"
+    ],
+    "H-003": [
+      "harden-hermes-transport:1.3"
+    ],
+    "H-004": [
+      "harden-hermes-transport:1.4"
+    ],
+    "H-101": [
+      "harden-hermes-transport:2.1",
+      "harden-hermes-transport:2.2",
+      "harden-hermes-transport:2.3"
+    ],
+    "H-102": [
+      "harden-hermes-transport:3.1",
+      "harden-hermes-transport:3.2",
+      "harden-hermes-transport:3.3"
+    ],
+    "H-103": [
+      "harden-hermes-transport:4.1",
+      "harden-hermes-transport:4.2",
+      "harden-hermes-transport:4.3"
+    ],
+    "H-104": [
+      "harden-hermes-transport:5.1",
+      "harden-hermes-transport:5.2",
+      "harden-hermes-transport:5.3"
+    ],
+    "H-105": [
+      "harden-hermes-transport:6.1",
+      "harden-hermes-transport:6.2",
+      "harden-hermes-transport:6.3"
+    ],
+    "H-106": [
+      "harden-hermes-transport:7.1",
+      "harden-hermes-transport:7.2",
+      "harden-hermes-transport:7.3",
+      "harden-hermes-transport:7.4"
+    ],
+    "H-501": [
+      "harden-hermes-transport:8.1",
+      "harden-hermes-transport:8.2",
+      "complete-hermes-http-runtime:7.1",
+      "enhance-hermes-cli-runtime:5.1",
+      "add-hermes-acp-client:5.1"
+    ],
+    "H-502": [
+      "harden-hermes-transport:8.3",
+      "complete-hermes-http-runtime:7.2",
+      "enhance-hermes-cli-runtime:5.2",
+      "add-hermes-acp-client:5.2"
+    ],
+    "H-503": [
+      "harden-hermes-transport:8.4",
+      "complete-hermes-http-runtime:7.3",
+      "enhance-hermes-cli-runtime:5.3",
+      "add-hermes-acp-client:5.3"
+    ],
+    "H-504": [
+      "harden-hermes-transport:8.5",
+      "complete-hermes-http-runtime:7.4",
+      "enhance-hermes-cli-runtime:5.4",
+      "add-hermes-acp-client:5.4"
+    ],
+    "H-201": [
+      "complete-hermes-http-runtime:1.1",
+      "complete-hermes-http-runtime:1.2",
+      "complete-hermes-http-runtime:1.3"
+    ],
+    "H-202": [
+      "complete-hermes-http-runtime:2.1",
+      "complete-hermes-http-runtime:2.2",
+      "complete-hermes-http-runtime:2.3"
+    ],
+    "H-203": [
+      "complete-hermes-http-runtime:3.1",
+      "complete-hermes-http-runtime:3.2",
+      "complete-hermes-http-runtime:3.3",
+      "complete-hermes-http-runtime:3.4"
+    ],
+    "H-204": [
+      "complete-hermes-http-runtime:4.1",
+      "complete-hermes-http-runtime:4.2",
+      "complete-hermes-http-runtime:4.3"
+    ],
+    "H-205": [
+      "complete-hermes-http-runtime:5.1",
+      "complete-hermes-http-runtime:5.2",
+      "complete-hermes-http-runtime:5.3",
+      "complete-hermes-http-runtime:5.4"
+    ],
+    "H-206": [
+      "complete-hermes-http-runtime:6.1",
+      "complete-hermes-http-runtime:6.2",
+      "complete-hermes-http-runtime:6.3",
+      "complete-hermes-http-runtime:6.4"
+    ],
+    "H-301": [
+      "enhance-hermes-cli-runtime:1.1",
+      "enhance-hermes-cli-runtime:1.2",
+      "enhance-hermes-cli-runtime:1.3",
+      "enhance-hermes-cli-runtime:1.4"
+    ],
+    "H-302": [
+      "enhance-hermes-cli-runtime:2.1",
+      "enhance-hermes-cli-runtime:2.2",
+      "enhance-hermes-cli-runtime:2.3",
+      "enhance-hermes-cli-runtime:2.4"
+    ],
+    "H-303": [
+      "enhance-hermes-cli-runtime:3.1",
+      "enhance-hermes-cli-runtime:3.2",
+      "enhance-hermes-cli-runtime:3.3",
+      "enhance-hermes-cli-runtime:3.4"
+    ],
+    "H-304": [
+      "enhance-hermes-cli-runtime:4.1",
+      "enhance-hermes-cli-runtime:4.2",
+      "enhance-hermes-cli-runtime:4.3"
+    ],
+    "H-401": [
+      "add-hermes-acp-client:1.1",
+      "add-hermes-acp-client:1.2",
+      "add-hermes-acp-client:1.3",
+      "add-hermes-acp-client:1.4"
+    ],
+    "H-402": [
+      "add-hermes-acp-client:2.1",
+      "add-hermes-acp-client:2.2",
+      "add-hermes-acp-client:2.3",
+      "add-hermes-acp-client:2.4"
+    ],
+    "H-403": [
+      "add-hermes-acp-client:3.1",
+      "add-hermes-acp-client:3.2",
+      "add-hermes-acp-client:3.3",
+      "add-hermes-acp-client:3.4"
+    ],
+    "H-404": [
+      "add-hermes-acp-client:4.1",
+      "add-hermes-acp-client:4.2",
+      "add-hermes-acp-client:4.3",
+      "add-hermes-acp-client:4.4"
+    ]
+  },
+  "legacy_acceptance": {
+    "T-01": [
+      "EP-001-S1"
+    ],
+    "T-02": [
+      "EP-001-S2",
+      "EP-003-S1"
+    ],
+    "T-03": [
+      "PA-001-S1",
+      "PA-003-S2"
+    ],
+    "T-04": [
+      "PA-002-S1",
+      "PA-002-S2"
+    ],
+    "T-05": [
+      "SE-001-S1"
+    ],
+    "T-06": [
+      "RS-002-S1"
+    ],
+    "T-07": [
+      "SE-003-S1"
+    ],
+    "T-08": [
+      "SE-004-S1"
+    ],
+    "T-09": [
+      "SE-005-S1"
+    ],
+    "T-10": [
+      "SE-006-S1"
+    ],
+    "T-11": [
+      "SE-002-S1"
+    ],
+    "T-12": [
+      "RN-003-S1"
+    ],
+    "T-13": [
+      "RN-003-S2"
+    ],
+    "T-14": [
+      "RN-004-S1",
+      "RN-004-S2"
+    ],
+    "T-15": [
+      "AP-001-S1",
+      "AP-002-S2"
+    ],
+    "T-16": [
+      "RC-001-S1"
+    ],
+    "T-17": [
+      "RC-002-S1"
+    ],
+    "T-18": [
+      "RC-001-S2"
+    ],
+    "T-19": [
+      "BC-001-S1"
+    ],
+    "T-20": [
+      "CS-001-S1",
+      "CE-003-S1"
+    ],
+    "T-21": [
+      "CS-002-S1"
+    ],
+    "T-22": [
+      "CS-002-S2"
+    ],
+    "T-23": [
+      "CE-004-S1"
+    ],
+    "T-24": [
+      "AT-002-S1",
+      "AM-002-S1"
+    ],
+    "T-25": [
+      "AT-003-S1",
+      "AT-003-S2"
+    ],
+    "T-26": [
+      "SE-002-S2",
+      "RN-002-S2",
+      "RR-003-S1"
+    ],
+    "T-27": [
+      "RC-003-S1"
+    ],
+    "T-28": [
+      "OB-003-S1"
+    ]
+  },
+  "requirements": {
+    "EP-001": {
+      "capability": "trusted-endpoints",
+      "change": "harden-hermes-transport",
+      "spec": "openspec/changes/harden-hermes-transport/specs/trusted-endpoints/spec.md",
+      "scenarios": [
+        "EP-001-S1",
+        "EP-001-S2"
+      ],
+      "tasks": [
+        "harden-hermes-transport:2.1",
+        "harden-hermes-transport:2.2",
+        "harden-hermes-transport:2.3"
+      ],
+      "planned_test_file": "src/test/java/io/github/easy4j/hermes/security/EndpointPolicyContractTest.java"
+    },
+    "EP-002": {
+      "capability": "trusted-endpoints",
+      "change": "harden-hermes-transport",
+      "spec": "openspec/changes/harden-hermes-transport/specs/trusted-endpoints/spec.md",
+      "scenarios": [
+        "EP-002-S1",
+        "EP-002-S2"
+      ],
+      "tasks": [
+        "harden-hermes-transport:2.1",
+        "harden-hermes-transport:2.2",
+        "harden-hermes-transport:2.3"
+      ],
+      "planned_test_file": "src/test/java/io/github/easy4j/hermes/security/EndpointPolicyContractTest.java"
+    },
+    "EP-003": {
+      "capability": "trusted-endpoints",
+      "change": "harden-hermes-transport",
+      "spec": "openspec/changes/harden-hermes-transport/specs/trusted-endpoints/spec.md",
+      "scenarios": [
+        "EP-003-S1",
+        "EP-003-S2"
+      ],
+      "tasks": [
+        "harden-hermes-transport:2.1",
+        "harden-hermes-transport:2.2",
+        "harden-hermes-transport:2.3"
+      ],
+      "planned_test_file": "src/test/java/io/github/easy4j/hermes/security/EndpointPolicyContractTest.java"
+    },
+    "PA-001": {
+      "capability": "profile-authentication",
+      "change": "harden-hermes-transport",
+      "spec": "openspec/changes/harden-hermes-transport/specs/profile-authentication/spec.md",
+      "scenarios": [
+        "PA-001-S1",
+        "PA-001-S2"
+      ],
+      "tasks": [
+        "harden-hermes-transport:3.1",
+        "harden-hermes-transport:3.2",
+        "harden-hermes-transport:3.3"
+      ],
+      "planned_test_file": "src/test/java/io/github/easy4j/hermes/security/ProfileAuthenticationContractTest.java"
+    },
+    "PA-002": {
+      "capability": "profile-authentication",
+      "change": "harden-hermes-transport",
+      "spec": "openspec/changes/harden-hermes-transport/specs/profile-authentication/spec.md",
+      "scenarios": [
+        "PA-002-S1",
+        "PA-002-S2"
+      ],
+      "tasks": [
+        "harden-hermes-transport:3.1",
+        "harden-hermes-transport:3.2",
+        "harden-hermes-transport:3.3"
+      ],
+      "planned_test_file": "src/test/java/io/github/easy4j/hermes/security/ProfileAuthenticationContractTest.java"
+    },
+    "PA-003": {
+      "capability": "profile-authentication",
+      "change": "harden-hermes-transport",
+      "spec": "openspec/changes/harden-hermes-transport/specs/profile-authentication/spec.md",
+      "scenarios": [
+        "PA-003-S1",
+        "PA-003-S2"
+      ],
+      "tasks": [
+        "harden-hermes-transport:3.1",
+        "harden-hermes-transport:3.2",
+        "harden-hermes-transport:3.3"
+      ],
+      "planned_test_file": "src/test/java/io/github/easy4j/hermes/security/ProfileAuthenticationContractTest.java"
+    },
+    "SE-001": {
+      "capability": "sse-lifecycle",
+      "change": "harden-hermes-transport",
+      "spec": "openspec/changes/harden-hermes-transport/specs/sse-lifecycle/spec.md",
+      "scenarios": [
+        "SE-001-S1",
+        "SE-001-S2"
+      ],
+      "tasks": [
+        "harden-hermes-transport:4.1",
+        "harden-hermes-transport:4.2",
+        "harden-hermes-transport:4.3"
+      ],
+      "planned_test_file": "src/test/java/io/github/easy4j/hermes/api/sse/SseLifecycleContractTest.java"
+    },
+    "SE-002": {
+      "capability": "sse-lifecycle",
+      "change": "harden-hermes-transport",
+      "spec": "openspec/changes/harden-hermes-transport/specs/sse-lifecycle/spec.md",
+      "scenarios": [
+        "SE-002-S1",
+        "SE-002-S2"
+      ],
+      "tasks": [
+        "harden-hermes-transport:4.1",
+        "harden-hermes-transport:4.2",
+        "harden-hermes-transport:4.3"
+      ],
+      "planned_test_file": "src/test/java/io/github/easy4j/hermes/api/sse/SseLifecycleContractTest.java"
+    },
+    "SE-003": {
+      "capability": "sse-lifecycle",
+      "change": "harden-hermes-transport",
+      "spec": "openspec/changes/harden-hermes-transport/specs/sse-lifecycle/spec.md",
+      "scenarios": [
+        "SE-003-S1",
+        "SE-003-S2"
+      ],
+      "tasks": [
+        "harden-hermes-transport:5.1",
+        "harden-hermes-transport:5.2",
+        "harden-hermes-transport:5.3"
+      ],
+      "planned_test_file": "src/test/java/io/github/easy4j/hermes/api/sse/SseLifecycleContractTest.java"
+    },
+    "SE-004": {
+      "capability": "sse-lifecycle",
+      "change": "harden-hermes-transport",
+      "spec": "openspec/changes/harden-hermes-transport/specs/sse-lifecycle/spec.md",
+      "scenarios": [
+        "SE-004-S1",
+        "SE-004-S2"
+      ],
+      "tasks": [
+        "harden-hermes-transport:5.1",
+        "harden-hermes-transport:5.2",
+        "harden-hermes-transport:5.3"
+      ],
+      "planned_test_file": "src/test/java/io/github/easy4j/hermes/api/sse/SseLifecycleContractTest.java"
+    },
+    "SE-005": {
+      "capability": "sse-lifecycle",
+      "change": "harden-hermes-transport",
+      "spec": "openspec/changes/harden-hermes-transport/specs/sse-lifecycle/spec.md",
+      "scenarios": [
+        "SE-005-S1",
+        "SE-005-S2"
+      ],
+      "tasks": [
+        "harden-hermes-transport:5.1",
+        "harden-hermes-transport:5.2",
+        "harden-hermes-transport:5.3"
+      ],
+      "planned_test_file": "src/test/java/io/github/easy4j/hermes/api/sse/SseLifecycleContractTest.java"
+    },
+    "SE-006": {
+      "capability": "sse-lifecycle",
+      "change": "harden-hermes-transport",
+      "spec": "openspec/changes/harden-hermes-transport/specs/sse-lifecycle/spec.md",
+      "scenarios": [
+        "SE-006-S1",
+        "SE-006-S2"
+      ],
+      "tasks": [
+        "harden-hermes-transport:6.1",
+        "harden-hermes-transport:6.2",
+        "harden-hermes-transport:6.3"
+      ],
+      "planned_test_file": "src/test/java/io/github/easy4j/hermes/api/sse/SseLifecycleContractTest.java"
+    },
+    "RC-001": {
+      "capability": "request-cancellation",
+      "change": "harden-hermes-transport",
+      "spec": "openspec/changes/harden-hermes-transport/specs/request-cancellation/spec.md",
+      "scenarios": [
+        "RC-001-S1",
+        "RC-001-S2"
+      ],
+      "tasks": [
+        "harden-hermes-transport:7.1",
+        "harden-hermes-transport:7.2",
+        "harden-hermes-transport:7.3",
+        "harden-hermes-transport:7.4"
+      ],
+      "planned_test_file": "src/test/java/io/github/easy4j/hermes/transport/PublicCancellationContractTest.java"
+    },
+    "RC-002": {
+      "capability": "request-cancellation",
+      "change": "harden-hermes-transport",
+      "spec": "openspec/changes/harden-hermes-transport/specs/request-cancellation/spec.md",
+      "scenarios": [
+        "RC-002-S1",
+        "RC-002-S2"
+      ],
+      "tasks": [
+        "harden-hermes-transport:7.1",
+        "harden-hermes-transport:7.2",
+        "harden-hermes-transport:7.3",
+        "harden-hermes-transport:7.4"
+      ],
+      "planned_test_file": "src/test/java/io/github/easy4j/hermes/transport/PublicCancellationContractTest.java"
+    },
+    "RC-003": {
+      "capability": "request-cancellation",
+      "change": "harden-hermes-transport",
+      "spec": "openspec/changes/harden-hermes-transport/specs/request-cancellation/spec.md",
+      "scenarios": [
+        "RC-003-S1",
+        "RC-003-S2"
+      ],
+      "tasks": [
+        "harden-hermes-transport:7.1",
+        "harden-hermes-transport:7.2",
+        "harden-hermes-transport:7.3",
+        "harden-hermes-transport:7.4"
+      ],
+      "planned_test_file": "src/test/java/io/github/easy4j/hermes/transport/PublicCancellationContractTest.java"
+    },
+    "BC-001": {
+      "capability": "sdk-compatibility",
+      "change": "harden-hermes-transport",
+      "spec": "openspec/changes/harden-hermes-transport/specs/sdk-compatibility/spec.md",
+      "scenarios": [
+        "BC-001-S1",
+        "BC-001-S2"
+      ],
+      "tasks": [
+        "harden-hermes-transport:8.1",
+        "harden-hermes-transport:8.2",
+        "harden-hermes-transport:8.3",
+        "harden-hermes-transport:8.4",
+        "harden-hermes-transport:8.5"
+      ],
+      "planned_test_file": "src/test/java/io/github/easy4j/hermes/compatibility/SdkCompatibilityContractTest.java"
+    },
+    "BC-002": {
+      "capability": "sdk-compatibility",
+      "change": "harden-hermes-transport",
+      "spec": "openspec/changes/harden-hermes-transport/specs/sdk-compatibility/spec.md",
+      "scenarios": [
+        "BC-002-S1",
+        "BC-002-S2"
+      ],
+      "tasks": [
+        "harden-hermes-transport:1.1",
+        "harden-hermes-transport:1.2",
+        "harden-hermes-transport:1.3",
+        "harden-hermes-transport:1.4",
+        "harden-hermes-transport:8.1",
+        "harden-hermes-transport:8.2",
+        "harden-hermes-transport:8.3",
+        "harden-hermes-transport:8.4",
+        "harden-hermes-transport:8.5"
+      ],
+      "planned_test_file": "src/test/java/io/github/easy4j/hermes/compatibility/SdkCompatibilityContractTest.java"
+    },
+    "BC-003": {
+      "capability": "sdk-compatibility",
+      "change": "harden-hermes-transport",
+      "spec": "openspec/changes/harden-hermes-transport/specs/sdk-compatibility/spec.md",
+      "scenarios": [
+        "BC-003-S1",
+        "BC-003-S2"
+      ],
+      "tasks": [
+        "harden-hermes-transport:8.1",
+        "harden-hermes-transport:8.2",
+        "harden-hermes-transport:8.3",
+        "harden-hermes-transport:8.4",
+        "harden-hermes-transport:8.5"
+      ],
+      "planned_test_file": "src/test/java/io/github/easy4j/hermes/compatibility/SdkCompatibilityContractTest.java"
+    },
+    "CT-001": {
+      "capability": "request-context",
+      "change": "complete-hermes-http-runtime",
+      "spec": "openspec/changes/complete-hermes-http-runtime/specs/request-context/spec.md",
+      "scenarios": [
+        "CT-001-S1",
+        "CT-001-S2"
+      ],
+      "tasks": [
+        "complete-hermes-http-runtime:1.1",
+        "complete-hermes-http-runtime:1.2",
+        "complete-hermes-http-runtime:1.3"
+      ],
+      "planned_test_file": "src/test/java/io/github/easy4j/hermes/context/RequestContextContractTest.java"
+    },
+    "CT-002": {
+      "capability": "request-context",
+      "change": "complete-hermes-http-runtime",
+      "spec": "openspec/changes/complete-hermes-http-runtime/specs/request-context/spec.md",
+      "scenarios": [
+        "CT-002-S1",
+        "CT-002-S2"
+      ],
+      "tasks": [
+        "complete-hermes-http-runtime:1.1",
+        "complete-hermes-http-runtime:1.2",
+        "complete-hermes-http-runtime:1.3"
+      ],
+      "planned_test_file": "src/test/java/io/github/easy4j/hermes/context/RequestContextContractTest.java"
+    },
+    "CT-003": {
+      "capability": "request-context",
+      "change": "complete-hermes-http-runtime",
+      "spec": "openspec/changes/complete-hermes-http-runtime/specs/request-context/spec.md",
+      "scenarios": [
+        "CT-003-S1",
+        "CT-003-S2"
+      ],
+      "tasks": [
+        "complete-hermes-http-runtime:1.1",
+        "complete-hermes-http-runtime:1.2",
+        "complete-hermes-http-runtime:1.3"
+      ],
+      "planned_test_file": "src/test/java/io/github/easy4j/hermes/context/RequestContextContractTest.java"
+    },
+    "RS-001": {
+      "capability": "responses-streaming",
+      "change": "complete-hermes-http-runtime",
+      "spec": "openspec/changes/complete-hermes-http-runtime/specs/responses-streaming/spec.md",
+      "scenarios": [
+        "RS-001-S1",
+        "RS-001-S2"
+      ],
+      "tasks": [
+        "complete-hermes-http-runtime:2.1",
+        "complete-hermes-http-runtime:2.2",
+        "complete-hermes-http-runtime:2.3"
+      ],
+      "planned_test_file": "src/test/java/io/github/easy4j/hermes/api/ResponsesStreamingContractTest.java"
+    },
+    "RS-002": {
+      "capability": "responses-streaming",
+      "change": "complete-hermes-http-runtime",
+      "spec": "openspec/changes/complete-hermes-http-runtime/specs/responses-streaming/spec.md",
+      "scenarios": [
+        "RS-002-S1",
+        "RS-002-S2"
+      ],
+      "tasks": [
+        "complete-hermes-http-runtime:2.1",
+        "complete-hermes-http-runtime:2.2",
+        "complete-hermes-http-runtime:2.3"
+      ],
+      "planned_test_file": "src/test/java/io/github/easy4j/hermes/api/ResponsesStreamingContractTest.java"
+    },
+    "RS-003": {
+      "capability": "responses-streaming",
+      "change": "complete-hermes-http-runtime",
+      "spec": "openspec/changes/complete-hermes-http-runtime/specs/responses-streaming/spec.md",
+      "scenarios": [
+        "RS-003-S1",
+        "RS-003-S2"
+      ],
+      "tasks": [
+        "complete-hermes-http-runtime:2.1",
+        "complete-hermes-http-runtime:2.2",
+        "complete-hermes-http-runtime:2.3"
+      ],
+      "planned_test_file": "src/test/java/io/github/easy4j/hermes/api/ResponsesStreamingContractTest.java"
+    },
+    "RN-001": {
+      "capability": "run-lifecycle",
+      "change": "complete-hermes-http-runtime",
+      "spec": "openspec/changes/complete-hermes-http-runtime/specs/run-lifecycle/spec.md",
+      "scenarios": [
+        "RN-001-S1",
+        "RN-001-S2"
+      ],
+      "tasks": [
+        "complete-hermes-http-runtime:3.1",
+        "complete-hermes-http-runtime:3.2",
+        "complete-hermes-http-runtime:3.3",
+        "complete-hermes-http-runtime:3.4"
+      ],
+      "planned_test_file": "src/test/java/io/github/easy4j/hermes/runtime/RunLifecycleContractTest.java"
+    },
+    "RN-002": {
+      "capability": "run-lifecycle",
+      "change": "complete-hermes-http-runtime",
+      "spec": "openspec/changes/complete-hermes-http-runtime/specs/run-lifecycle/spec.md",
+      "scenarios": [
+        "RN-002-S1",
+        "RN-002-S2"
+      ],
+      "tasks": [
+        "complete-hermes-http-runtime:3.1",
+        "complete-hermes-http-runtime:3.2",
+        "complete-hermes-http-runtime:3.3",
+        "complete-hermes-http-runtime:3.4"
+      ],
+      "planned_test_file": "src/test/java/io/github/easy4j/hermes/runtime/RunLifecycleContractTest.java"
+    },
+    "RN-003": {
+      "capability": "run-lifecycle",
+      "change": "complete-hermes-http-runtime",
+      "spec": "openspec/changes/complete-hermes-http-runtime/specs/run-lifecycle/spec.md",
+      "scenarios": [
+        "RN-003-S1",
+        "RN-003-S2"
+      ],
+      "tasks": [
+        "complete-hermes-http-runtime:3.1",
+        "complete-hermes-http-runtime:3.2",
+        "complete-hermes-http-runtime:3.3",
+        "complete-hermes-http-runtime:3.4"
+      ],
+      "planned_test_file": "src/test/java/io/github/easy4j/hermes/runtime/RunLifecycleContractTest.java"
+    },
+    "RN-004": {
+      "capability": "run-lifecycle",
+      "change": "complete-hermes-http-runtime",
+      "spec": "openspec/changes/complete-hermes-http-runtime/specs/run-lifecycle/spec.md",
+      "scenarios": [
+        "RN-004-S1",
+        "RN-004-S2"
+      ],
+      "tasks": [
+        "complete-hermes-http-runtime:3.1",
+        "complete-hermes-http-runtime:3.2",
+        "complete-hermes-http-runtime:3.3",
+        "complete-hermes-http-runtime:3.4"
+      ],
+      "planned_test_file": "src/test/java/io/github/easy4j/hermes/runtime/RunLifecycleContractTest.java"
+    },
+    "AP-001": {
+      "capability": "approval-workflow",
+      "change": "complete-hermes-http-runtime",
+      "spec": "openspec/changes/complete-hermes-http-runtime/specs/approval-workflow/spec.md",
+      "scenarios": [
+        "AP-001-S1",
+        "AP-001-S2"
+      ],
+      "tasks": [
+        "complete-hermes-http-runtime:4.1",
+        "complete-hermes-http-runtime:4.2",
+        "complete-hermes-http-runtime:4.3"
+      ],
+      "planned_test_file": "src/test/java/io/github/easy4j/hermes/runtime/ApprovalWorkflowContractTest.java"
+    },
+    "AP-002": {
+      "capability": "approval-workflow",
+      "change": "complete-hermes-http-runtime",
+      "spec": "openspec/changes/complete-hermes-http-runtime/specs/approval-workflow/spec.md",
+      "scenarios": [
+        "AP-002-S1",
+        "AP-002-S2"
+      ],
+      "tasks": [
+        "complete-hermes-http-runtime:4.1",
+        "complete-hermes-http-runtime:4.2",
+        "complete-hermes-http-runtime:4.3"
+      ],
+      "planned_test_file": "src/test/java/io/github/easy4j/hermes/runtime/ApprovalWorkflowContractTest.java"
+    },
+    "RR-001": {
+      "capability": "runtime-resources",
+      "change": "complete-hermes-http-runtime",
+      "spec": "openspec/changes/complete-hermes-http-runtime/specs/runtime-resources/spec.md",
+      "scenarios": [
+        "RR-001-S1",
+        "RR-001-S2"
+      ],
+      "tasks": [
+        "complete-hermes-http-runtime:5.1",
+        "complete-hermes-http-runtime:5.2",
+        "complete-hermes-http-runtime:5.3",
+        "complete-hermes-http-runtime:5.4"
+      ],
+      "planned_test_file": "src/test/java/io/github/easy4j/hermes/api/RuntimeResourcesContractTest.java"
+    },
+    "RR-002": {
+      "capability": "runtime-resources",
+      "change": "complete-hermes-http-runtime",
+      "spec": "openspec/changes/complete-hermes-http-runtime/specs/runtime-resources/spec.md",
+      "scenarios": [
+        "RR-002-S1",
+        "RR-002-S2"
+      ],
+      "tasks": [
+        "complete-hermes-http-runtime:5.1",
+        "complete-hermes-http-runtime:5.2",
+        "complete-hermes-http-runtime:5.3",
+        "complete-hermes-http-runtime:5.4"
+      ],
+      "planned_test_file": "src/test/java/io/github/easy4j/hermes/api/RuntimeResourcesContractTest.java"
+    },
+    "RR-003": {
+      "capability": "runtime-resources",
+      "change": "complete-hermes-http-runtime",
+      "spec": "openspec/changes/complete-hermes-http-runtime/specs/runtime-resources/spec.md",
+      "scenarios": [
+        "RR-003-S1",
+        "RR-003-S2"
+      ],
+      "tasks": [
+        "complete-hermes-http-runtime:5.1",
+        "complete-hermes-http-runtime:5.2",
+        "complete-hermes-http-runtime:5.3",
+        "complete-hermes-http-runtime:5.4"
+      ],
+      "planned_test_file": "src/test/java/io/github/easy4j/hermes/api/RuntimeResourcesContractTest.java"
+    },
+    "OB-001": {
+      "capability": "runtime-observability",
+      "change": "complete-hermes-http-runtime",
+      "spec": "openspec/changes/complete-hermes-http-runtime/specs/runtime-observability/spec.md",
+      "scenarios": [
+        "OB-001-S1",
+        "OB-001-S2"
+      ],
+      "tasks": [
+        "complete-hermes-http-runtime:6.1",
+        "complete-hermes-http-runtime:6.2",
+        "complete-hermes-http-runtime:6.3",
+        "complete-hermes-http-runtime:6.4"
+      ],
+      "planned_test_file": "src/test/java/io/github/easy4j/hermes/observability/RuntimeObservabilityContractTest.java"
+    },
+    "OB-002": {
+      "capability": "runtime-observability",
+      "change": "complete-hermes-http-runtime",
+      "spec": "openspec/changes/complete-hermes-http-runtime/specs/runtime-observability/spec.md",
+      "scenarios": [
+        "OB-002-S1",
+        "OB-002-S2"
+      ],
+      "tasks": [
+        "complete-hermes-http-runtime:6.1",
+        "complete-hermes-http-runtime:6.2",
+        "complete-hermes-http-runtime:6.3",
+        "complete-hermes-http-runtime:6.4"
+      ],
+      "planned_test_file": "src/test/java/io/github/easy4j/hermes/observability/RuntimeObservabilityContractTest.java"
+    },
+    "OB-003": {
+      "capability": "runtime-observability",
+      "change": "complete-hermes-http-runtime",
+      "spec": "openspec/changes/complete-hermes-http-runtime/specs/runtime-observability/spec.md",
+      "scenarios": [
+        "OB-003-S1",
+        "OB-003-S2"
+      ],
+      "tasks": [
+        "complete-hermes-http-runtime:6.1",
+        "complete-hermes-http-runtime:6.2",
+        "complete-hermes-http-runtime:6.3",
+        "complete-hermes-http-runtime:6.4"
+      ],
+      "planned_test_file": "src/test/java/io/github/easy4j/hermes/observability/RuntimeObservabilityContractTest.java"
+    },
+    "CE-001": {
+      "capability": "cli-execution",
+      "change": "enhance-hermes-cli-runtime",
+      "spec": "openspec/changes/enhance-hermes-cli-runtime/specs/cli-execution/spec.md",
+      "scenarios": [
+        "CE-001-S1",
+        "CE-001-S2"
+      ],
+      "tasks": [
+        "enhance-hermes-cli-runtime:1.1",
+        "enhance-hermes-cli-runtime:1.2",
+        "enhance-hermes-cli-runtime:1.3",
+        "enhance-hermes-cli-runtime:1.4"
+      ],
+      "planned_test_file": "src/test/java/io/github/easy4j/hermes/cli/process/CliExecutionContractTest.java"
+    },
+    "CE-002": {
+      "capability": "cli-execution",
+      "change": "enhance-hermes-cli-runtime",
+      "spec": "openspec/changes/enhance-hermes-cli-runtime/specs/cli-execution/spec.md",
+      "scenarios": [
+        "CE-002-S1",
+        "CE-002-S2"
+      ],
+      "tasks": [
+        "enhance-hermes-cli-runtime:1.1",
+        "enhance-hermes-cli-runtime:1.2",
+        "enhance-hermes-cli-runtime:1.3",
+        "enhance-hermes-cli-runtime:1.4"
+      ],
+      "planned_test_file": "src/test/java/io/github/easy4j/hermes/cli/process/CliExecutionContractTest.java"
+    },
+    "CE-003": {
+      "capability": "cli-execution",
+      "change": "enhance-hermes-cli-runtime",
+      "spec": "openspec/changes/enhance-hermes-cli-runtime/specs/cli-execution/spec.md",
+      "scenarios": [
+        "CE-003-S1",
+        "CE-003-S2"
+      ],
+      "tasks": [
+        "enhance-hermes-cli-runtime:1.1",
+        "enhance-hermes-cli-runtime:1.2",
+        "enhance-hermes-cli-runtime:1.3",
+        "enhance-hermes-cli-runtime:1.4"
+      ],
+      "planned_test_file": "src/test/java/io/github/easy4j/hermes/cli/process/CliExecutionContractTest.java"
+    },
+    "CE-004": {
+      "capability": "cli-execution",
+      "change": "enhance-hermes-cli-runtime",
+      "spec": "openspec/changes/enhance-hermes-cli-runtime/specs/cli-execution/spec.md",
+      "scenarios": [
+        "CE-004-S1",
+        "CE-004-S2"
+      ],
+      "tasks": [
+        "enhance-hermes-cli-runtime:3.1",
+        "enhance-hermes-cli-runtime:3.2",
+        "enhance-hermes-cli-runtime:3.3",
+        "enhance-hermes-cli-runtime:3.4"
+      ],
+      "planned_test_file": "src/test/java/io/github/easy4j/hermes/cli/process/CliExecutionContractTest.java"
+    },
+    "CS-001": {
+      "capability": "cli-streaming",
+      "change": "enhance-hermes-cli-runtime",
+      "spec": "openspec/changes/enhance-hermes-cli-runtime/specs/cli-streaming/spec.md",
+      "scenarios": [
+        "CS-001-S1",
+        "CS-001-S2"
+      ],
+      "tasks": [
+        "enhance-hermes-cli-runtime:2.1",
+        "enhance-hermes-cli-runtime:2.2",
+        "enhance-hermes-cli-runtime:2.3",
+        "enhance-hermes-cli-runtime:2.4"
+      ],
+      "planned_test_file": "src/test/java/io/github/easy4j/hermes/cli/stream/CliStreamingContractTest.java"
+    },
+    "CS-002": {
+      "capability": "cli-streaming",
+      "change": "enhance-hermes-cli-runtime",
+      "spec": "openspec/changes/enhance-hermes-cli-runtime/specs/cli-streaming/spec.md",
+      "scenarios": [
+        "CS-002-S1",
+        "CS-002-S2",
+        "CS-002-S3"
+      ],
+      "tasks": [
+        "enhance-hermes-cli-runtime:2.1",
+        "enhance-hermes-cli-runtime:2.2",
+        "enhance-hermes-cli-runtime:2.3",
+        "enhance-hermes-cli-runtime:2.4"
+      ],
+      "planned_test_file": "src/test/java/io/github/easy4j/hermes/cli/stream/CliStreamingContractTest.java"
+    },
+    "CS-003": {
+      "capability": "cli-streaming",
+      "change": "enhance-hermes-cli-runtime",
+      "spec": "openspec/changes/enhance-hermes-cli-runtime/specs/cli-streaming/spec.md",
+      "scenarios": [
+        "CS-003-S1",
+        "CS-003-S2"
+      ],
+      "tasks": [
+        "enhance-hermes-cli-runtime:2.1",
+        "enhance-hermes-cli-runtime:2.2",
+        "enhance-hermes-cli-runtime:2.3",
+        "enhance-hermes-cli-runtime:2.4"
+      ],
+      "planned_test_file": "src/test/java/io/github/easy4j/hermes/cli/stream/CliStreamingContractTest.java"
+    },
+    "CC-001": {
+      "capability": "cli-commands",
+      "change": "enhance-hermes-cli-runtime",
+      "spec": "openspec/changes/enhance-hermes-cli-runtime/specs/cli-commands/spec.md",
+      "scenarios": [
+        "CC-001-S1",
+        "CC-001-S2"
+      ],
+      "tasks": [
+        "enhance-hermes-cli-runtime:4.1",
+        "enhance-hermes-cli-runtime:4.2",
+        "enhance-hermes-cli-runtime:4.3"
+      ],
+      "planned_test_file": "src/test/java/io/github/easy4j/hermes/cli/CliCommandsContractTest.java"
+    },
+    "CC-002": {
+      "capability": "cli-commands",
+      "change": "enhance-hermes-cli-runtime",
+      "spec": "openspec/changes/enhance-hermes-cli-runtime/specs/cli-commands/spec.md",
+      "scenarios": [
+        "CC-002-S1",
+        "CC-002-S2"
+      ],
+      "tasks": [
+        "enhance-hermes-cli-runtime:4.1",
+        "enhance-hermes-cli-runtime:4.2",
+        "enhance-hermes-cli-runtime:4.3"
+      ],
+      "planned_test_file": "src/test/java/io/github/easy4j/hermes/cli/CliCommandsContractTest.java"
+    },
+    "AT-001": {
+      "capability": "acp-transport",
+      "change": "add-hermes-acp-client",
+      "spec": "openspec/changes/add-hermes-acp-client/specs/acp-transport/spec.md",
+      "scenarios": [
+        "AT-001-S1",
+        "AT-001-S2"
+      ],
+      "tasks": [
+        "add-hermes-acp-client:1.1",
+        "add-hermes-acp-client:1.2",
+        "add-hermes-acp-client:1.3",
+        "add-hermes-acp-client:1.4",
+        "add-hermes-acp-client:4.1",
+        "add-hermes-acp-client:4.2",
+        "add-hermes-acp-client:4.3",
+        "add-hermes-acp-client:4.4"
+      ],
+      "planned_test_file": "src/test/java/io/github/easy4j/hermes/acp/AcpTransportContractTest.java"
+    },
+    "AT-002": {
+      "capability": "acp-transport",
+      "change": "add-hermes-acp-client",
+      "spec": "openspec/changes/add-hermes-acp-client/specs/acp-transport/spec.md",
+      "scenarios": [
+        "AT-002-S1",
+        "AT-002-S2"
+      ],
+      "tasks": [
+        "add-hermes-acp-client:1.1",
+        "add-hermes-acp-client:1.2",
+        "add-hermes-acp-client:1.3",
+        "add-hermes-acp-client:1.4"
+      ],
+      "planned_test_file": "src/test/java/io/github/easy4j/hermes/acp/AcpTransportContractTest.java"
+    },
+    "AT-003": {
+      "capability": "acp-transport",
+      "change": "add-hermes-acp-client",
+      "spec": "openspec/changes/add-hermes-acp-client/specs/acp-transport/spec.md",
+      "scenarios": [
+        "AT-003-S1",
+        "AT-003-S2"
+      ],      "tasks": [
+        "add-hermes-acp-client:3.1",
+        "add-hermes-acp-client:3.2",
+        "add-hermes-acp-client:3.3",
+        "add-hermes-acp-client:3.4",
+        "add-hermes-acp-client:4.1",
+        "add-hermes-acp-client:4.2",
+        "add-hermes-acp-client:4.3",
+        "add-hermes-acp-client:4.4"
+      ],
+      "planned_test_file": "src/test/java/io/github/easy4j/hermes/acp/AcpTransportContractTest.java"
+    },
+    "AS-001": {
+      "capability": "acp-sessions",
+      "change": "add-hermes-acp-client",
+      "spec": "openspec/changes/add-hermes-acp-client/specs/acp-sessions/spec.md",
+      "scenarios": [
+        "AS-001-S1",
+        "AS-001-S2"
+      ],
+      "tasks": [
+        "add-hermes-acp-client:2.1",
+        "add-hermes-acp-client:2.2",
+        "add-hermes-acp-client:2.3",
+        "add-hermes-acp-client:2.4",
+        "add-hermes-acp-client:4.1",
+        "add-hermes-acp-client:4.2",
+        "add-hermes-acp-client:4.3",
+        "add-hermes-acp-client:4.4"
+      ],
+      "planned_test_file": "src/test/java/io/github/easy4j/hermes/acp/AcpSessionsContractTest.java"
+    },
+    "AS-002": {
+      "capability": "acp-sessions",
+      "change": "add-hermes-acp-client",
+      "spec": "openspec/changes/add-hermes-acp-client/specs/acp-sessions/spec.md",
+      "scenarios": [
+        "AS-002-S1",
+        "AS-002-S2"
+      ],
+      "tasks": [
+        "add-hermes-acp-client:2.1",
+        "add-hermes-acp-client:2.2",
+        "add-hermes-acp-client:2.3",
+        "add-hermes-acp-client:2.4"
+      ],
+      "planned_test_file": "src/test/java/io/github/easy4j/hermes/acp/AcpSessionsContractTest.java"
+    },
+    "AS-003": {
+      "capability": "acp-sessions",
+      "change": "add-hermes-acp-client",
+      "spec": "openspec/changes/add-hermes-acp-client/specs/acp-sessions/spec.md",
+      "scenarios": [
+        "AS-003-S1",
+        "AS-003-S2"
+      ],
+      "tasks": [
+        "add-hermes-acp-client:2.1",
+        "add-hermes-acp-client:2.2",
+        "add-hermes-acp-client:2.3",
+        "add-hermes-acp-client:2.4"
+      ],
+      "planned_test_file": "src/test/java/io/github/easy4j/hermes/acp/AcpSessionsContractTest.java"
+    },
+    "AM-001": {
+      "capability": "acp-permissions",
+      "change": "add-hermes-acp-client",
+      "spec": "openspec/changes/add-hermes-acp-client/specs/acp-permissions/spec.md",
+      "scenarios": [
+        "AM-001-S1",
+        "AM-001-S2"
+      ],
+      "tasks": [
+        "add-hermes-acp-client:3.1",
+        "add-hermes-acp-client:3.2",
+        "add-hermes-acp-client:3.3",
+        "add-hermes-acp-client:3.4"
+      ],
+      "planned_test_file": "src/test/java/io/github/easy4j/hermes/acp/AcpPermissionsContractTest.java"
+    },
+    "AM-002": {
+      "capability": "acp-permissions",
+      "change": "add-hermes-acp-client",
+      "spec": "openspec/changes/add-hermes-acp-client/specs/acp-permissions/spec.md",
+      "scenarios": [
+        "AM-002-S1",
+        "AM-002-S2"
+      ],
+      "tasks": [
+        "add-hermes-acp-client:3.1",
+        "add-hermes-acp-client:3.2",
+        "add-hermes-acp-client:3.3",
+        "add-hermes-acp-client:3.4",
+        "add-hermes-acp-client:4.1",
+        "add-hermes-acp-client:4.2",
+        "add-hermes-acp-client:4.3",
+        "add-hermes-acp-client:4.4"
+      ],
+      "planned_test_file": "src/test/java/io/github/easy4j/hermes/acp/AcpPermissionsContractTest.java"
+    }
+  },
+  "tasks": {
+    "harden-hermes-transport:1.1": {
+      "change": "harden-hermes-transport",
+      "id": "1.1",
+      "legacy": "H-001",
+      "requirements": [
+        "BC-002"
+      ],
+      "description": "记录三分支 HEAD、POM、Maven/真实 JDK、依赖字节码及宿主授权的目标 Hermes commit；验证 `git rev-parse HEAD`、`java -version`、`mvn -version` 与清单一致，未提供的服务器不得填造。",
+      "file": "openspec/changes/harden-hermes-transport/tasks.md"
+    },
+    "harden-hermes-transport:1.2": {
+      "change": "harden-hermes-transport",
+      "id": "1.2",
+      "legacy": "H-002",
+      "requirements": [
+        "BC-002"
+      ],
+      "description": "建立端点/CLI/ACP 能力与 wire 映射登记表；验证每项有 SUPPORTED/UNSUPPORTED/UNKNOWN、版本和证据路径，能力未知不进入自动执行。",
+      "file": "openspec/changes/harden-hermes-transport/tasks.md"
+    },
+    "harden-hermes-transport:1.3": {
+      "change": "harden-hermes-transport",
+      "id": "1.3",
+      "legacy": "H-003",
+      "requirements": [
+        "BC-002"
+      ],
+      "description": "新增脱敏协议样本及 SHA-256 manifest，区分真实捕获/官方示例/人工边界；验证样本可解析、秘密扫描为零且每个来源可追溯。",
+      "file": "openspec/changes/harden-hermes-transport/tasks.md"
+    },
+    "harden-hermes-transport:1.4": {
+      "change": "harden-hermes-transport",
+      "id": "1.4",
+      "legacy": "H-004",
+      "requirements": [
+        "BC-002"
+      ],
+      "description": "从公开入口新增标准 chunk、Session POST 断线及公开 Future 取消回归；运行 `mvn -B -Dtest=SseLifecycleContractTest,PublicCancellationContractTest test`（逐场景断言见 test-catalog.md），记录三线预期失败或静态证据，不将构建环境失败误当行为复现。",
+      "file": "openspec/changes/harden-hermes-transport/tasks.md"
+    },
+    "harden-hermes-transport:2.1": {
+      "change": "harden-hermes-transport",
+      "id": "2.1",
+      "legacy": "H-101",
+      "requirements": [
+        "EP-001",
+        "EP-002",
+        "EP-003"
+      ],
+      "description": "新增 `EndpointPolicyContractTest` 的六个场景；运行 `mvn -B -Dtest=EndpointPolicyContractTest test`，确认未修复时至少相关行为回归失败，断言私网/跳转在凭据发送前拒绝。",
+      "file": "openspec/changes/harden-hermes-transport/tasks.md"
+    },
+    "harden-hermes-transport:2.2": {
+      "change": "harden-hermes-transport",
+      "id": "2.2",
+      "legacy": "H-101",
+      "requirements": [
+        "EP-001",
+        "EP-002",
+        "EP-003"
+      ],
+      "description": "实现显式本地/私网/公网策略、全部候选地址校验、origin 与路径段约束并接入 HTTP/SSE；运行同一测试类，验证可信地址成功与混合 DNS/跨域拒绝同时通过。",
+      "file": "openspec/changes/harden-hermes-transport/tasks.md"
+    },
+    "harden-hermes-transport:2.3": {
+      "change": "harden-hermes-transport",
+      "id": "2.3",
+      "legacy": "H-101",
+      "requirements": [
+        "EP-001",
+        "EP-002",
+        "EP-003"
+      ],
+      "description": "更新可信本地示例并弃用生产中的测试旁路；检视公开差异与示例，验证现有公开签名未被直接删除且示例不再调用测试开关。",
+      "file": "openspec/changes/harden-hermes-transport/tasks.md"
+    },
+    "harden-hermes-transport:3.1": {
+      "change": "harden-hermes-transport",
+      "id": "3.1",
+      "legacy": "H-102",
+      "requirements": [
+        "PA-001",
+        "PA-002",
+        "PA-003"
+      ],
+      "description": "新增 `ProfileAuthenticationContractTest` 六个场景并使用两个不同假密钥；运行该类，验证根凭据借用、覆盖头与轮换行为有可复现断言。",
+      "file": "openspec/changes/harden-hermes-transport/tasks.md"
+    },
+    "harden-hermes-transport:3.2": {
+      "change": "harden-hermes-transport",
+      "id": "3.2",
+      "legacy": "H-102",
+      "requirements": [
+        "PA-001",
+        "PA-002",
+        "PA-003"
+      ],
+      "description": "实现每次请求凭据解析、非秘密身份缓存键和保护头校验；运行 `mvn -B -Dtest=ProfileAuthenticationContractTest test`，验证并发请求无身份串用。",
+      "file": "openspec/changes/harden-hermes-transport/tasks.md"
+    },
+    "harden-hermes-transport:3.3": {
+      "change": "harden-hermes-transport",
+      "id": "3.3",
+      "legacy": "H-102",
+      "requirements": [
+        "PA-001",
+        "PA-002",
+        "PA-003"
+      ],
+      "description": "覆盖外部有状态 interceptor、CookieJar、缓存与 resolver 缺失；运行同一类并审核日志，验证拒绝或隔离策略明确、密钥不入缓存键/输出。",
+      "file": "openspec/changes/harden-hermes-transport/tasks.md"
+    },
+    "harden-hermes-transport:4.1": {
+      "change": "harden-hermes-transport",
+      "id": "4.1",
+      "legacy": "H-103",
+      "requirements": [
+        "SE-001",
+        "SE-002"
+      ],
+      "description": "在 `SseLifecycleContractTest` 新增 SE-001/002 场景：标准 chunk、多行 data、UTF-8 分片、回调抛错；运行 `mvn -B -Dtest=SseLifecycleContractTest test` 并保留修复前失败原因。",
+      "file": "openspec/changes/harden-hermes-transport/tasks.md"
+    },
+    "harden-hermes-transport:4.2": {
+      "change": "harden-hermes-transport",
+      "id": "4.2",
+      "legacy": "H-103",
+      "requirements": [
+        "SE-001",
+        "SE-002"
+      ],
+      "description": "实现 raw frame→端点 decoder→类型化事件与旧 SseEvent 适配；运行该测试，验证无需额外 JSON data 包装、无伪造服务端 ID。",
+      "file": "openspec/changes/harden-hermes-transport/tasks.md"
+    },
+    "harden-hermes-transport:4.3": {
+      "change": "harden-hermes-transport",
+      "id": "4.3",
+      "legacy": "H-103",
+      "requirements": [
+        "SE-001",
+        "SE-002"
+      ],
+      "description": "分离解析/网络/回调/业务错误并核对帧大小保护；重跑对应场景和超大帧边界，验证消费者异常不会伪装成解析错误且资源仍释放。",
+      "file": "openspec/changes/harden-hermes-transport/tasks.md"
+    },
+    "harden-hermes-transport:5.1": {
+      "change": "harden-hermes-transport",
+      "id": "5.1",
+      "legacy": "H-104",
+      "requirements": [
+        "SE-003",
+        "SE-004",
+        "SE-005"
+      ],
+      "description": "新增 SE-003～005 六个场景，以服务端请求计数断言“终态后 EOF”和“中途断线”都只有一次聊天 POST；运行 `mvn -B -Dtest=SseLifecycleContractTest test` 验证旧风险。",
+      "file": "openspec/changes/harden-hermes-transport/tasks.md"
+    },
+    "harden-hermes-transport:5.2": {
+      "change": "harden-hermes-transport",
+      "id": "5.2",
+      "legacy": "H-104",
+      "requirements": [
+        "SE-003",
+        "SE-004",
+        "SE-005"
+      ],
+      "description": "实现端点终态、至多一次完成、EOF 核对与按请求语义限制底层/上层重试；运行同类测试，验证无依据写重放为零。",
+      "file": "openspec/changes/harden-hermes-transport/tasks.md"
+    },
+    "harden-hermes-transport:5.3": {
+      "change": "harden-hermes-transport",
+      "id": "5.3",
+      "legacy": "H-104",
+      "requirements": [
+        "SE-003",
+        "SE-004",
+        "SE-005"
+      ],
+      "description": "实现既有运行 reattach、连续性标志及原生 ID 去重；测试相同文本不同事件不被删除、无游标恢复标 UNVERIFIED，不生成新 Run。",
+      "file": "openspec/changes/harden-hermes-transport/tasks.md"
+    },
+    "harden-hermes-transport:6.1": {
+      "change": "harden-hermes-transport",
+      "id": "6.1",
+      "legacy": "H-105",
+      "requirements": [
+        "SE-006"
+      ],
+      "description": "新增 SE-006 场景并设置容量为 1，制造慢消费者与控制事件；运行 `mvn -B -Dtest=SseLifecycleContractTest test`，验证饱和可检测。",
+      "file": "openspec/changes/harden-hermes-transport/tasks.md"
+    },
+    "harden-hermes-transport:6.2": {
+      "change": "harden-hermes-transport",
+      "id": "6.2",
+      "legacy": "H-105",
+      "requirements": [
+        "SE-006"
+      ],
+      "description": "实现按订阅顺序派发、默认 FAIL 溢出和显式进度合并；运行同类及有界负载，验证文本/审批/终态不静默丢弃。",
+      "file": "openspec/changes/harden-hermes-transport/tasks.md"
+    },
+    "harden-hermes-transport:6.3": {
+      "change": "harden-hermes-transport",
+      "id": "6.3",
+      "legacy": "H-105",
+      "requirements": [
+        "SE-006"
+      ],
+      "description": "覆盖两个订阅一慢一快、关闭时排队事件和重连任务；验证 B 不被 A 阻塞、queue/线程归零或回到所记录基线。",
+      "file": "openspec/changes/harden-hermes-transport/tasks.md"
+    },
+    "harden-hermes-transport:7.1": {
+      "change": "harden-hermes-transport",
+      "id": "7.1",
+      "legacy": "H-106",
+      "requirements": [
+        "RC-001",
+        "RC-002",
+        "RC-003"
+      ],
+      "description": "新增 `PublicCancellationContractTest` 六个场景，从 SDK 直接返回结果发起 cancel；运行 `mvn -B -Dtest=PublicCancellationContractTest test`，验证底层调用取消而其他请求正常。",
+      "file": "openspec/changes/harden-hermes-transport/tasks.md"
+    },
+    "harden-hermes-transport:7.2": {
+      "change": "harden-hermes-transport",
+      "id": "7.2",
+      "legacy": "H-106",
+      "requirements": [
+        "RC-001",
+        "RC-002",
+        "RC-003"
+      ],
+      "description": "绑定外层 Future、显式令牌、队列与重试到取消上下文；重跑该类，验证未开始任务不会发送、注册均注销。",
+      "file": "openspec/changes/harden-hermes-transport/tasks.md"
+    },
+    "harden-hermes-transport:7.3": {
+      "change": "harden-hermes-transport",
+      "id": "7.3",
+      "legacy": "H-106",
+      "requirements": [
+        "RC-001",
+        "RC-002",
+        "RC-003"
+      ],
+      "description": "实现所有权账本、幂等 close 和创建/关闭并发门禁；用外部共享客户端与并发 subscribe 测试，验证无关 Call 不被 cancelAll、无遗留订阅。",
+      "file": "openspec/changes/harden-hermes-transport/tasks.md"
+    },
+    "harden-hermes-transport:7.4": {
+      "change": "harden-hermes-transport",
+      "id": "7.4",
+      "legacy": "H-106",
+      "requirements": [
+        "RC-001",
+        "RC-002",
+        "RC-003"
+      ],
+      "description": "将观察关闭与远端停止拆开并更新示例；验证 RC-002 两场景远端 stop 计数为零，已发写请求被取消时暴露未知结果。",
+      "file": "openspec/changes/harden-hermes-transport/tasks.md"
+    },
+    "harden-hermes-transport:8.1": {
+      "change": "harden-hermes-transport",
+      "id": "8.1",
+      "legacy": "H-501",
+      "requirements": [
+        "BC-001",
+        "BC-002",
+        "BC-003"
+      ],
+      "description": "新增契约/API Shape/共享源码范围及显式白名单检查；运行脚本与 `SdkCompatibilityContractTest`，验证三线公共语义一致，差异只有已审查适配项。",
+      "file": "openspec/changes/harden-hermes-transport/tasks.md"
+    },
+    "harden-hermes-transport:8.2": {
+      "change": "harden-hermes-transport",
+      "id": "8.2",
+      "legacy": "H-501",
+      "requirements": [
+        "BC-001",
+        "BC-002",
+        "BC-003"
+      ],
+      "description": "在实际 JDK 8/17/21 分别运行 `mvn -B --no-transfer-progress clean verify` 并检查依赖字节码；验证报告记录真实环境而非仅 --release 编译。",
+      "file": "openspec/changes/harden-hermes-transport/tasks.md"
+    },
+    "harden-hermes-transport:8.3": {
+      "change": "harden-hermes-transport",
+      "id": "8.3",
+      "legacy": "H-502",
+      "requirements": [
+        "BC-001",
+        "BC-002",
+        "BC-003"
+      ],
+      "description": "使用可控 HTTP/SSE 服务执行 100/300/500/800/1000 档位及断线/慢消费者/取消测试；验证事件完整性与资源收敛，阈值按固定基线冻结，不调用大量付费 Agent。",
+      "file": "openspec/changes/harden-hermes-transport/tasks.md"
+    },
+    "harden-hermes-transport:8.4": {
+      "change": "harden-hermes-transport",
+      "id": "8.4",
+      "legacy": "H-503",
+      "requirements": [
+        "BC-001",
+        "BC-002",
+        "BC-003"
+      ],
+      "description": "更新 README 的 POM 对齐矩阵、Profile/端点/取消/重连迁移和日志限制；检查示例与新行为一致、无“无感兼容”误导或正文秘密泄露。",
+      "file": "openspec/changes/harden-hermes-transport/tasks.md"
+    },
+    "harden-hermes-transport:8.5": {
+      "change": "harden-hermes-transport",
+      "id": "8.5",
+      "legacy": "H-504",
+      "requirements": [
+        "BC-001",
+        "BC-002",
+        "BC-003"
+      ],
+      "description": "汇总当前批次代码 diff、三线测试和真实目标互操作证据；只有所有支持声明有证据时才批准候选发布/归档，本任务不得因规范文件已写完而勾选。",
+      "file": "openspec/changes/harden-hermes-transport/tasks.md"
+    },
+    "complete-hermes-http-runtime:1.1": {
+      "change": "complete-hermes-http-runtime",
+      "id": "1.1",
+      "legacy": "H-201",
+      "requirements": [
+        "CT-001",
+        "CT-002",
+        "CT-003"
+      ],
+      "description": "新增 `RequestContextContractTest` 的六场景和请求体快照断言；运行 `mvn -B -Dtest=RequestContextContractTest test`，验证并发修改、身份覆盖及媒体不支持的失败路径。",
+      "file": "openspec/changes/complete-hermes-http-runtime/tasks.md"
+    },
+    "complete-hermes-http-runtime:1.2": {
+      "change": "complete-hermes-http-runtime",
+      "id": "1.2",
+      "legacy": "H-201",
+      "requirements": [
+        "CT-001",
+        "CT-002",
+        "CT-003"
+      ],
+      "description": "实现不可变快照、显式值优先与契约化 model/provider/options 映射；运行同类测试验证三种入口发出的有效字段一致且保留实际模型区别。",
+      "file": "openspec/changes/complete-hermes-http-runtime/tasks.md"
+    },
+    "complete-hermes-http-runtime:1.3": {
+      "change": "complete-hermes-http-runtime",
+      "id": "1.3",
+      "legacy": "H-201",
+      "requirements": [
+        "CT-001",
+        "CT-002",
+        "CT-003"
+      ],
+      "description": "补结构化输入 builder 与安全 raw 扩展；运行 CT-003 和三线 JSON 样本对照，验证不丢未知字段、不伪造媒体接口、不覆盖凭据。",
+      "file": "openspec/changes/complete-hermes-http-runtime/tasks.md"
+    },
+    "complete-hermes-http-runtime:2.1": {
+      "change": "complete-hermes-http-runtime",
+      "id": "2.1",
+      "legacy": "H-202",
+      "requirements": [
+        "RS-001",
+        "RS-002",
+        "RS-003"
+      ],
+      "description": "新增 `ResponsesStreamingContractTest` 六场景；运行 `mvn -B -Dtest=ResponsesStreamingContractTest test`，验证普通 JSON 入口拒绝 stream=true 且发送计数为零。",
+      "file": "openspec/changes/complete-hermes-http-runtime/tasks.md"
+    },
+    "complete-hermes-http-runtime:2.2": {
+      "change": "complete-hermes-http-runtime",
+      "id": "2.2",
+      "legacy": "H-202",
+      "requirements": [
+        "RS-001",
+        "RS-002",
+        "RS-003"
+      ],
+      "description": "实现专用 stream、按原生索引输出聚合与有界结果；运行同类测试，验证工具/过程/答案分离、结果不重复累计。",
+      "file": "openspec/changes/complete-hermes-http-runtime/tasks.md"
+    },
+    "complete-hermes-http-runtime:2.3": {
+      "change": "complete-hermes-http-runtime",
+      "id": "2.3",
+      "legacy": "H-202",
+      "requirements": [
+        "RS-001",
+        "RS-002",
+        "RS-003"
+      ],
+      "description": "覆盖空终态、中断/缺口与回调异常，接入前置取消/身份；重跑三线同样本验证完整性标志一致且无 Java 二次工具调用。",
+      "file": "openspec/changes/complete-hermes-http-runtime/tasks.md"
+    },
+    "complete-hermes-http-runtime:3.1": {
+      "change": "complete-hermes-http-runtime",
+      "id": "3.1",
+      "legacy": "H-203",
+      "requirements": [
+        "RN-001",
+        "RN-002",
+        "RN-003",
+        "RN-004"
+      ],
+      "description": "新增 `RunLifecycleContractTest` 八场景，用请求计数和状态序列测试 submit/attach/timeout；运行 `mvn -B -Dtest=RunLifecycleContractTest test`，保存预期失败。",
+      "file": "openspec/changes/complete-hermes-http-runtime/tasks.md"
+    },
+    "complete-hermes-http-runtime:3.2": {
+      "change": "complete-hermes-http-runtime",
+      "id": "3.2",
+      "legacy": "H-203",
+      "requirements": [
+        "RN-001",
+        "RN-002",
+        "RN-003",
+        "RN-004"
+      ],
+      "description": "实现 submitRun/attachRun、独立 server/observation 状态及有界等待；测试 RN-001/002 验证 attach 不创建、未知状态不误判终态。",
+      "file": "openspec/changes/complete-hermes-http-runtime/tasks.md"
+    },
+    "complete-hermes-http-runtime:3.3": {
+      "change": "complete-hermes-http-runtime",
+      "id": "3.3",
+      "legacy": "H-203",
+      "requirements": [
+        "RN-001",
+        "RN-002",
+        "RN-003",
+        "RN-004"
+      ],
+      "description": "实现同一操作键/载荷/身份重试与冲突反馈；测试响应丢失和冲突，验证不换键且在无幂等契约时不自动重放。",
+      "file": "openspec/changes/complete-hermes-http-runtime/tasks.md"
+    },
+    "complete-hermes-http-runtime:3.4": {
+      "change": "complete-hermes-http-runtime",
+      "id": "3.4",
+      "legacy": "H-203",
+      "requirements": [
+        "RN-001",
+        "RN-002",
+        "RN-003",
+        "RN-004"
+      ],
+      "description": "实现 StopReceipt 与事件/查询终态核对；运行 RN-004 和自然完成竞态，验证 stop 接收后不会提前宣称 worker 已退出。",
+      "file": "openspec/changes/complete-hermes-http-runtime/tasks.md"
+    },
+    "complete-hermes-http-runtime:4.1": {
+      "change": "complete-hermes-http-runtime",
+      "id": "4.1",
+      "legacy": "H-204",
+      "requirements": [
+        "AP-001",
+        "AP-002"
+      ],
+      "description": "新增 `ApprovalWorkflowContractTest` 四场景；运行 `mvn -B -Dtest=ApprovalWorkflowContractTest test`，验证无 handler、过期和跨身份决定不批准。",
+      "file": "openspec/changes/complete-hermes-http-runtime/tasks.md"
+    },
+    "complete-hermes-http-runtime:4.2": {
+      "change": "complete-hermes-http-runtime",
+      "id": "4.2",
+      "legacy": "H-204",
+      "requirements": [
+        "AP-001",
+        "AP-002"
+      ],
+      "description": "实现异步挑战状态与 wire 映射，绑定运行/身份/原生挑战信息；运行同类测试，验证有效决定只发送一次且审批回调不阻塞事件读取。",
+      "file": "openspec/changes/complete-hermes-http-runtime/tasks.md"
+    },
+    "complete-hermes-http-runtime:4.3": {
+      "change": "complete-hermes-http-runtime",
+      "id": "4.3",
+      "legacy": "H-204",
+      "requirements": [
+        "AP-001",
+        "AP-002"
+      ],
+      "description": "测试超时迟到决定、重复提交和无 server challenge ID 的保守路径；验证未伪造 exactly-once，Receipt 不被当成 Run 成功。",
+      "file": "openspec/changes/complete-hermes-http-runtime/tasks.md"
+    },
+    "complete-hermes-http-runtime:5.1": {
+      "change": "complete-hermes-http-runtime",
+      "id": "5.1",
+      "legacy": "H-205",
+      "requirements": [
+        "RR-001",
+        "RR-002",
+        "RR-003"
+      ],
+      "description": "新增 `RuntimeResourcesContractTest` 六场景及契约确认表；运行 `mvn -B -Dtest=RuntimeResourcesContractTest test`，验证未支持/未知能力不被当作可用。",
+      "file": "openspec/changes/complete-hermes-http-runtime/tasks.md"
+    },
+    "complete-hermes-http-runtime:5.2": {
+      "change": "complete-hermes-http-runtime",
+      "id": "5.2",
+      "legacy": "H-205",
+      "requirements": [
+        "RR-001",
+        "RR-002",
+        "RR-003"
+      ],
+      "description": "补类型化模型选项元数据、会话分页与历史请求；用已固定 wire 样本测试边界和扩展保留，验证必要 async 入口取消语义一致。",
+      "file": "openspec/changes/complete-hermes-http-runtime/tasks.md"
+    },
+    "complete-hermes-http-runtime:5.3": {
+      "change": "complete-hermes-http-runtime",
+      "id": "5.3",
+      "legacy": "H-205",
+      "requirements": [
+        "RR-001",
+        "RR-002",
+        "RR-003"
+      ],
+      "description": "实现 Job 创建/增量修改/控制与 UNSET/SET/CLEAR；测试省略与清空序列化不同，立即执行不默认重放且无额外本地调度。",
+      "file": "openspec/changes/complete-hermes-http-runtime/tasks.md"
+    },
+    "complete-hermes-http-runtime:5.4": {
+      "change": "complete-hermes-http-runtime",
+      "id": "5.4",
+      "legacy": "H-205",
+      "requirements": [
+        "RR-001",
+        "RR-002",
+        "RR-003"
+      ],
+      "description": "实现能力隔离缓存与 Health 分类；运行 RR-003，验证鉴权失败不等于离线、能力中的新端点不获自动授权。",
+      "file": "openspec/changes/complete-hermes-http-runtime/tasks.md"
+    },
+    "complete-hermes-http-runtime:6.1": {
+      "change": "complete-hermes-http-runtime",
+      "id": "6.1",
+      "legacy": "H-206",
+      "requirements": [
+        "OB-001",
+        "OB-002",
+        "OB-003"
+      ],
+      "description": "新增 `RuntimeObservabilityContractTest` 六场景；运行 `mvn -B -Dtest=RuntimeObservabilityContractTest test`，验证错误分类、缺失用量和秘密日志边界。",
+      "file": "openspec/changes/complete-hermes-http-runtime/tasks.md"
+    },
+    "complete-hermes-http-runtime:6.2": {
+      "change": "complete-hermes-http-runtime",
+      "id": "6.2",
+      "legacy": "H-206",
+      "requirements": [
+        "OB-001",
+        "OB-002",
+        "OB-003"
+      ],
+      "description": "实现状态/必要响应头/受限错误体和重试决策，增加新严格删除结果；验证 404/403/500 不混淆，Retry-After 被 deadline 约束。",
+      "file": "openspec/changes/complete-hermes-http-runtime/tasks.md"
+    },
+    "complete-hermes-http-runtime:6.3": {
+      "change": "complete-hermes-http-runtime",
+      "id": "6.3",
+      "legacy": "H-206",
+      "requirements": [
+        "OB-001",
+        "OB-002",
+        "OB-003"
+      ],
+      "description": "实现 usage/runtime 事实模型与可选 observer；测试重复终态不倍增用量、缺失不伪造零、无遥测后端仍正常工作。",
+      "file": "openspec/changes/complete-hermes-http-runtime/tasks.md"
+    },
+    "complete-hermes-http-runtime:6.4": {
+      "change": "complete-hermes-http-runtime",
+      "id": "6.4",
+      "legacy": "H-206",
+      "requirements": [
+        "OB-001",
+        "OB-002",
+        "OB-003"
+      ],
+      "description": "对 BODY、原始报文诊断和观察者异常加入脱敏/长度/隔离检查；运行 OB-003 并审核输出，验证无秘密和无限高基数标签。",
+      "file": "openspec/changes/complete-hermes-http-runtime/tasks.md"
+    },
+    "complete-hermes-http-runtime:7.1": {
+      "change": "complete-hermes-http-runtime",
+      "id": "7.1",
+      "legacy": "H-501",
+      "requirements": [],
+      "description": "对当前新增 API 和同版样本运行三线 guard 与真实 JDK 的 `mvn -B --no-transfer-progress clean verify`；验证全部新增业务结果等价。",
+      "file": "openspec/changes/complete-hermes-http-runtime/tasks.md"
+    },
+    "complete-hermes-http-runtime:7.2": {
+      "change": "complete-hermes-http-runtime",
+      "id": "7.2",
+      "legacy": "H-502",
+      "requirements": [],
+      "description": "在固定授权测试 Hermes 上执行创建→事件→审批→停止→真实终态；验证每步有脱敏证据和资源收敛，无实例时本项保持未完成。",
+      "file": "openspec/changes/complete-hermes-http-runtime/tasks.md"
+    },
+    "complete-hermes-http-runtime:7.3": {
+      "change": "complete-hermes-http-runtime",
+      "id": "7.3",
+      "legacy": "H-503",
+      "requirements": [],
+      "description": "交付 Responses、Run、审批、Jobs 和取消迁移示例；核对配置/方法与实现一致，不把估算费用写成真实账单。",
+      "file": "openspec/changes/complete-hermes-http-runtime/tasks.md"
+    },
+    "complete-hermes-http-runtime:7.4": {
+      "change": "complete-hermes-http-runtime",
+      "id": "7.4",
+      "legacy": "H-504",
+      "requirements": [],
+      "description": "汇总本包证据并复核前置包已实施/归档；验证声明支持范围、diff、文档和未完成项一致后才批准候选发布。",
+      "file": "openspec/changes/complete-hermes-http-runtime/tasks.md"
+    },
+    "enhance-hermes-cli-runtime:1.1": {
+      "change": "enhance-hermes-cli-runtime",
+      "id": "1.1",
+      "legacy": "H-301",
+      "requirements": [
+        "CE-001",
+        "CE-002",
+        "CE-003"
+      ],
+      "description": "新增 `CliExecutionContractTest` 的 CE-001～003 场景和无副作用测试进程；运行 `mvn -B -Dtest=CliExecutionContractTest test`，断言 argv、环境、双 Profile 及排队限制。",
+      "file": "openspec/changes/enhance-hermes-cli-runtime/tasks.md"
+    },
+    "enhance-hermes-cli-runtime:1.2": {
+      "change": "enhance-hermes-cli-runtime",
+      "id": "1.2",
+      "legacy": "H-301",
+      "requirements": [
+        "CE-001",
+        "CE-002",
+        "CE-003"
+      ],
+      "description": "实现每次启动快照、允许环境和独立 argv；运行对应场景，验证父环境/全局 Profile 未修改且 shell 字符未执行。",
+      "file": "openspec/changes/enhance-hermes-cli-runtime/tasks.md"
+    },
+    "enhance-hermes-cli-runtime:1.3": {
+      "change": "enhance-hermes-cli-runtime",
+      "id": "1.3",
+      "legacy": "H-301",
+      "requirements": [
+        "CE-001",
+        "CE-002",
+        "CE-003"
+      ],
+      "description": "实现有限输出上限、并发 permit 和有界可取消排队；运行输出洪泛/取消场景，验证内存及配额回归记录基线。",
+      "file": "openspec/changes/enhance-hermes-cli-runtime/tasks.md"
+    },
+    "enhance-hermes-cli-runtime:1.4": {
+      "change": "enhance-hermes-cli-runtime",
+      "id": "1.4",
+      "legacy": "H-301",
+      "requirements": [
+        "CE-001",
+        "CE-002",
+        "CE-003"
+      ],
+      "description": "保留旧有限 execute 并增加受管启动边界；测试交互命令明确拒绝或委托，验证不将有限入口变成长连接。",
+      "file": "openspec/changes/enhance-hermes-cli-runtime/tasks.md"
+    },
+    "enhance-hermes-cli-runtime:2.1": {
+      "change": "enhance-hermes-cli-runtime",
+      "id": "2.1",
+      "legacy": "H-302",
+      "requirements": [
+        "CS-001",
+        "CS-002",
+        "CS-003"
+      ],
+      "description": "新增 `CliStreamingContractTest` 七场景，覆盖字节分片、stderr、启动失败和终态冲突；运行 `mvn -B -Dtest=CliStreamingContractTest test` 验证缺陷边界。",
+      "file": "openspec/changes/enhance-hermes-cli-runtime/tasks.md"
+    },
+    "enhance-hermes-cli-runtime:2.2": {
+      "change": "enhance-hermes-cli-runtime",
+      "id": "2.2",
+      "legacy": "H-302",
+      "requirements": [
+        "CS-001",
+        "CS-002",
+        "CS-003"
+      ],
+      "description": "实现有界增量 UTF-8 JSONL 解码和 stdout/stderr 分离；重跑测试，验证半行只在完整后交付、长行超限不先分配无限内存。",
+      "file": "openspec/changes/enhance-hermes-cli-runtime/tasks.md"
+    },
+    "enhance-hermes-cli-runtime:2.3": {
+      "change": "enhance-hermes-cli-runtime",
+      "id": "2.3",
+      "legacy": "H-302",
+      "requirements": [
+        "CS-001",
+        "CS-002",
+        "CS-003"
+      ],
+      "description": "实现 live handle 与独立终态/exit 聚合；测试进程未退出前事件可见、部分文本不报成功、重复最终文本不双拼。",
+      "file": "openspec/changes/enhance-hermes-cli-runtime/tasks.md"
+    },
+    "enhance-hermes-cli-runtime:2.4": {
+      "change": "enhance-hermes-cli-runtime",
+      "id": "2.4",
+      "legacy": "H-302",
+      "requirements": [
+        "CS-001",
+        "CS-002",
+        "CS-003"
+      ],
+      "description": "按固定 CLI 样本映射机器事件和事实用量，接入可选 observer；验证未知类型保留、缺字段不猜测，秘密不被日志外送。",
+      "file": "openspec/changes/enhance-hermes-cli-runtime/tasks.md"
+    },
+    "enhance-hermes-cli-runtime:3.1": {
+      "change": "enhance-hermes-cli-runtime",
+      "id": "3.1",
+      "legacy": "H-303",
+      "requirements": [
+        "CE-004"
+      ],
+      "description": "为 CE-004 新增忽略取消和外部附着场景，并加入受控后代进程；运行 `mvn -B -Dtest=CliExecutionContractTest test`，记录修复前资源状态。",
+      "file": "openspec/changes/enhance-hermes-cli-runtime/tasks.md"
+    },
+    "enhance-hermes-cli-runtime:3.2": {
+      "change": "enhance-hermes-cli-runtime",
+      "id": "3.2",
+      "legacy": "H-303",
+      "requirements": [
+        "CE-004"
+      ],
+      "description": "实现协议取消→宽限等待→系统终止→退出确认，只作用于拥有进程；重跑场景并检查后代残留，不使用按名称全局 kill。",
+      "file": "openspec/changes/enhance-hermes-cli-runtime/tasks.md"
+    },
+    "enhance-hermes-cli-runtime:3.3": {
+      "change": "enhance-hermes-cli-runtime",
+      "id": "3.3",
+      "legacy": "H-303",
+      "requirements": [
+        "CE-004"
+      ],
+      "description": "分别在 Linux/macOS/Windows 运行平台 fixture 并记录 JDK/OS、PID 与退出证据；未验证平台标 LIMITED/UNVERIFIED，不复制其他平台通过结果。",
+      "file": "openspec/changes/enhance-hermes-cli-runtime/tasks.md"
+    },
+    "enhance-hermes-cli-runtime:3.4": {
+      "change": "enhance-hermes-cli-runtime",
+      "id": "3.4",
+      "legacy": "H-303",
+      "requirements": [
+        "CE-004"
+      ],
+      "description": "验证重复 close、排队取消、stderr 洪泛和超时竞态都释放 permit/Future/线程；重跑资源压力测试，确认结果回到固定基线。",
+      "file": "openspec/changes/enhance-hermes-cli-runtime/tasks.md"
+    },
+    "enhance-hermes-cli-runtime:4.1": {
+      "change": "enhance-hermes-cli-runtime",
+      "id": "4.1",
+      "legacy": "H-304",
+      "requirements": [
+        "CC-001",
+        "CC-002"
+      ],
+      "description": "用目标版本 --version/--help 和解析器证据登记命令、别名、选项和退出码；验证探测不执行 install/update/delete/start，尤其核实 cron add/create。",
+      "file": "openspec/changes/enhance-hermes-cli-runtime/tasks.md"
+    },
+    "enhance-hermes-cli-runtime:4.2": {
+      "change": "enhance-hermes-cli-runtime",
+      "id": "4.2",
+      "legacy": "H-304",
+      "requirements": [
+        "CC-001",
+        "CC-002"
+      ],
+      "description": "新增 `CliCommandsContractTest` 四场景并实现已验证有限管理选项/raw 入口；运行 `mvn -B -Dtest=CliCommandsContractTest test`，验证 raw 仍受资源和身份策略约束。",
+      "file": "openspec/changes/enhance-hermes-cli-runtime/tasks.md"
+    },
+    "enhance-hermes-cli-runtime:4.3": {
+      "change": "enhance-hermes-cli-runtime",
+      "id": "4.3",
+      "legacy": "H-304",
+      "requirements": [
+        "CC-001",
+        "CC-002"
+      ],
+      "description": "类型化机器用量与实际模型/时长信息；重跑同类测试，验证缺失保持缺失，不从自然语言日志推算 token 或账单。",
+      "file": "openspec/changes/enhance-hermes-cli-runtime/tasks.md"
+    },
+    "enhance-hermes-cli-runtime:5.1": {
+      "change": "enhance-hermes-cli-runtime",
+      "id": "5.1",
+      "legacy": "H-501",
+      "requirements": [],
+      "description": "同步三分支并在对应真实 JDK 运行全部 CLI contract 与 `mvn -B --no-transfer-progress clean verify`；验证基础公开类型没有高版本依赖。",
+      "file": "openspec/changes/enhance-hermes-cli-runtime/tasks.md"
+    },
+    "enhance-hermes-cli-runtime:5.2": {
+      "change": "enhance-hermes-cli-runtime",
+      "id": "5.2",
+      "legacy": "H-502",
+      "requirements": [],
+      "description": "用伪 CLI 做长输出/慢消费/取消/超时故障测试，并在授权目标 CLI 验证机器流；记录内存、线程、进程与输出完整性，测试不得自动批准危险工具。",
+      "file": "openspec/changes/enhance-hermes-cli-runtime/tasks.md"
+    },
+    "enhance-hermes-cli-runtime:5.3": {
+      "change": "enhance-hermes-cli-runtime",
+      "id": "5.3",
+      "legacy": "H-503",
+      "requirements": [],
+      "description": "交付有限 execute→streaming→受管进程迁移说明；验证全局 Profile/用户配置未被测试改动，平台能力声明有证据。",
+      "file": "openspec/changes/enhance-hermes-cli-runtime/tasks.md"
+    },
+    "enhance-hermes-cli-runtime:5.4": {
+      "change": "enhance-hermes-cli-runtime",
+      "id": "5.4",
+      "legacy": "H-504",
+      "requirements": [],
+      "description": "汇总当前批次证据并复核前置契约，审查 diff/残留/迁移后批准候选版本；真实平台证据缺失时保持对应任务未完成。",
+      "file": "openspec/changes/enhance-hermes-cli-runtime/tasks.md"
+    },
+    "add-hermes-acp-client:1.1": {
+      "change": "add-hermes-acp-client",
+      "id": "1.1",
+      "legacy": "H-401",
+      "requirements": [
+        "AT-001",
+        "AT-002"
+      ],
+      "description": "固定 Hermes/ACP 版本、framing、能力字段、方法及错误，决定满足 JDK 的协议适配；验证 descriptor 有来源与字节码结论，不假设 CLI/LSP framing。",
+      "file": "openspec/changes/add-hermes-acp-client/tasks.md"
+    },
+    "add-hermes-acp-client:1.2": {
+      "change": "add-hermes-acp-client",
+      "id": "1.2",
+      "legacy": "H-401",
+      "requirements": [
+        "AT-001",
+        "AT-002"
+      ],
+      "description": "新增 `AcpTransportContractTest` 的 AT-001/002 四场景：真实帧、乱序响应、通知与未知 ID；运行 `mvn -B -Dtest=AcpTransportContractTest test` 记录失败。",
+      "file": "openspec/changes/add-hermes-acp-client/tasks.md"
+    },
+    "add-hermes-acp-client:1.3": {
+      "change": "add-hermes-acp-client",
+      "id": "1.3",
+      "legacy": "H-401",
+      "requirements": [
+        "AT-001",
+        "AT-002"
+      ],
+      "description": "实现持续读写、初始化、请求关联及通知分流；运行同类测试，验证初始化前不发 session 请求且 stderr 不入协议 stdout。",
+      "file": "openspec/changes/add-hermes-acp-client/tasks.md"
+    },
+    "add-hermes-acp-client:1.4": {
+      "change": "add-hermes-acp-client",
+      "id": "1.4",
+      "legacy": "H-401",
+      "requirements": [
+        "AT-001",
+        "AT-002"
+      ],
+      "description": "实现 frame/pending/writer/deadline 上限和超限清理；负载测试验证无无限请求表、乱序响应不误完成其他请求。",
+      "file": "openspec/changes/add-hermes-acp-client/tasks.md"
+    },
+    "add-hermes-acp-client:2.1": {
+      "change": "add-hermes-acp-client",
+      "id": "2.1",
+      "legacy": "H-402",
+      "requirements": [
+        "AS-001",
+        "AS-002",
+        "AS-003"
+      ],
+      "description": "新增 `AcpSessionsContractTest` 六场景及会话状态断言；运行 `mvn -B -Dtest=AcpSessionsContractTest test`，验证创建/prompt/取消和不支持能力路径。",
+      "file": "openspec/changes/add-hermes-acp-client/tasks.md"
+    },
+    "add-hermes-acp-client:2.2": {
+      "change": "add-hermes-acp-client",
+      "id": "2.2",
+      "legacy": "H-402",
+      "requirements": [
+        "AS-001",
+        "AS-002",
+        "AS-003"
+      ],
+      "description": "实现最小 session/prompt/事件/结果与显式取消；运行 AS-001，验证原生会话关联、进度先于完成且其他会话不受影响。",
+      "file": "openspec/changes/add-hermes-acp-client/tasks.md"
+    },
+    "add-hermes-acp-client:2.3": {
+      "change": "add-hermes-acp-client",
+      "id": "2.3",
+      "legacy": "H-402",
+      "requirements": [
+        "AS-001",
+        "AS-002",
+        "AS-003"
+      ],
+      "description": "对恢复/分叉/媒体和同名工具关联增加 capability gate；运行 AS-002，验证不自动 HTTP fallback、不用名称猜原生调用 ID。",
+      "file": "openspec/changes/add-hermes-acp-client/tasks.md"
+    },
+    "add-hermes-acp-client:2.4": {
+      "change": "add-hermes-acp-client",
+      "id": "2.4",
+      "legacy": "H-402",
+      "requirements": [
+        "AS-001",
+        "AS-002",
+        "AS-003"
+      ],
+      "description": "实现显式启用与可选依赖隔离；运行 AS-003 和 Java 8 类加载检查，无 ACP 环境时基础 HTTP/CLI 不探测、不报依赖缺失。",
+      "file": "openspec/changes/add-hermes-acp-client/tasks.md"
+    },
+    "add-hermes-acp-client:3.1": {      "change": "add-hermes-acp-client",
+      "id": "3.1",
+      "legacy": "H-403",
+      "requirements": [
+        "AM-001",
+        "AM-002",
+        "AT-003"
+      ],
+      "description": "新增 `AcpPermissionsContractTest` 四场景和 `AcpTransportContractTest` 退出/重启场景；运行两类，验证异步回调查询状态时读循环不死锁。",
+      "file": "openspec/changes/add-hermes-acp-client/tasks.md"
+    },
+    "add-hermes-acp-client:3.2": {
+      "change": "add-hermes-acp-client",
+      "id": "3.2",
+      "legacy": "H-403",
+      "requirements": [
+        "AM-001",
+        "AM-002",
+        "AT-003"
+      ],
+      "description": "实现连接代次/会话/挑战绑定、默认拒绝、超时和单次应答；测试迟到允许被忽略、过期授权不能用于新连接。",
+      "file": "openspec/changes/add-hermes-acp-client/tasks.md"
+    },
+    "add-hermes-acp-client:3.3": {
+      "change": "add-hermes-acp-client",
+      "id": "3.3",
+      "legacy": "H-403",
+      "requirements": [
+        "AM-001",
+        "AM-002",
+        "AT-003"
+      ],
+      "description": "将进程退出连接到 pending ledger 和任务清理；运行 AT-003，验证全部挂起请求结束且重启不会自动 replay prompt。",
+      "file": "openspec/changes/add-hermes-acp-client/tasks.md"
+    },
+    "add-hermes-acp-client:3.4": {
+      "change": "add-hermes-acp-client",
+      "id": "3.4",
+      "legacy": "H-403",
+      "requirements": [
+        "AM-001",
+        "AM-002",
+        "AT-003"
+      ],
+      "description": "覆盖协议取消/权限拒绝/进程退出竞态及外部进程 ownership；运行当前权限和传输测试及资源检查，验证无双应答、误杀或永久等待。",
+      "file": "openspec/changes/add-hermes-acp-client/tasks.md"
+    },
+    "add-hermes-acp-client:4.1": {
+      "change": "add-hermes-acp-client",
+      "id": "4.1",
+      "legacy": "H-404",
+      "requirements": [
+        "AT-001",
+        "AT-003",
+        "AS-001",
+        "AM-002"
+      ],
+      "description": "建立已授权目标 Hermes 的最小互操作环境，记录版本、选项及只读/审批控制测试工具；验证无全局自动批准，无凭据时不伪造环境通过。",
+      "file": "openspec/changes/add-hermes-acp-client/tasks.md"
+    },
+    "add-hermes-acp-client:4.2": {
+      "change": "add-hermes-acp-client",
+      "id": "4.2",
+      "legacy": "H-404",
+      "requirements": [
+        "AT-001",
+        "AT-003",
+        "AS-001",
+        "AM-002"
+      ],
+      "description": "执行 Java 初始化→建会话→prompt→服务端权限反向请求→Java 决定→终态；验证四向消息、请求 ID 和最终结果均有脱敏证据。",
+      "file": "openspec/changes/add-hermes-acp-client/tasks.md"
+    },
+    "add-hermes-acp-client:4.3": {
+      "change": "add-hermes-acp-client",
+      "id": "4.3",
+      "legacy": "H-404",
+      "requirements": [
+        "AT-001",
+        "AT-003",
+        "AS-001",
+        "AM-002"
+      ],
+      "description": "执行中途取消、对端退出和显式恢复/不支持恢复分支；验证挂起请求结束、无自动重放，并保存资源回收证据。",
+      "file": "openspec/changes/add-hermes-acp-client/tasks.md"
+    },
+    "add-hermes-acp-client:4.4": {
+      "change": "add-hermes-acp-client",
+      "id": "4.4",
+      "legacy": "H-404",
+      "requirements": [
+        "AT-001",
+        "AT-003",
+        "AS-001",
+        "AM-002"
+      ],
+      "description": "编写显式启用/权限处理/关闭的 Java 示例并在宣称支持的版本线编译运行；验证基础 SDK 不装 ACP 仍可运行。",
+      "file": "openspec/changes/add-hermes-acp-client/tasks.md"
+    },
+    "add-hermes-acp-client:5.1": {
+      "change": "add-hermes-acp-client",
+      "id": "5.1",
+      "legacy": "H-501",
+      "requirements": [],
+      "description": "运行三线公开契约、真实 JDK 和核心无 ACP 类加载测试；验证可选依赖矩阵清晰，不把有限 ACP 支持写成所有版本线等价支持。",
+      "file": "openspec/changes/add-hermes-acp-client/tasks.md"
+    },
+    "add-hermes-acp-client:5.2": {
+      "change": "add-hermes-acp-client",
+      "id": "5.2",
+      "legacy": "H-502",
+      "requirements": [],
+      "description": "执行双向交错、frame/pending 饱和、取消/退出故障注入；验证有界资源和权限读循环存活并记录结果。",
+      "file": "openspec/changes/add-hermes-acp-client/tasks.md"
+    },
+    "add-hermes-acp-client:5.3": {
+      "change": "add-hermes-acp-client",
+      "id": "5.3",
+      "legacy": "H-503",
+      "requirements": [],
+      "description": "更新 ACP 支持矩阵、迁移、权限和原 cli.acp 边界；检视全部四包的文档和实现符合 spec。",
+      "file": "openspec/changes/add-hermes-acp-client/tasks.md"
+    },
+    "add-hermes-acp-client:5.4": {
+      "change": "add-hermes-acp-client",
+      "id": "5.4",
+      "legacy": "H-504",
+      "requirements": [],
+      "description": "按依赖复核四包与原 28 项任务及 28 个验收场景的证据，不遗漏未验证项；只有授权评审及真实测试齐全后才发布并归档，不自动启用 A2A/MCP/Admin。",
+      "file": "openspec/changes/add-hermes-acp-client/tasks.md"
+    }
+  },
+  "dependency_semantics": "project-level human/CI gate, not native OpenSpec scheduler",
+  "dependencies": {
+    "harden-hermes-transport": [],
+    "complete-hermes-http-runtime": [
+      "harden-hermes-transport"
+    ],
+    "enhance-hermes-cli-runtime": [
+      "harden-hermes-transport",
+      "complete-hermes-http-runtime"
+    ],
+    "add-hermes-acp-client": [
+      "enhance-hermes-cli-runtime"
+    ]
+  }
+}

@@ -1,0 +1,4 @@
+NOT_RUN: official OpenSpec CLI is not installed or is not on PATH.
+No official validation or status command was executed.
+
+wrapper_exit_code=2

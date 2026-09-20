@@ -1,0 +1,1615 @@
+{
+  "schema": "hermes-spec-index/v1",
+  "changes": {
+    "harden-hermes-transport": {
+      "title": "传输、安全与兼容性加固",
+      "caps": [
+        "trusted-endpoints",
+        "profile-authentication",
+        "sse-lifecycle",
+        "request-cancellation",
+        "sdk-compatibility"
+      ],
+      "depends": []
+    },
+    "complete-hermes-http-runtime": {
+      "title": "HTTP 运行闭环",
+      "caps": [
+        "request-context",
+        "responses-streaming",
+        "run-lifecycle",
+        "approval-workflow",
+        "runtime-resources",
+        "runtime-observability"
+      ],
+      "depends": [
+        "harden-hermes-transport"
+      ]
+    },
+    "enhance-hermes-cli-runtime": {
+      "title": "CLI 结构化执行与进程管理",
+      "caps": [
+        "cli-execution",
+        "cli-streaming",
+        "cli-commands"
+      ],
+      "depends": [
+        "harden-hermes-transport",
+        "complete-hermes-http-runtime"
+      ]
+    },
+    "add-hermes-acp-client": {
+      "title": "ACP 双向协议客户端",
+      "caps": [
+        "acp-transport",
+        "acp-sessions",
+        "acp-permissions"
+      ],
+      "depends": [
+        "enhance-hermes-cli-runtime"
+      ]
+    }
+  },
+  "capabilities": {
+    "trusted-endpoints": {
+      "change": "harden-hermes-transport",
+      "title": "可信端点与出站策略",
+      "purpose": "定义 Java 应用连接可信本机、企业内网与公网 Hermes 服务时的可观察安全边界，使合法部署无需测试旁路，同时阻止未授权目标、身份外送及配置与实际连接之间的地址校验脱节。",
+      "reqs": [
+        "EP-001",
+        "EP-002",
+        "EP-003"
+      ]
+    },
+    "profile-authentication": {
+      "change": "harden-hermes-transport",
+      "title": "Profile 身份与凭据隔离",
+      "purpose": "定义命名 Profile 的凭据绑定、轮换和并发隔离，使连接复用不改变调用身份；普通请求选项不得覆盖已绑定认证，缺失凭据、身份变更和关闭行为均向宿主明确报告。",
+      "reqs": [
+        "PA-001",
+        "PA-002",
+        "PA-003"
+      ]
+    },
+    "sse-lifecycle": {
+      "change": "harden-hermes-transport",
+      "title": "SSE 数据、终态与恢复",
+      "purpose": "定义聊天、Responses、运行和会话事件流的原始帧保留、端点专用解释、终态与断线语义，在有界资源中保持事件顺序，并保证重新观察不会被误用为再次执行有副作用的 Agent 请求。",
+      "reqs": [
+        "SE-001",
+        "SE-002",
+        "SE-003",
+        "SE-004",
+        "SE-005",
+        "SE-006"
+      ]
+    },
+    "request-cancellation": {
+      "change": "harden-hermes-transport",
+      "title": "取消与资源所有权",
+      "purpose": "明确本地等待、网络调用与远端运行之间的取消边界，要求 SDK 提供的公开取消入口真正收敛对应资源，并在共享传输、关闭竞态和结果未知条件下不影响宿主的其他工作。",
+      "reqs": [
+        "RC-001",
+        "RC-002",
+        "RC-003"
+      ]
+    },
+    "sdk-compatibility": {
+      "change": "harden-hermes-transport",
+      "title": "三版本线与证据化发布",
+      "purpose": "保证 Java 8、17、21 三条 SDK 版本线具有相同的公开业务契约，同时允许底层依赖适配差异；真实协议来源、运行环境、迁移变化与发布证据必须可追溯，而不是以单一 Mock 结果代替兼容证明。",
+      "reqs": [
+        "BC-001",
+        "BC-002",
+        "BC-003"
+      ]
+    },
+    "request-context": {
+      "change": "complete-hermes-http-runtime",
+      "title": "请求上下文与模型选择",
+      "purpose": "为 HTTP 各领域请求提供明确的身份、会话、模型选择与调用选项合并规则，使客户端默认值和单次覆盖保持可预测，同时避免可变对象、原始请求头和协议扩展破坏既定身份隔离。",
+      "reqs": [
+        "CT-001",
+        "CT-002",
+        "CT-003"
+      ]
+    },
+    "responses-streaming": {
+      "change": "complete-hermes-http-runtime",
+      "title": "Responses 结构化流",
+      "purpose": "让 Java 调用者通过明确的流式入口消费 Responses 事件并获得可解释的最终结果，按服务端输出项关联内容，避免工具活动、过程信息与最终答案混合，也避免中断与重复终态造成假成功或重复累计。",
+      "reqs": [
+        "RS-001",
+        "RS-002",
+        "RS-003"
+      ]
+    },
+    "run-lifecycle": {
+      "change": "complete-hermes-http-runtime",
+      "title": "Agent Run 句柄与状态核对",
+      "purpose": "为提交、重新附着、停止和等待 Agent 运行提供持续可观察的生命周期契约，严格分离本地连接状态和服务端执行状态，并利用已确认的幂等语义处理响应丢失与进程恢复而不重复创建工作。",
+      "reqs": [
+        "RN-001",
+        "RN-002",
+        "RN-003",
+        "RN-004"
+      ]
+    },
+    "approval-workflow": {
+      "change": "complete-hermes-http-runtime",
+      "title": "人工审批闭环",
+      "purpose": "定义服务端审批请求与宿主决策之间的身份绑定、超时与失败语义，确保任何缺失、过期或异常均不会自动扩大权限；提交审批仅改变当前挑战处理，不等同于运行完成。",
+      "reqs": [
+        "AP-001",
+        "AP-002"
+      ]
+    },
+    "runtime-resources": {
+      "change": "complete-hermes-http-runtime",
+      "title": "模型、会话、Jobs 与能力发现",
+      "purpose": "为模型选项、会话、定时任务、健康与能力查询建立类型化且可扩展的外部契约，区分缺失与清空、不可见与失败、未知与不支持，并以服务端能力证据限制自动化操作。",
+      "reqs": [
+        "RR-001",
+        "RR-002",
+        "RR-003"
+      ]
+    },
+    "runtime-observability": {
+      "change": "complete-hermes-http-runtime",
+      "title": "错误、运行事实与安全观测",
+      "purpose": "提供可分类错误、必要响应元数据、事实性模型和用量以及受控生命周期观测，使宿主能够审计和诊断；正文、凭据与原始协议信息不会因为调试或遥测自动外送，费用与授权仍由宿主负责。",
+      "reqs": [
+        "OB-001",
+        "OB-002",
+        "OB-003"
+      ]
+    },
+    "cli-execution": {
+      "change": "enhance-hermes-cli-runtime",
+      "title": "CLI 执行上下文与有界资源",
+      "purpose": "将有限命令、结构化单轮执行和长期受管进程分为清晰的调用形态，固定每次执行的 Profile、环境与工作目录，保证参数安全、输出和并发有界，并只回收 SDK 确实拥有的进程资源。",
+      "reqs": [
+        "CE-001",
+        "CE-002",
+        "CE-003",
+        "CE-004"
+      ]
+    },
+    "cli-streaming": {
+      "change": "enhance-hermes-cli-runtime",
+      "title": "CLI JSONL 与终态聚合",
+      "purpose": "使应用在 Hermes 单轮 CLI 进程退出前消费机器可读事件，正确处理流式 UTF-8、记录边界与独立 stderr，并通过终态记录和退出结果共同判断成功、启动失败及不完整执行。",
+      "reqs": [
+        "CS-001",
+        "CS-002",
+        "CS-003"
+      ]
+    },
+    "cli-commands": {
+      "change": "enhance-hermes-cli-runtime",
+      "title": "CLI 命令兼容与用量",
+      "purpose": "为常用有限管理命令与用量结果提供逐版本、可验证的 Java 入口，通过无副作用探测说明已支持命令、选项和退出语义；保留高级 argv 的同时不把分组命令或交互界面当作完整管理集成。",
+      "reqs": [
+        "CC-001",
+        "CC-002"
+      ]
+    },
+    "acp-transport": {
+      "change": "add-hermes-acp-client",
+      "title": "ACP 双向传输与请求关联",
+      "purpose": "提供真正的双向 ACP 会话通道，而非仅启动一个命令进程；协商固定协议、区分请求响应和通知、限制挂起工作并在进程退出时结束所有等待，同时保留独立 stderr 诊断和明确的进程所有权。",
+      "reqs": [
+        "AT-001",
+        "AT-002",
+        "AT-003"
+      ]
+    },
+    "acp-sessions": {
+      "change": "add-hermes-acp-client",
+      "title": "ACP 会话与能力边界",
+      "purpose": "让 Java 宿主通过协商后的 ACP 能力创建会话、提交 prompt、观察消息和工具活动并取消当前轮；同时明确恢复、分叉、媒体和工具范围并非默认与 HTTP 等价，不支持能力不得通过隐式协议回退掩盖。",
+      "reqs": [
+        "AS-001",
+        "AS-002",
+        "AS-003"
+      ]
+    },
+    "acp-permissions": {
+      "change": "add-hermes-acp-client",
+      "title": "ACP 权限请求与异步决定",
+      "purpose": "为 ACP 服务端发起的权限挑战提供宿主可控的异步处理闭环，在没有授权、决定超时或对端退出时不自动放行，并保持协议读写持续运行和决定对当前会话挑战的严格关联。",
+      "reqs": [
+        "AM-001",
+        "AM-002"
+      ]
+    }
+  },
+  "requirements": {
+    "EP-001": {
+      "id": "EP-001",
+      "title": "Explicit trusted endpoint selection",
+      "body": "SDK MUST 由管理员配置的端点策略显式区分可信本地、可信私网与公网 HTTPS 目标；策略 MUST 限定主机及端口。旧配置入口 MUST NOT 自动放宽为允许任意私网；生产示例 MUST NOT 依赖仅供测试的地址旁路。",
+      "scenarios": [
+        {
+          "name": "Trusted local endpoint",
+          "given": "管理员仅授权 127.0.0.1 的测试服务端口",
+          "when": "调用普通健康查询",
+          "then": [
+            "请求可以建立且无需测试旁路；其他未授权本机端口仍被拒绝。"
+          ],
+          "id": "EP-001-S1"
+        },
+        {
+          "name": "Untrusted input is not administrator policy",
+          "given": "最终用户提交一个未授权私网 URL",
+          "when": "应用试图将其直接作为运行目标",
+          "then": [
+            "SDK 在发送鉴权头和请求正文前报告端点策略错误，不将该 URL 自动加入可信集合。"
+          ],
+          "id": "EP-001-S2"
+        }
+      ],
+      "capability": "trusted-endpoints"
+    },
+    "EP-002": {
+      "id": "EP-002",
+      "title": "Bind checks to actual connection targets",
+      "body": "SDK MUST 对实际连接使用的候选地址执行当前策略检查；严格策略 MUST NOT 在解析失败时声称地址已验证。代理代为解析而客户端无法证明目标地址时，SDK MUST 明确暴露该保证边界并要求可信代理策略，不能把预检查结果当作实际连接的证明。",
+      "scenarios": [
+        {
+          "name": "Mixed address resolution",
+          "given": "严格策略下同一主机解析到公网和未授权环回地址",
+          "when": "连接器准备使用候选地址",
+          "then": [
+            "连接被拒绝且不发送敏感数据，不能只检查第一个安全地址。"
+          ],
+          "id": "EP-002-S1"
+        },
+        {
+          "name": "Resolution failure",
+          "given": "严格策略无法完成名称解析",
+          "when": "请求准备发出",
+          "then": [
+            "返回可分类的解析或策略失败，不返回校验成功，不回退至未经授权地址。"
+          ],
+          "id": "EP-002-S2"
+        }
+      ],
+      "capability": "trusted-endpoints"
+    },
+    "EP-003": {
+      "id": "EP-003",
+      "title": "Prevent credential forwarding and path confusion",
+      "body": "SDK MUST 默认拒绝跨 origin 跳转；MUST 拒绝 URL user-info 与用于鉴权的 URL 令牌；MUST 将模型、会话和运行标识作为独立路径段编码，防止标识改变 origin、路径层级或查询含义。鉴权只能由绑定身份提供。",
+      "scenarios": [
+        {
+          "name": "Cross origin redirect",
+          "given": "已绑定凭据的 HTTP 或 SSE 请求收到指向其他 origin 的跳转",
+          "when": "客户端处理跳转",
+          "then": [
+            "不向新 origin 发送凭据或自动重放写请求，并返回清晰的跳转拒绝结果。"
+          ],
+          "id": "EP-003-S1"
+        },
+        {
+          "name": "Identifier contains reserved characters",
+          "given": "调用者提供包含斜线、空格或问号的对象标识",
+          "when": "构造按标识查询的路径",
+          "then": [
+            "标识按端点契约编码为数据，不改变已授权目标和其他路径段。"
+          ],
+          "id": "EP-003-S2"
+        }
+      ],
+      "capability": "trusted-endpoints"
+    },
+    "PA-001": {
+      "id": "PA-001",
+      "title": "Bind credentials to endpoint and profile",
+      "body": "SDK MUST 将命名 Profile 与端点身份及凭据身份绑定；MUST 支持显式凭据和宿主提供的 Profile 凭据解析。命名 Profile 无可用凭据时 MUST 明确失败，MUST NOT 静默使用根 Profile 的密钥。",
+      "scenarios": [
+        {
+          "name": "Independent profiles",
+          "given": "同一服务的两个命名 Profile 配置不同测试密钥",
+          "when": "两个 Profile 并发查询和订阅",
+          "then": [
+            "各请求只携带对应 Profile 的密钥；路径与凭据绑定一致。"
+          ],
+          "id": "PA-001-S1"
+        },
+        {
+          "name": "Missing profile credential",
+          "given": "根客户端有密钥而命名 Profile 没有凭据解析结果",
+          "when": "创建或首次调用命名 Profile 视图",
+          "then": [
+            "返回配置错误，不借用根密钥发出请求。"
+          ],
+          "id": "PA-001-S2"
+        }
+      ],
+      "capability": "profile-authentication"
+    },
+    "PA-002": {
+      "id": "PA-002",
+      "title": "Rotate credentials without replaying unknown writes",
+      "body": "SDK MUST 为每次新请求解析绑定身份当前可用的凭据；能力缓存及身份相关视图 MUST 按端点、Profile、凭据身份和必要的轮换标识隔离。凭据轮换 MUST NOT 自动重放结果未知的写请求，也 MUST NOT 改变其幂等身份范围。",
+      "scenarios": [
+        {
+          "name": "New requests after rotation",
+          "given": "Profile 的凭据从版本 A 轮换为 B",
+          "when": "轮换后创建新请求",
+          "then": [
+            "新请求使用 B；旧的身份相关缓存失效或重新核对；密钥正文不作为缓存键。"
+          ],
+          "id": "PA-002-S1"
+        },
+        {
+          "name": "Rotation after lost response",
+          "given": "写请求可能已被服务端接收但响应丢失",
+          "when": "此时发生凭据轮换",
+          "then": [
+            "SDK 报告结果未知或按已确认契约核对，不在新身份下重新创建操作。"
+          ],
+          "id": "PA-002-S2"
+        }
+      ],
+      "capability": "profile-authentication"
+    },
+    "PA-003": {
+      "id": "PA-003",
+      "title": "Isolate authentication from shared transport customization",
+      "body": "SDK MUST 防止普通附加请求头覆盖 Authorization、Host、Cookie 身份或既定 Profile 路由。共享传输 MUST NOT 导致身份相关 Cookie、缓存、认证拦截行为跨 Profile 泄露。无法证明安全的外部定制 MUST 被拒绝用于隔离视图或要求显式隔离适配。",
+      "scenarios": [
+        {
+          "name": "Attempt to override identity",
+          "given": "请求绑定 Profile A",
+          "when": "普通请求选项携带 Profile B 的认证头",
+          "then": [
+            "覆盖被拒绝并报告冲突，不能静默将请求变成 B 的身份。"
+          ],
+          "id": "PA-003-S1"
+        },
+        {
+          "name": "Shared transport with identity state",
+          "given": "调用者注入含认证状态的外部传输",
+          "when": "尝试派生多个隔离 Profile",
+          "then": [
+            "SDK 使用隔离策略或拒绝该定制，不声明未经证明的跨 Profile 隔离。"
+          ],
+          "id": "PA-003-S2"
+        }
+      ],
+      "capability": "profile-authentication"
+    },
+    "SE-001": {
+      "id": "SE-001",
+      "title": "Preserve the SSE frame before decoding payloads",
+      "body": "SDK MUST 保留 SSE 事件名称、可用事件 ID 与原始 data 文本，再按目标端点解释业务载荷；MUST NOT 要求业务 JSON 额外包含名为 data 的嵌套字符串。没有服务端事件 ID 时 MUST NOT 伪造服务端 ID。",
+      "scenarios": [
+        {
+          "name": "Standard chat completion chunk",
+          "given": "data 是包含 choices[0].delta.content 的合法聊天 JSON",
+          "when": "消费含中文和空格的文本分片",
+          "then": [
+            "文本被正确读取且空格不丢失，原始 data 可访问，不需要额外 data 包装。"
+          ],
+          "id": "SE-001-S1"
+        },
+        {
+          "name": "Multi line and fragmented UTF8",
+          "given": "SSE 使用 CRLF、多行 data、注释并在 UTF-8 字符中间分片",
+          "when": "网络分批读取并完成事件",
+          "then": [
+            "仅完整帧交付解码，注释不成为业务事件，字符不损坏。"
+          ],
+          "id": "SE-001-S2"
+        }
+      ],
+      "capability": "sse-lifecycle"
+    },
+    "SE-002": {
+      "id": "SE-002",
+      "title": "Classify decoding and consumer failures separately",
+      "body": "SDK MUST 区分协议解析、传输、消费者回调和 Agent 业务错误；未知非控制事件 MUST 保留可诊断信息。未识别的必需控制语义 MUST NOT 被视为已经处理。回调错误 MUST 被隔离或显式终止该订阅，且清理仍发生。",
+      "scenarios": [
+        {
+          "name": "Consumer throws",
+          "given": "业务 JSON 可成功解析",
+          "when": "事件监听器抛出异常",
+          "then": [
+            "报告消费者错误而非 JSON 错误，并按配置终止或隔离订阅且释放对应资源。"
+          ],
+          "id": "SE-002-S1"
+        },
+        {
+          "name": "Unknown control or data event",
+          "given": "服务端发送客户端未识别的事件类型",
+          "when": "客户端接收该事件",
+          "then": [
+            "保留原始类型与内容；普通未知事件可继续观察，未知必需控制事件不能被默认为批准或成功。"
+          ],
+          "id": "SE-002-S2"
+        }
+      ],
+      "capability": "sse-lifecycle"
+    },
+    "SE-003": {
+      "id": "SE-003",
+      "title": "Resolve terminal state at most once",
+      "body": "SDK MUST 使用已验证的端点终态契约完成观察结果，至多完成一次；MUST 区分成功、失败、取消和不完整。EOF 本身 MUST NOT 被等同于成功；可核对运行状态时执行有界核对，否则报告流中断或结果未知并标记部分输出。",
+      "scenarios": [
+        {
+          "name": "Terminal then EOF",
+          "given": "服务端发送该端点的合法成功终态",
+          "when": "随后 EOF 或重复终态到达",
+          "then": [
+            "成功只完成一次，资源回收，原始聊天 POST 次数保持一次。"
+          ],
+          "id": "SE-003-S1"
+        },
+        {
+          "name": "EOF without terminal",
+          "given": "已有文本增量但没有已验证终态",
+          "when": "连接意外关闭",
+          "then": [
+            "结果标记不完整；无可核对句柄时返回中断或结果未知，不能以部分文本成功结束。"
+          ],
+          "id": "SE-003-S2"
+        }
+      ],
+      "capability": "sse-lifecycle"
+    },
+    "SE-004": {
+      "id": "SE-004",
+      "title": "Never blindly replay agent creation requests",
+      "body": "SDK MUST NOT 因读取中断、凭据刷新或观察重连自动重发 Chat、Responses 或 Session Chat 的创建请求。写重试 MUST 同时具备已验证服务端幂等契约、同一操作键、同一载荷快照和同一身份范围。所有底层恢复策略 MUST 遵守该约束。",
+      "scenarios": [
+        {
+          "name": "Session POST disconnects after acceptance",
+          "given": "服务端已接受一轮会话聊天",
+          "when": "响应流中途断开",
+          "then": [
+            "客户端不再次提交原始 POST；可用句柄仅用于观察或核对，外部工具不会因自动重放再执行。"
+          ],
+          "id": "SE-004-S1"
+        },
+        {
+          "name": "Write has no verified idempotency",
+          "given": "某写操作没有已验证幂等契约",
+          "when": "发生可重试网络异常",
+          "then": [
+            "不重放该写请求；报告提交阶段和结果不确定性。"
+          ],
+          "id": "SE-004-S2"
+        }
+      ],
+      "capability": "sse-lifecycle"
+    },
+    "SE-005": {
+      "id": "SE-005",
+      "title": "Reattach with explicit continuity evidence",
+      "body": "SDK MUST 将订阅既有运行与创建新运行分开；仅在目标服务支持时使用游标恢复。恢复 MUST 声明事件连续性是否得到证明；不能用相同文本内容去重，也不能把重新连接成功当成无损恢复。",
+      "scenarios": [
+        {
+          "name": "No replay cursor support",
+          "given": "已有运行可查询但服务端不提供事件恢复游标",
+          "when": "客户端重新附着",
+          "then": [
+            "订阅和核对原运行，标记连续性未证明；不新建运行，不宣称所有中间事件已恢复。"
+          ],
+          "id": "SE-005-S1"
+        },
+        {
+          "name": "Repeated legitimate text",
+          "given": "连续两个事件有不同服务端身份但相同文本",
+          "when": "消费重连前后的事件",
+          "then": [
+            "两个合法增量均保留；仅按已验证的事件身份/游标规则去重。"
+          ],
+          "id": "SE-005-S2"
+        }
+      ],
+      "capability": "sse-lifecycle"
+    },
+    "SE-006": {
+      "id": "SE-006",
+      "title": "Bound ordered event delivery and expose overflow",
+      "body": "SDK MUST 为每个订阅按顺序派发事件且避免慢消费者阻塞无关请求；事件队列和重连调度 MUST 有界。默认溢出 MUST 显式失败，文本、审批、错误和终态 MUST NOT 静默丢弃。进度合并仅可由调用者显式启用。",
+      "scenarios": [
+        {
+          "name": "Queue saturated by slow consumer",
+          "given": "有界队列已满且后续到达审批或终态",
+          "when": "客户端无法继续可靠交付",
+          "then": [
+            "明确报告溢出并关闭或核对观察，不丢控制事件后继续报告成功。"
+          ],
+          "id": "SE-006-S1"
+        },
+        {
+          "name": "One slow subscription",
+          "given": "订阅 A 的监听器阻塞而订阅 B 正常",
+          "when": "两个订阅持续收到事件",
+          "then": [
+            "A 的处理不阻塞 B 的传输，单个订阅内部顺序保持。"
+          ],
+          "id": "SE-006-S2"
+        }
+      ],
+      "capability": "sse-lifecycle"
+    },
+    "RC-001": {
+      "id": "RC-001",
+      "title": "Propagate cancellation from public asynchronous results",
+      "body": "SDK MUST 将其直接返回的可取消异步结果或显式取消令牌绑定到对应网络调用、未开始重试和排队任务；取消 MUST NOT 影响其他调用。对调用者自行派生的异步阶段 MUST 明确取消边界，并提供共享令牌作为可靠控制入口。",
+      "scenarios": [
+        {
+          "name": "Cancel returned future",
+          "given": "公开异步方法已发起尚未结束的网络调用",
+          "when": "调用者取消 SDK 直接返回的 Future",
+          "then": [
+            "对应调用终止、重试停止且取消注册释放；并发其他请求继续运行。"
+          ],
+          "id": "RC-001-S1"
+        },
+        {
+          "name": "Cancel derived stage",
+          "given": "调用者从 SDK 结果自行派生新的 Future",
+          "when": "仅取消该派生 Future 或改用共享令牌取消",
+          "then": [
+            "文档不承诺派生取消反向传播；使用共享令牌时对应网络调用确定被取消。"
+          ],
+          "id": "RC-001-S2"
+        }
+      ],
+      "capability": "request-cancellation"
+    },
+    "RC-002": {
+      "id": "RC-002",
+      "title": "Separate observation cancellation from remote stop",
+      "body": "SDK MUST 将关闭观察、停止本地等待与请求远端停止作为不同操作。观察超时、取消 SSE 或关闭客户端 MUST NOT 隐式停止远端 Run。已经发送的写请求被取消时 MUST 保留结果可能未知的语义。",
+      "scenarios": [
+        {
+          "name": "Close observation only",
+          "given": "远端 Run 仍在运行",
+          "when": "宿主关闭其事件观察句柄",
+          "then": [
+            "本地连接关闭且不发送远端 stop，运行状态不被伪造为 cancelled。"
+          ],
+          "id": "RC-002-S1"
+        },
+        {
+          "name": "Cancel after submission",
+          "given": "写请求已经发送",
+          "when": "调用者取消网络请求",
+          "then": [
+            "网络资源收敛；结果可能未知被显式标记，允许按身份及操作键核对。"
+          ],
+          "id": "RC-002-S2"
+        }
+      ],
+      "capability": "request-cancellation"
+    },
+    "RC-003": {
+      "id": "RC-003",
+      "title": "Close only owned resources and handle races",
+      "body": "SDK MUST 幂等关闭其拥有的订阅、执行器、连接及注册；MUST NOT 关闭外部共享传输的全局资源或无关调用。关闭与请求创建并发时 MUST 使新调用明确失败或被纳入关闭范围，不能留下不再可管理的资源。",
+      "scenarios": [
+        {
+          "name": "External shared client",
+          "given": "SDK 与宿主无关任务使用同一外部传输",
+          "when": "关闭 SDK 两次",
+          "then": [
+            "SDK 的工作清理一次；宿主无关任务和外部全局资源仍可使用。"
+          ],
+          "id": "RC-003-S1"
+        },
+        {
+          "name": "Close during subscribe and retry",
+          "given": "一个线程关闭客户端，另一个创建订阅或安排重连",
+          "when": "这两个动作并发执行",
+          "then": [
+            "创建操作被拒绝或随后被清理；无遗留重连、Future 或活动订阅。"
+          ],
+          "id": "RC-003-S2"
+        }
+      ],
+      "capability": "request-cancellation"
+    },
+    "BC-001": {
+      "id": "BC-001",
+      "title": "Maintain equivalent cross branch behavior",
+      "body": "新增公开功能 MUST 在 feature/1.0.x、feature/2.0.x、feature/3.0.x 保持等价的请求字段、事件、错误与取消语义；分别维持 Java 8、17、21 基线。新增基础公开 API MUST NOT 强制高版本 JDK 类型或新的 Spring/Reactor 依赖。",
+      "scenarios": [
+        {
+          "name": "Same fixtures on all branches",
+          "given": "同一来源版本的协议样本与公开行为断言",
+          "when": "分别在三条真实目标 JDK 上执行",
+          "then": [
+            "结果等价；仅批准的历史依赖类型差异允许进入白名单。"
+          ],
+          "id": "BC-001-S1"
+        },
+        {
+          "name": "Optional adapter requires newer JDK",
+          "given": "可选协议依赖不能在 Java 8 装载",
+          "when": "发布基础 SDK 和可选适配器",
+          "then": [
+            "基础 Java 8 客户端仍能装载及执行已承诺功能，不因可选依赖隐式提高运行基线。"
+          ],
+          "id": "BC-001-S2"
+        }
+      ],
+      "capability": "sdk-compatibility"
+    },
+    "BC-002": {
+      "id": "BC-002",
+      "title": "Bind claimed support to verifiable evidence",
+      "body": "发布所承诺的协议及平台支持 MUST 记录 SDK commit、目标 Hermes 版本/commit、实际 JDK、操作系统、依赖、命令与结果。人工边界样本、文档示例和真实捕获 MUST 区分。缺少证据的能力 MUST 标记未验证，不得将规范校验通过当作 SDK 测试通过。",
+      "scenarios": [
+        {
+          "name": "Only a mock test exists",
+          "given": "某协议仅有人工样本测试",
+          "when": "生成兼容或发布报告",
+          "then": [
+            "报告说明测试层次及来源，不宣称已通过真实 Hermes 互操作。"
+          ],
+          "id": "BC-002-S1"
+        },
+        {
+          "name": "Unverified target platform",
+          "given": "进程清理仅在一种操作系统得到证明",
+          "when": "声明跨平台支持范围",
+          "then": [
+            "未验证平台明确标记，不复制已验证平台的通过结论。"
+          ],
+          "id": "BC-002-S2"
+        }
+      ],
+      "capability": "sdk-compatibility"
+    },
+    "BC-003": {
+      "id": "BC-003",
+      "title": "Publish explicit migration and stage gates",
+      "body": "每个变更批次 MUST 同步三分支测试、兼容矩阵和迁移说明。旧常用入口 MUST 通过兼容委托保留；确需删除的入口 MUST 另行声明 BREAKING 并经过兼容评审。但危险 POST 重放、凭据混用等安全行为 MUST NOT 作为默认兼容路径保留。计划阶段 MUST NOT 勾选实现任务或归档未实现的规范。",
+      "scenarios": [
+        {
+          "name": "Behavior changes with old signature",
+          "given": "旧方法签名仍存在但默认重连或凭据行为变严",
+          "when": "发布候选版本",
+          "then": [
+            "说明变化、迁移入口和回滚边界，不声称完全无感兼容。"
+          ],
+          "id": "BC-003-S1"
+        },
+        {
+          "name": "One branch missing evidence",
+          "given": "其他两条版本线通过而第三条缺少回归结果",
+          "when": "尝试宣布批次完成或归档",
+          "then": [
+            "发布门禁阻止完成声明，未验证任务保持未完成。"
+          ],
+          "id": "BC-003-S2"
+        }
+      ],
+      "capability": "sdk-compatibility"
+    },
+    "CT-001": {
+      "id": "CT-001",
+      "title": "Snapshot context and preserve identity boundaries",
+      "body": "SDK MUST 在发送前固定本次身份、会话、调用选项和业务载荷的有效快照；本次显式业务值优先于客户端默认值。会话标识与长期记忆范围 MUST 分别携带。SDK MUST NOT 从任意用户请求头推断或授予租户权限。",
+      "scenarios": [
+        {
+          "name": "Concurrent mutation",
+          "given": "同一个请求构建对象将在发送后被另一线程修改",
+          "when": "SDK 创建本次传输请求",
+          "then": [
+            "已发送操作继续使用固定快照，之后的修改只影响后续明确创建的操作。"
+          ],
+          "id": "CT-001-S1"
+        },
+        {
+          "name": "Separate session and memory keys",
+          "given": "一次请求指定不同的会话 ID 和记忆范围键",
+          "when": "创建 Chat、Run 或会话操作",
+          "then": [
+            "两种标识按各自契约传输，不互相覆盖，也不将其等同于平台授权。"
+          ],
+          "id": "CT-001-S2"
+        }
+      ],
+      "capability": "request-context"
+    },
+    "CT-002": {
+      "id": "CT-002",
+      "title": "Propagate verified model options and preserve actual runtime",
+      "body": "SDK MUST 将本次指定的 model、provider 及 model options 按目标端点已验证契约传输；MUST 保留服务端返回的实际运行模型与请求模型之间的区别。不存在的字段 MUST 保持缺失，不能伪造实际模型或保证服务端一定采用请求值。",
+      "scenarios": [
+        {
+          "name": "Explicit option overrides default",
+          "given": "客户端有默认模型和 provider",
+          "when": "请求显式指定另一组有效选择",
+          "then": [
+            "服务端收到本次显式字段；未指定的可用默认值按约定补齐。"
+          ],
+          "id": "CT-002-S1"
+        },
+        {
+          "name": "Server selects a fallback",
+          "given": "请求模型 A，响应声明实际模型 B",
+          "when": "SDK 构造运行结果",
+          "then": [
+            "同时保留请求选择和实际 B，不将 A 写成实际执行模型。"
+          ],
+          "id": "CT-002-S2"
+        }
+      ],
+      "capability": "request-context"
+    },
+    "CT-003": {
+      "id": "CT-003",
+      "title": "Validate media and raw extensions against capabilities",
+      "body": "SDK MUST 为目标端点已确认支持的结构化输入提供可验证的表达；MUST NOT 将聊天兼容性当作完整媒体或文件 API 支持。原始扩展入口 MUST 保留安全、身份、资源限制和未知能力处理，不能成为绕过策略的入口。",
+      "scenarios": [
+        {
+          "name": "Unsupported media type",
+          "given": "当前端点未确认支持某媒体输入",
+          "when": "高层请求使用该输入",
+          "then": [
+            "返回不支持或能力未知，不静默丢字段后改成文本请求。"
+          ],
+          "id": "CT-003-S1"
+        },
+        {
+          "name": "Raw extension with identity conflict",
+          "given": "调用者使用高级扩展字段或请求头",
+          "when": "扩展试图改变 Profile 或认证",
+          "then": [
+            "安全检查仍拒绝冲突；普通合法扩展被保留。"
+          ],
+          "id": "CT-003-S2"
+        }
+      ],
+      "capability": "request-context"
+    },
+    "RS-001": {
+      "id": "RS-001",
+      "title": "Separate streaming and ordinary JSON APIs",
+      "body": "SDK MUST 提供独立的 Responses 流式入口；普通 JSON 响应入口收到 stream=true 时 MUST 在发送前拒绝并说明正确入口。流式入口 MUST 复用安全、身份、取消与 SSE 终态规则，而不是等待完整正文再执行 JSON 解析。",
+      "scenarios": [
+        {
+          "name": "Streaming request sent to JSON API",
+          "given": "调用者在普通 Responses 方法中开启 stream",
+          "when": "准备发送请求",
+          "then": [
+            "请求未发送即报告参数与入口不匹配，并指引专用流式入口。"
+          ],
+          "id": "RS-001-S1"
+        },
+        {
+          "name": "Stream opens",
+          "given": "目标服务支持 Responses 流",
+          "when": "通过专用入口提交",
+          "then": [
+            "进程或 HTTP 调用未结束前即可观察事件，并取得独立取消/观察句柄。"
+          ],
+          "id": "RS-001-S2"
+        }
+      ],
+      "capability": "responses-streaming"
+    },
+    "RS-002": {
+      "id": "RS-002",
+      "title": "Accumulate indexed outputs without reexecuting tools",
+      "body": "SDK MUST 按原生输出项标识、索引及内容位置聚合事件；最终答案、过程消息和工具活动 MUST 分离。重复终态不得重复累计。服务端已完成的工具活动 MUST NOT 被当成要求 Java 自动执行该工具的命令。",
+      "scenarios": [
+        {
+          "name": "Interleaved outputs",
+          "given": "两个输出项交错到达文本和工具活动",
+          "when": "累积器生成结果",
+          "then": [
+            "每个内容归入正确项，工具记录独立保留，最终文本不混入过程日志。"
+          ],
+          "id": "RS-002-S1"
+        },
+        {
+          "name": "Terminal repeats prior content",
+          "given": "最后一条权威结果包含此前已发出的增量文本",
+          "when": "终态及重复终态到达",
+          "then": [
+            "最终结果不重复拼接，完成一次且没有客户端二次工具执行。"
+          ],
+          "id": "RS-002-S2"
+        }
+      ],
+      "capability": "responses-streaming"
+    },
+    "RS-003": {
+      "id": "RS-003",
+      "title": "Expose complete versus partial results",
+      "body": "SDK MUST 以端点可验证终态决定 Responses 完整性；空文本但合法终态 MUST 可成功。缺终态、无法恢复的事件缺口或解析失败 MUST 明确标记不完整，并保留可安全访问的部分输出和原因。",
+      "scenarios": [
+        {
+          "name": "Legitimate empty output",
+          "given": "服务端返回合法成功终态且无文本",
+          "when": "构建最终结果",
+          "then": [
+            "成功状态成立，空输出不被误判为网络错误。"
+          ],
+          "id": "RS-003-S1"
+        },
+        {
+          "name": "Output gap after disconnect",
+          "given": "已接收若干输出项但连续性无法证明",
+          "when": "连接恢复后获取运行最终状态",
+          "then": [
+            "运行终态与观察完整性分别报告，不宣称此前流已无损恢复。"
+          ],
+          "id": "RS-003-S2"
+        }
+      ],
+      "capability": "responses-streaming"
+    },
+    "RN-001": {
+      "id": "RN-001",
+      "title": "Submit and attach expose the same lifecycle contract",
+      "body": "SDK MUST 为新提交运行和既有运行附着提供等价的状态查询、事件观察、停止请求及终态等待能力。附着 MUST NOT 创建新运行，身份与可见性 MUST 沿用已绑定上下文。",
+      "scenarios": [
+        {
+          "name": "Attach an existing run",
+          "given": "宿主持有原运行标识及授权身份",
+          "when": "重新创建观察句柄",
+          "then": [
+            "只查询/订阅该运行，创建 Run 的计数不增加。"
+          ],
+          "id": "RN-001-S1"
+        },
+        {
+          "name": "Run inaccessible",
+          "given": "绑定身份无法读取某运行",
+          "when": "查询返回不存在或无权限",
+          "then": [
+            "暴露对应错误，不推断其他 Profile 是否拥有该运行，也不报告成功。"
+          ],
+          "id": "RN-001-S2"
+        }
+      ],
+      "capability": "run-lifecycle"
+    },
+    "RN-002": {
+      "id": "RN-002",
+      "title": "Separate local observation and server state",
+      "body": "SDK MUST 分别表达服务端状态与本地观察状态；未知原生状态 MUST 原样保留。观察等待 MUST 支持有界截止时间，超时或断线 MUST NOT 被映射为服务端已取消、已失败或已成功。",
+      "scenarios": [
+        {
+          "name": "Observation times out",
+          "given": "运行仍在执行",
+          "when": "本地等待达到截止时间",
+          "then": [
+            "返回观察超时，不调用远端停止，不改变服务端状态；之后仍可重新观察。"
+          ],
+          "id": "RN-002-S1"
+        },
+        {
+          "name": "Unknown server status",
+          "given": "服务端返回尚未识别的状态字符串",
+          "when": "SDK 更新快照",
+          "then": [
+            "保留原始状态并标记未知，不擅自选择任何终态。"
+          ],
+          "id": "RN-002-S2"
+        }
+      ],
+      "capability": "run-lifecycle"
+    },
+    "RN-003": {
+      "id": "RN-003",
+      "title": "Keep one idempotent operation identity across retries",
+      "body": "创建运行的自动重试 MUST 以服务端已验证幂等契约为前提，复用同一键、请求快照与身份范围。键与载荷冲突 MUST 返回冲突，不换新键重试。跨应用重启的恢复 MUST 由宿主持久化操作身份，SDK MUST NOT 承诺仅靠内存实现 exactly-once。",
+      "scenarios": [
+        {
+          "name": "Submission accepted but response lost",
+          "given": "服务端支持幂等且本次键 K 已接受",
+          "when": "响应丢失后执行允许的重试",
+          "then": [
+            "继续使用 K 和同一载荷/身份，核对原操作，不创建第二个业务运行。"
+          ],
+          "id": "RN-003-S1"
+        },
+        {
+          "name": "Same key different payload",
+          "given": "宿主复用键 K 但传入另一载荷",
+          "when": "服务端或客户端检测冲突",
+          "then": [
+            "返回幂等冲突，绝不自动生成替代键规避冲突。"
+          ],
+          "id": "RN-003-S2"
+        }
+      ],
+      "capability": "run-lifecycle"
+    },
+    "RN-004": {
+      "id": "RN-004",
+      "title": "Distinguish stop acknowledgement from confirmed terminal",
+      "body": "SDK MUST 将停止请求的接收结果与运行的实际终态分开。停止应答后 MUST 通过事件或有界查询确认终态；停止与自然完成竞态 MUST 保留实际终态，不伪造 worker 已退出或 cancelled。",
+      "scenarios": [
+        {
+          "name": "Stop accepted while worker runs",
+          "given": "停止接口返回已接收",
+          "when": "运行仍报告正在停止",
+          "then": [
+            "句柄继续观察至真实终态，不提前宣布已停止。"
+          ],
+          "id": "RN-004-S1"
+        },
+        {
+          "name": "Completion races stop",
+          "given": "运行在停止提交前后自然完成",
+          "when": "服务端确认最终完成",
+          "then": [
+            "报告实际完成状态和停止请求结果，不强制改写为取消。"
+          ],
+          "id": "RN-004-S2"
+        }
+      ],
+      "capability": "run-lifecycle"
+    },
+    "AP-001": {
+      "id": "AP-001",
+      "title": "Default to no approval and bind decisions",
+      "body": "SDK MUST 把审批决定绑定到端点、Profile、运行和当前挑战；服务端提供挑战 ID、版本或有效期时 MUST 利用它们，缺失时不得伪造。无处理器、处理器异常或超时 MUST NOT 自动批准，高权限长期允许 MUST 由宿主明确授权。",
+      "scenarios": [
+        {
+          "name": "Handler missing or fails",
+          "given": "收到审批请求但无处理器或处理器抛错",
+          "when": "SDK 处理挑战",
+          "then": [
+            "报告审批未完成/拒绝或按已确认契约拒绝，不自动发送允许。"
+          ],
+          "id": "AP-001-S1"
+        },
+        {
+          "name": "Decision crosses run boundary",
+          "given": "决定来自运行 A 的挑战",
+          "when": "被用于运行 B 或其他 Profile",
+          "then": [
+            "SDK 拒绝提交，不把它降级成不带绑定的通用决定。"
+          ],
+          "id": "AP-001-S2"
+        }
+      ],
+      "capability": "approval-workflow"
+    },
+    "AP-002": {
+      "id": "AP-002",
+      "title": "Process asynchronous decisions without claiming exactly once",
+      "body": "审批等待 MUST 不阻塞协议事件读取；超时、过期、断连与重复提交 MUST 有明确结果。本地防重 MUST NOT 被表述为服务端 exactly-once。审批接收成功 MUST NOT 被表述为 Agent 运行成功。",
+      "scenarios": [
+        {
+          "name": "Approval waits while events arrive",
+          "given": "宿主异步处理审批",
+          "when": "服务端继续发送控制和状态事件",
+          "then": [
+            "读循环继续处理事件；审批完成后仅更新挑战处理，运行仍等待其真实终态。"
+          ],
+          "id": "AP-002-S1"
+        },
+        {
+          "name": "Duplicate or expired decision",
+          "given": "同一决定重复提交或挑战已过期",
+          "when": "SDK 或服务端返回冲突/过期",
+          "then": [            "明确报告拒绝、冲突或结果未知，不自动扩大授权或再提交新挑战。"
+          ],
+          "id": "AP-002-S2"
+        }
+      ],
+      "capability": "approval-workflow"
+    },
+    "RR-001": {
+      "id": "RR-001",
+      "title": "Expose typed model session and job operations",
+      "body": "SDK MUST 为已验证的模型选择元数据、会话创建/更新/分叉/历史/分页及 Jobs 查询/修改/控制提供类型化访问，保留高级原始字段入口。未验证子能力 MUST 显式不支持或未知，MUST NOT 由方法名推定可用。",
+      "scenarios": [
+        {
+          "name": "Paged sessions",
+          "given": "服务端返回有限页和继续信息",
+          "when": "调用者按页读取会话历史",
+          "then": [
+            "边界与继续信息正确保留，不伪装为一次返回全部数据。"
+          ],
+          "id": "RR-001-S1"
+        },
+        {
+          "name": "Verified model metadata",
+          "given": "目标契约已确认模型选择元数据接口",
+          "when": "查询 provider/model 选择信息",
+          "then": [
+            "返回类型化选项和原始扩展字段；请求默认值与服务端实际执行信息仍分开。"
+          ],
+          "id": "RR-001-S2"
+        }
+      ],
+      "capability": "runtime-resources"
+    },
+    "RR-002": {
+      "id": "RR-002",
+      "title": "Preserve patch tri state and schedule ownership",
+      "body": "任务增量修改 MUST 区分未设置、显式赋值与显式清空；时区、技能、工作目录和投递字段 MUST 按目标契约表达。SDK MUST NOT 隐式再启动一个本地调度器执行已注册的 Hermes 任务，也不得默认重放立即执行请求。",
+      "scenarios": [
+        {
+          "name": "Omit versus clear",
+          "given": "现有 Job 含工作目录",
+          "when": "一个更新省略该字段，另一个显式清空",
+          "then": [
+            "前者不修改原值；后者按已验证的清空语义传输；两者序列化不同。"
+          ],
+          "id": "RR-002-S1"
+        },
+        {
+          "name": "External scheduler owns timing",
+          "given": "宿主只要求一次执行或委托 Hermes Cron",
+          "when": "SDK 接收该请求",
+          "then": [
+            "仅执行所选一种职责，不另外登记重复定时任务。"
+          ],
+          "id": "RR-002-S2"
+        }
+      ],
+      "capability": "runtime-resources"
+    },
+    "RR-003": {
+      "id": "RR-003",
+      "title": "Represent unknown capabilities and health failures explicitly",
+      "body": "SDK MUST 区分能力支持、不支持与未知；能力缓存 MUST 遵守身份与版本边界。能力获取失败 MUST NOT 推定全部支持；响应中的端点信息 MUST NOT 授权访问新 origin。健康结果 MUST 区分存活、可用性、认证失败和传输失败。",
+      "scenarios": [
+        {
+          "name": "Capability fetch fails",
+          "given": "服务能力查询超时",
+          "when": "高层自动化判断可否使用某功能",
+          "then": [
+            "状态为未知并要求显式处理，不隐式回退到另一协议再执行。"
+          ],
+          "id": "RR-003-S1"
+        },
+        {
+          "name": "Auth error on health",
+          "given": "服务可达但返回认证失败",
+          "when": "构造健康报告",
+          "then": [
+            "报告鉴权失败，不能标记为网络离线或对话模型不可用。"
+          ],
+          "id": "RR-003-S2"
+        }
+      ],
+      "capability": "runtime-resources"
+    },
+    "OB-001": {
+      "id": "OB-001",
+      "title": "Preserve actionable errors and response metadata",
+      "body": "SDK MUST 保留 HTTP 状态、可用服务端错误码、必要响应头和受限诊断正文；错误 MUST 区分配置、认证、权限、限流、幂等冲突、解析、流中断、审批、进程、远端业务及结果未知。删除等新接口 MUST 区分成功、不存在、无权限与服务错误。",
+      "scenarios": [
+        {
+          "name": "Delete returns forbidden",
+          "given": "删除操作被服务端拒绝",
+          "when": "调用类型化删除入口",
+          "then": [
+            "返回权限错误而不是 false 或成功，保留受限诊断与关联信息。"
+          ],
+          "id": "OB-001-S1"
+        },
+        {
+          "name": "Retry after exceeds deadline",
+          "given": "限流应答给出 Retry-After",
+          "when": "所需等待超过本次截止时间",
+          "then": [
+            "返回限流/截止结果，不超期等待或重放无幂等保障的写请求。"
+          ],
+          "id": "OB-001-S2"
+        }
+      ],
+      "capability": "runtime-observability"
+    },
+    "OB-002": {
+      "id": "OB-002",
+      "title": "Expose factual usage without double accounting",
+      "body": "SDK MUST 保留服务端实际运行模型、可用 token 及缓存用量与来源；缺失值 MUST 保持缺失。重复终态或重附着 MUST NOT 在 SDK 的最终用量聚合中重复累加。费用估算 MUST 与真实账单区分且交由宿主定价逻辑处理。",
+      "scenarios": [
+        {
+          "name": "Missing usage",
+          "given": "运行结果不含缓存 token 或费用",
+          "when": "构造用量结果",
+          "then": [
+            "字段保持未提供，不用零或猜测值冒充服务端事实。"
+          ],
+          "id": "OB-002-S1"
+        },
+        {
+          "name": "Duplicate terminal usage",
+          "given": "相同运行终态携带相同用量重复到达",
+          "when": "句柄完成并发布最终结果",
+          "then": [
+            "最终用量不倍增；跨进程结算仍要求宿主稳定身份防重。"
+          ],
+          "id": "OB-002-S2"
+        }
+      ],
+      "capability": "runtime-observability"
+    },
+    "OB-003": {
+      "id": "OB-003",
+      "title": "Bound and redact observability without mandatory backends",
+      "body": "生命周期观测 MUST 可选且不强制遥测后端；默认日志 MUST 不记录请求/响应正文、秘密头、Cookie、完整环境及未授权原始报文。调试正文 MUST 有长度限制和脱敏。指标 MUST 避免无限高基数身份标签；原始载荷的内存可访问性不构成落盘授权。",
+      "scenarios": [
+        {
+          "name": "Sensitive data in diagnostics",
+          "given": "错误与环境包含测试密钥、Cookie 和用户正文",
+          "when": "默认日志及主动 BODY 调试分别记录",
+          "then": [
+            "默认不记录正文；敏感字段均脱敏；开启正文仍限长，原始数据不自动外送。"
+          ],
+          "id": "OB-003-S1"
+        },
+        {
+          "name": "No telemetry configured",
+          "given": "应用没有安装观测后端",
+          "when": "执行 HTTP、CLI 或 ACP 工作",
+          "then": [
+            "核心行为仍正常；观察者失败被隔离而不阻塞关键资源清理。"
+          ],
+          "id": "OB-003-S2"
+        }
+      ],
+      "capability": "runtime-observability"
+    },
+    "CE-001": {
+      "id": "CE-001",
+      "title": "Separate execution modes and snapshot process context",
+      "body": "SDK MUST 区分有限执行、结构化流式执行和长期受管进程；旧有限入口 MUST NOT 悄悄改变为长连接。每次执行 MUST 固定程序、工作目录、允许环境及 Profile 上下文；MUST NOT 通过修改全局默认 Profile 切换并发请求身份。",
+      "scenarios": [
+        {
+          "name": "Two profiles execute concurrently",
+          "given": "两个执行请求使用不同 Profile 和工作目录",
+          "when": "同时启动两个测试进程",
+          "then": [
+            "各自读取自己的配置快照，父进程和全局默认 Profile 不被修改。"
+          ],
+          "id": "CE-001-S1"
+        },
+        {
+          "name": "Interactive command in noninteractive mode",
+          "given": "命令需要交互终端或浏览器授权",
+          "when": "调用无交互有限执行入口",
+          "then": [
+            "明确报告需要宿主交互或不支持，不声称授权已完成。"
+          ],
+          "id": "CE-001-S2"
+        }
+      ],
+      "capability": "cli-execution"
+    },
+    "CE-002": {
+      "id": "CE-002",
+      "title": "Preserve argv boundaries and explicit environment policy",
+      "body": "普通 CLI 调用 MUST 通过独立参数传递而非 shell 拼接，保留空格、中文及字面字符。环境继承及覆盖 MUST 遵循明确名单；秘密值 MUST NOT 出现在日志或命令诊断。高级 shell 执行不得混入普通入口。",
+      "scenarios": [
+        {
+          "name": "Prompt contains shell characters",
+          "given": "prompt 含空格、中文、引号和分号",
+          "when": "通过普通执行入口发送",
+          "then": [
+            "子进程收到一个完整 prompt 参数，字符不被 shell 解释为额外命令。"
+          ],
+          "id": "CE-002-S1"
+        },
+        {
+          "name": "Unapproved environment variable",
+          "given": "父进程含未授权秘密环境变量",
+          "when": "创建受限子进程",
+          "then": [
+            "变量不被隐式继承，日志也不输出整个父进程环境。"
+          ],
+          "id": "CE-002-S2"
+        }
+      ],
+      "capability": "cli-execution"
+    },
+    "CE-003": {
+      "id": "CE-003",
+      "title": "Bound output concurrency and admission waiting",
+      "body": "SDK MUST 为 stdout、stderr、单条结构化记录、并发进程数及待执行队列配置有限上限。输出超限 MUST 明确失败并处理拥有的进程；排队 MUST 可取消且受 deadline 限制。所有退出路径 MUST 释放占用配额。",
+      "scenarios": [
+        {
+          "name": "Output floods memory budget",
+          "given": "测试进程持续输出超过声明上限",
+          "when": "缓冲达到限制",
+          "then": [
+            "返回输出超限错误、停止或回收拥有进程，内存不随输出无界增长。"
+          ],
+          "id": "CE-003-S1"
+        },
+        {
+          "name": "Queued request cancelled",
+          "given": "并发名额已用完且请求在有界队列中",
+          "when": "请求被取消或截止时间到达",
+          "then": [
+            "请求不启动，队列和配额被清理，不影响其他排队项。"
+          ],
+          "id": "CE-003-S2"
+        }
+      ],
+      "capability": "cli-execution"
+    },
+    "CE-004": {
+      "id": "CE-004",
+      "title": "Cancel and close according to process ownership",
+      "body": "SDK MUST 对拥有进程执行可观察的取消、宽限等待及必要系统终止并确认结果；MUST NOT 杀死仅附着的外部进程或无关进程。每个平台的子进程树清理支持 MUST 有独立证据；无法保证时明确报告，不作跨平台完整回收承诺。",
+      "scenarios": [
+        {
+          "name": "Owned process ignores cooperative cancellation",
+          "given": "受管测试进程忽略协议取消",
+          "when": "宽限时间到达",
+          "then": [
+            "按该平台已验证方式终止并检查残留，结果包括取消与回收状态。"
+          ],
+          "id": "CE-004-S1"
+        },
+        {
+          "name": "Attached external process",
+          "given": "SDK 仅观察宿主拥有的长期进程",
+          "when": "关闭观察句柄",
+          "then": [
+            "本地句柄和读写资源释放，但不终止该外部进程。"
+          ],
+          "id": "CE-004-S2"
+        }
+      ],
+      "capability": "cli-execution"
+    },
+    "CS-001": {
+      "id": "CS-001",
+      "title": "Decode machine output incrementally and preserve data",
+      "body": "SDK MUST 按已固定 CLI 契约增量解析机器输出，分离 stdout 与 stderr；MUST 处理跨读边界 UTF-8 与半行，禁止对文本增量 trim。未知事件 MUST 保留，畸形或超限记录 MUST 明确分类，不能混入自然语言终端日志解析。",
+      "scenarios": [
+        {
+          "name": "UTF8 record fragmented",
+          "given": "一条中文 JSONL 记录分多次读取且字符字节被拆开",
+          "when": "读取至完整换行",
+          "then": [
+            "恰好生成一个正确事件，前后合法空格保持。"
+          ],
+          "id": "CS-001-S1"
+        },
+        {
+          "name": "Mixed stderr diagnostics",
+          "given": "stdout 提供有效机器事件而 stderr 提供诊断",
+          "when": "两路数据交错到达",
+          "then": [
+            "诊断不进入事件 JSON 解析，两个通道独立且均受限。"
+          ],
+          "id": "CS-001-S2"
+        }
+      ],
+      "capability": "cli-streaming"
+    },
+    "CS-002": {
+      "id": "CS-002",
+      "title": "Reconcile protocol terminal with process exit",
+      "body": "SDK MUST 同时记录协议初始化、终态结果与进程退出。初始化前失败 MUST 返回启动/配置/认证等可识别错误；已开始而无合法终态 MUST 报告协议中断或结果未知。非成功退出与声称成功终态冲突时 MUST NOT 无条件返回成功。",
+      "scenarios": [
+        {
+          "name": "Failure before initialization",
+          "given": "程序不存在或在协议初始化前退出",
+          "when": "执行结束",
+          "then": [
+            "返回启动失败、可用退出信息和受限 stderr，不一律报缺少 result。"
+          ],
+          "id": "CS-002-S1"
+        },
+        {
+          "name": "Output without terminal",
+          "given": "进程已发送文本事件但没有合法终态",
+          "when": "进程退出",
+          "then": [
+            "部分输出可访问但最终结果不完整，不按文本非空判断成功。"
+          ],
+          "id": "CS-002-S2"
+        },
+        {
+          "name": "Terminal conflicts with exit",
+          "given": "收到成功终态后进程非成功退出",
+          "when": "生成最终执行结果",
+          "then": [
+            "保留终态与退出两份证据并报告冲突，不能伪造完整成功。"
+          ],
+          "id": "CS-002-S3"
+        }
+      ],
+      "capability": "cli-streaming"
+    },
+    "CS-003": {
+      "id": "CS-003",
+      "title": "Deliver live events and avoid duplicate final text",
+      "body": "流式入口 MUST 在进程退出前交付完整事件并提供取消与最终结果句柄；最终权威结果与增量 MUST 使用明确的聚合规则，不能重复拼接。生命周期和用量事实 MUST 遵循统一观测中的缺失值、隐私与去重规则。",
+      "scenarios": [
+        {
+          "name": "Progress before process exit",
+          "given": "测试 CLI 发出事件后延迟退出",
+          "when": "监听者等待首个事件",
+          "then": [
+            "首事件在进程结束前被观察到，有限执行的异步包装不能冒充此能力。"
+          ],
+          "id": "CS-003-S1"
+        },
+        {
+          "name": "Final result repeats deltas",
+          "given": "最后结果文本包含已流式显示的内容",
+          "when": "执行结果聚合",
+          "then": [
+            "最终文本只保留一次，重复终态不重复计入用量。"
+          ],
+          "id": "CS-003-S2"
+        }
+      ],
+      "capability": "cli-streaming"
+    },
+    "CC-001": {
+      "id": "CC-001",
+      "title": "Discover command support without side effects",
+      "body": "命令可用性探测 MUST 只使用版本、帮助或其他已确认只读方式；MUST NOT 为探测执行安装、删除、更新或服务启动。子命令、别名、选项与退出码 MUST 按固定目标版本核实，未知时明确报告。",
+      "scenarios": [
+        {
+          "name": "Probe cron command compatibility",
+          "given": "前序 Java 包装与目标文档的 cron 子命令名称存在差异",
+          "when": "执行版本和帮助探测",
+          "then": [
+            "记录目标真正接受的命令与别名；不创建真实任务验证猜测。"
+          ],
+          "id": "CC-001-S1"
+        },
+        {
+          "name": "Plugin installation availability",
+          "given": "宿主只查询安装命令是否可用",
+          "when": "进行能力探测",
+          "then": [
+            "不会安装插件或修改本地配置；仅返回有来源的支持信息。"
+          ],
+          "id": "CC-001-S2"
+        }
+      ],
+      "capability": "cli-commands"
+    },
+    "CC-002": {
+      "id": "CC-002",
+      "title": "Expose typed options and factual machine usage",
+      "body": "常用配置、Profile、Skills、Jobs 命令 MUST 提供经过契约验证的类型化选项；高级 argv 入口 MUST 保留上下文和资源限制。用量 MUST 来自机器可读字段，缺失保持缺失；MUST 区分实际模型、请求模型、进程时长和模型调用时长。",
+      "scenarios": [
+        {
+          "name": "Machine usage missing cache tokens",
+          "given": "CLI 结果提供部分用量字段",
+          "when": "SDK 映射类型化结果",
+          "then": [
+            "保留来源与缺失状态，不从日志猜缓存消耗或账单。"
+          ],
+          "id": "CC-002-S1"
+        },
+        {
+          "name": "Raw command exceeds quota",
+          "given": "调用者绕过类型化命令而使用 raw argv",
+          "when": "进程输出超过上限或排队超时",
+          "then": [
+            "同样执行资源与取消策略，raw 入口不成为无限制执行通道。"
+          ],
+          "id": "CC-002-S2"
+        }
+      ],
+      "capability": "cli-commands"
+    },
+    "AT-001": {
+      "id": "AT-001",
+      "title": "Initialize a versioned bidirectional protocol",
+      "body": "SDK MUST 在发送会话操作前完成目标 ACP 协议初始化和能力协商；必须按选定协议的真实 framing 与消息结构读写，MUST NOT 假设等同于任意 CLI JSONL 或混入终端日志。版本不兼容 MUST 明确失败。",
+      "scenarios": [
+        {
+          "name": "Real bidirectional initialization",
+          "given": "启动支持选定 ACP 版本的进程",
+          "when": "Java 发送初始化并读取对端结果",
+          "then": [
+            "协商完成后才能发会话请求；stdout 仅作为协议通道，stderr 独立处理。"
+          ],
+          "id": "AT-001-S1"
+        },
+        {
+          "name": "Version mismatch",
+          "given": "对端不能接受 SDK 声明版本",
+          "when": "收到初始化失败或不兼容应答",
+          "then": [
+            "初始化明确失败且清理拥有资源，不伪装为可用客户端。"
+          ],
+          "id": "AT-001-S2"
+        }
+      ],
+      "capability": "acp-transport"
+    },
+    "AT-002": {
+      "id": "AT-002",
+      "title": "Correlate bounded concurrent requests and notifications",
+      "body": "SDK MUST 区分 JSON-RPC 请求标识、会话标识及工具调用标识，关联乱序响应并独立处理通知。挂起请求、消息大小和等待时间 MUST 有界；未知响应 ID 或畸形消息 MUST 分类报告，不能误完成其他请求。",
+      "scenarios": [
+        {
+          "name": "Out of order replies with notifications",
+          "given": "并发发出两个请求，其间有会话通知",
+          "when": "响应按相反顺序到达",
+          "then": [
+            "每个响应完成正确请求；通知交付独立监听者，不按到达顺序猜关联。"
+          ],
+          "id": "AT-002-S1"
+        },
+        {
+          "name": "Unmatched response ID",
+          "given": "收到不属于任何挂起请求的响应",
+          "when": "分发该响应",
+          "then": [
+            "报告协议诊断并保留其他请求，不随意完成最早或同名请求。"
+          ],
+          "id": "AT-002-S2"
+        }
+      ],
+      "capability": "acp-transport"
+    },
+    "AT-003": {
+      "id": "AT-003",
+      "title": "Drain pending work on exit without prompt replay",
+      "body": "进程退出、传输关闭或初始化失败 MUST 使所有关联挂起请求以明确结果结束并回收拥有资源。重启 MUST NOT 自动重放此前 prompt；恢复只能使用经协商支持的会话恢复操作和宿主显式意图。",
+      "scenarios": [
+        {
+          "name": "Process exits with requests pending",
+          "given": "还有会话请求与权限应答未完成",
+          "when": "ACP 进程异常退出",
+          "then": [
+            "所有关联等待结束为进程/传输异常，无永久悬挂 Future。"
+          ],
+          "id": "AT-003-S1"
+        },
+        {
+          "name": "Process restarted",
+          "given": "上次 prompt 可能已部分执行",
+          "when": "宿主重启进程",
+          "then": [
+            "不会自动重发 prompt；先初始化，仅按已支持能力显式恢复或重新创建。"
+          ],
+          "id": "AT-003-S2"
+        }
+      ],
+      "capability": "acp-transport"
+    },
+    "AS-001": {
+      "id": "AS-001",
+      "title": "Complete the supported session prompt lifecycle",
+      "body": "SDK MUST 支持所选 ACP 契约下的创建会话、提交文本 prompt、读取通知、等待真实完成及取消当前轮闭环；本地观察中止与协议取消 MUST 分开。创建后的会话和原生执行关联信息 MUST 保留。",
+      "scenarios": [
+        {
+          "name": "Prompt completes with events",
+          "given": "协商成功并创建会话",
+          "when": "提交文本且接收工具/消息通知直至完成",
+          "then": [
+            "通知在完成前可消费，结果保持会话关联并只完成一次。"
+          ],
+          "id": "AS-001-S1"
+        },
+        {
+          "name": "Cancel current turn",
+          "given": "会话存在进行中的 prompt",
+          "when": "宿主明确请求协议取消",
+          "then": [
+            "只取消目标轮并核对结果，不擅自删除会话或终止其他会话。"
+          ],
+          "id": "AS-001-S2"
+        }
+      ],
+      "capability": "acp-sessions"
+    },
+    "AS-002": {
+      "id": "AS-002",
+      "title": "Gate optional operations and preserve native identity",
+      "body": "恢复、分叉、列出会话、多模态及工具范围 MUST 按真实协商能力暴露。SDK MUST NOT 因 ACP 不支持某操作就自动通过 HTTP/CLI 重做。事件 MUST 保留原生调用身份；同名并行工具不能仅按名称关联完成。",
+      "scenarios": [
+        {
+          "name": "Restore not advertised",
+          "given": "服务端未声明恢复能力",
+          "when": "调用恢复入口",
+          "then": [
+            "明确返回不支持或未知，不新建会话冒充恢复，不自动提交原 prompt。"
+          ],
+          "id": "AS-002-S1"
+        },
+        {
+          "name": "Parallel same named tools",
+          "given": "两个同名工具调用具有不同原生 ID",
+          "when": "其完成事件乱序到达",
+          "then": [
+            "按照原生 ID 关联；缺少 ID 时明确关联不确定，不猜测配对。"
+          ],
+          "id": "AS-002-S2"
+        }
+      ],
+      "capability": "acp-sessions"
+    },
+    "AS-003": {
+      "id": "AS-003",
+      "title": "Keep ACP optional and preserve base SDK compatibility",
+      "body": "ACP 集成 MUST 显式启用且不得阻塞基础 HTTP/有限 CLI 的装载和运行。基础 SDK 的 Java 基线 MUST 不因 ACP 依赖提高；不能满足某版本线时 MUST 采用可选分发边界并明确声明，不虚报三线 ACP 功能完全等价。",
+      "scenarios": [
+        {
+          "name": "ACP absent",
+          "given": "普通 Java 8 应用未安装任何 ACP 运行环境",
+          "when": "仅使用基础 HTTP 功能",
+          "then": [
+            "核心 SDK 正常装载和工作，不启动探测进程或抛可选依赖缺失错误。"
+          ],
+          "id": "AS-003-S1"
+        },
+        {
+          "name": "Optional adapter needs different runtime",
+          "given": "选定 ACP 协议实现有额外依赖限制",
+          "when": "构建和声明兼容矩阵",
+          "then": [
+            "依赖隔离且支持范围准确；基础构件不隐式携带高版本字节码。"
+          ],
+          "id": "AS-003-S2"
+        }
+      ],
+      "capability": "acp-sessions"
+    },
+    "AM-001": {
+      "id": "AM-001",
+      "title": "Deny by default and validate challenge scope",
+      "body": "权限决定 MUST 由宿主显式提供并绑定当前连接、会话、挑战及工具调用的可用原生身份。无处理器、处理器失败、超时或挑战过期 MUST NOT 自动允许；MUST 使用协议可表达的拒绝/取消结果或明确终止该挑战。",
+      "scenarios": [
+        {
+          "name": "No permission handler",
+          "given": "工具请求权限但宿主未配置处理器",
+          "when": "收到权限挑战",
+          "then": [
+            "返回协定拒绝/取消或明确错误，不默认批准该工具执行。"
+          ],
+          "id": "AM-001-S1"
+        },
+        {
+          "name": "Stale decision after reconnect",
+          "given": "宿主仍持有旧连接的权限决定",
+          "when": "尝试用于新连接上的请求",
+          "then": [
+            "拒绝过期绑定，不能把旧授权扩展到新连接。"
+          ],
+          "id": "AM-001-S2"
+        }
+      ],
+      "capability": "acp-permissions"
+    },
+    "AM-002": {
+      "id": "AM-002",
+      "title": "Keep protocol reading live during asynchronous approval",
+      "body": "权限等待 MUST 在不阻塞协议读循环的路径执行；并发请求和通知仍需可处理。一个挑战 MUST 至多产生一次有效应答；超时后的迟到决定、取消和进程退出 MUST 终止等待且不发送冲突应答。",
+      "scenarios": [
+        {
+          "name": "Bidirectional interleaving",
+          "given": "Java 正等待 prompt，服务端反向请求权限",
+          "when": "宿主异步查询状态后作出决定",
+          "then": [
+            "状态响应和通知能继续处理；权限应答可送达，形成真实双向闭环而非死锁。"
+          ],
+          "id": "AM-002-S1"
+        },
+        {
+          "name": "Late approval after timeout",
+          "given": "权限等待已经超时并发送拒绝",
+          "when": "异步宿主稍后返回允许",
+          "then": [
+            "迟到允许不再发送，挑战只记录一个最终决定。"
+          ],
+          "id": "AM-002-S2"
+        }
+      ],
+      "capability": "acp-permissions"
+    }
+  }
+}

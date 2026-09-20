@@ -1,0 +1,7 @@
+{
+  "command": "bash -n scripts/validate-openspec-package.sh",
+  "exit_code": 0,
+  "stdout": "",
+  "stderr": "",
+  "scope": "shell syntax only; official CLI not run"
+}
