@@ -89,6 +89,16 @@ public final class EndpointGuard {
         }
         // Strip IPv6 brackets that URI parsing leaves intact on some JDKs.
         String lookup = stripBrackets(host);
+        // RFC 2606 reserved TLDs (.invalid, .test, .example, .localhost) are
+        // rejected deterministically without DNS — a wildcard resolver may
+        // return a public IP for these, bypassing the guard.
+        String lower = lookup.toLowerCase();
+        if (lower.endsWith(".invalid") || lower.endsWith(".test")
+                || lower.endsWith(".example") || lower.endsWith(".localhost")
+                || "localhost".equals(lower)) {
+            throw new IllegalArgumentException(
+                    "Refusing to talk to reserved test host: " + lookup + " (" + context + ")");
+        }
         InetAddress addr;
         try {
             addr = InetAddress.getByName(lookup);

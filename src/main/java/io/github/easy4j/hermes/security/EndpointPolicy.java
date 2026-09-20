@@ -102,6 +102,7 @@ public final class EndpointPolicy {
         requireHttpScheme(uri, url);
         rejectUserInfo(uri, url);
         String host = normalizeHost(uri.getHost());
+        rejectReservedTld(host, url);
 
         if (mode == Mode.STRICT_PUBLIC) {
             if (!"https".equalsIgnoreCase(uri.getScheme())) {
@@ -163,6 +164,20 @@ public final class EndpointPolicy {
     private static void requirePort(int port, String label) {
         if (port < 1 || port > 65535) {
             throw new IllegalArgumentException(label + " port must be between 1 and 65535");
+        }
+    }
+
+    /**
+     * <p>拒绝 RFC 2606 保留 TLD（.invalid/.test/.example/.localhost）——
+     * 确定性拦截，不依赖 DNS 解析。通配 DNS 环境可能将保留 TLD 解析到公网 IP。</p>
+     */
+    private static void rejectReservedTld(String host, String url) {
+        String lower = host.toLowerCase();
+        if (lower.endsWith(".invalid") || lower.endsWith(".test")
+                || lower.endsWith(".example") || lower.endsWith(".localhost")
+                || "localhost".equals(lower)) {
+            throw new IllegalArgumentException(
+                    "Refusing to talk to reserved test host: " + host + " (" + url + ")");
         }
     }
 
