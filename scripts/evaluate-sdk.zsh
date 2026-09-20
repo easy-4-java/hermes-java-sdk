@@ -1,4 +1,5 @@
 #!/bin/zsh
+# shellcheck shell=bash
 set -uo pipefail
 
 repo_root=${0:a:h:h}
