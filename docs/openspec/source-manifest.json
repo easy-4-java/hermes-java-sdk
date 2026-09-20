@@ -1,0 +1,99 @@
+{
+  "schema": "hermes-source-observation/v1",
+  "observation_date": "2026-09-20",
+  "repository": "easy-4-java/hermes-java-sdk",
+  "transport": "GitHub connector GET",
+  "branches": [
+    {
+      "branch": "feature/1.0.x",
+      "head": "76710a9d7e72bd589d2244ecf9004a9bec3d3ed2",
+      "required_java_baseline": 8,
+      "root_tree_url": "https://api.github.com/repos/easy-4-java/hermes-java-sdk/git/trees/76710a9d7e72bd589d2244ecf9004a9bec3d3ed2",
+      "root_paths": [
+        ".github",
+        ".gitignore",
+        ".mvn",
+        "LICENSE",
+        "README.md",
+        "README.zh-CN.md",
+        "maven",
+        "mvnw",
+        "mvnw.bat",
+        "mvnw.cmd",
+        "pom.xml",
+        "scripts",
+        "src"
+      ],
+      "response_truncated": false,
+      "openspec_root_present": false,
+      "note": "Java 基线沿用原方案；本次未执行 POM/依赖/JDK 构建验证"
+    },
+    {
+      "branch": "feature/2.0.x",
+      "head": "c97b68698751b2560b2472ee96874ccb10494e46",
+      "required_java_baseline": 17,
+      "root_tree_url": "https://api.github.com/repos/easy-4-java/hermes-java-sdk/git/trees/c97b68698751b2560b2472ee96874ccb10494e46",
+      "root_paths": [
+        ".github",
+        ".gitignore",
+        ".mvn",
+        "LICENSE",
+        "README.md",
+        "README.zh-CN.md",
+        "maven",
+        "mvnw",
+        "mvnw.bat",
+        "pom.xml",
+        "scripts",
+        "src"
+      ],
+      "response_truncated": false,
+      "openspec_root_present": false,
+      "note": "Java 基线沿用原方案；本次未执行 POM/依赖/JDK 构建验证"
+    },
+    {
+      "branch": "feature/3.0.x",
+      "head": "3b3f148a09987442c71586cec809a62529f4c940",
+      "required_java_baseline": 21,
+      "root_tree_url": "https://api.github.com/repos/easy-4-java/hermes-java-sdk/git/trees/3b3f148a09987442c71586cec809a62529f4c940",
+      "root_paths": [
+        ".github",
+        ".gitignore",
+        ".mvn",
+        "LICENSE",
+        "README.md",
+        "README.zh-CN.md",
+        "maven",
+        "mvnw",
+        "mvnw.bat",
+        "mvnw.cmd",
+        "pom.xml",
+        "scripts",
+        "src"
+      ],
+      "response_truncated": false,
+      "openspec_root_present": false,
+      "note": "Java 基线沿用原方案；本次未执行 POM/依赖/JDK 构建验证"
+    }
+  ],
+  "server_contract": {
+    "status": "NOT_PINNED",
+    "reason": "本次写规范；目标部署版本必须由 H-001 与协议分批采证固定"
+  },
+  "local_clone": {
+    "status": "FAILED",
+    "reason": "git clone could not resolve github.com in execution container"
+  },
+  "original_plan": {
+    "path": "docs/design/hermes-java-sdk-optimization-plan-v1.0.md",
+    "sha256": "92e94b92156ebf52fe03ede76f95a7cc9aa6b65473f6da9994a56b25a4f17b76"
+  },
+  "openspec_cli": {
+    "requested_version": "1.13.1",
+    "version_source": "https://raw.githubusercontent.com/Fission-AI/OpenSpec/main/package.json",
+    "execution_status": "NOT_RUN",
+    "reason": "CLI not installed; npm registry request failed EAI_AGAIN"
+  },
+  "sdk_tests": "NOT_RUN",
+  "remote_writes": "NONE"
+}

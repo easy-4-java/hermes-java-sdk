@@ -1,0 +1,12 @@
+test_broken_relative_link_is_rejected (__main__.OfflinePackageCheckerTests.test_broken_relative_link_is_rejected) ... ok
+test_checked_implementation_task_is_rejected_in_planning (__main__.OfflinePackageCheckerTests.test_checked_implementation_task_is_rejected_in_planning) ... ok
+test_dependency_cycle_is_rejected (__main__.OfflinePackageCheckerTests.test_dependency_cycle_is_rejected) ... ok
+test_duplicate_requirement_id_is_rejected (__main__.OfflinePackageCheckerTests.test_duplicate_requirement_id_is_rejected) ... ok
+test_missing_then_is_rejected (__main__.OfflinePackageCheckerTests.test_missing_then_is_rejected) ... ok
+test_unowned_requirement_is_rejected (__main__.OfflinePackageCheckerTests.test_unowned_requirement_is_rejected) ... ok
+test_valid_planning_package (__main__.OfflinePackageCheckerTests.test_valid_planning_package) ... ok
+
+----------------------------------------------------------------------
+Ran 7 tests in 4.399s
+
+OK
