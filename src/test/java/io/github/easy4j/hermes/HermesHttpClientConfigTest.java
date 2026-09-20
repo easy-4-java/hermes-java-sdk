@@ -20,8 +20,8 @@ class HermesHttpClientConfigTest {
         assertFalse(config.getDebug().isEnabled());
         assertEquals(2_000, config.getDebug().getMaxContentLength());
         assertEquals(okhttp3.extension.logging.HttpLogLevel.BASIC, config.getDebug().getLevel());
-        config.setBaseUrl("http://hermes");
-        assertEquals("http://hermes", config.getBaseUrl());
+        config.setBaseUrl("http://1.1.1.1");
+        assertEquals("http://1.1.1.1", config.getBaseUrl());
 
         config.setStreamCorePoolSize(7);
         config.setStreamMaxPoolSize(9);
