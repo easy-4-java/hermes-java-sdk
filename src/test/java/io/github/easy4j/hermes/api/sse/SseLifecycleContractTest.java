@@ -26,8 +26,8 @@ class SseLifecycleContractTest {
     @Test
     void standardChatChunkDoesNotRequireNestedDataField() throws Exception {
         OkHttpClient client = new OkHttpClient.Builder().addInterceptor(chain -> {
-            String body = "data: {\"choices\":[{\"delta\":{\"content\":\"hello\"}}]}\\n\\n"
-                    + "data: [DONE]\\n\\n";
+            String body = "data: {\"choices\":[{\"delta\":{\"content\":\"hello\"}}]}\n\n"
+                    + "data: [DONE]\n\n";
             return new Response.Builder()
                     .request(chain.request())
                     .protocol(Protocol.HTTP_1_1)
@@ -60,11 +60,11 @@ class SseLifecycleContractTest {
             server.enqueue(new MockResponse()
                     .setResponseCode(200)
                     .setHeader("Content-Type", "text/event-stream")
-                    .setBody("data: {\"choices\":[{\"delta\":{\"content\":\"partial\"}}]}\\n\\n"));
+                    .setBody("data: {\"choices\":[{\"delta\":{\"content\":\"partial\"}}]}\n\n"));
             server.enqueue(new MockResponse()
                     .setResponseCode(200)
                     .setHeader("Content-Type", "text/event-stream")
-                    .setBody("data: [DONE]\\n\\n"));
+                    .setBody("data: [DONE]\n\n"));
 
             HermesHttpClientConfig config = new HermesHttpClientConfig();
             config.markUnsafeBaseUrlOverriddenForTest(true);
