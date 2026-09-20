@@ -220,7 +220,7 @@ public class HermesSseClient implements AutoCloseable {
         return start(() -> buildPostSseRequest(url, Collections.singletonMap("input", input), null),
                 consumer, () -> { },
                 error -> log.warn("Hermes session SSE stopped: sessionId={}, error={}",
-                        sessionId, error.getMessage()), true, "session:" + sessionId);
+                        sessionId, error.getMessage()), false, "session:" + sessionId);
     }
 
     private SseSubscription start(RequestFactory requestFactory, Consumer<SseEvent> consumer,
@@ -280,14 +280,15 @@ public class HermesSseClient implements AutoCloseable {
                         return;
                     }
                     try {
-                        SseEvent event = mapper.readValue(data, SseEvent.class);
+                        SseEvent event = new SseEvent();
                         event.setEvent(type);
+                        event.setData(data);
                         consumer.accept(event);
                     } catch (Exception error) {
                         if (config.getDebug().allows(HttpLogLevel.BODY)) {
-                            log.debug("Hermes SSE parse failed: label={}, data={}", label, truncate(data), error);
+                            log.debug("Hermes SSE consumer failed: label={}, data={}", label, truncate(data), error);
                         } else {
-                            debug(HttpLogLevel.BASIC, "Hermes SSE parse failed: label={}, dataLength={}, error={}",
+                            debug(HttpLogLevel.BASIC, "Hermes SSE consumer failed: label={}, dataLength={}, error={}",
                                     label, data.length(), error.getMessage());
                         }
                     }
