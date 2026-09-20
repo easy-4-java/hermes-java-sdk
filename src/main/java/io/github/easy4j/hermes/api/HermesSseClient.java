@@ -110,10 +110,8 @@ public class HermesSseClient implements AutoCloseable {
      * @since 1.0.0
      */
     public HermesSseClient(HermesHttpClientConfig config, ObjectMapper objectMapper, OkHttpClient httpClient) {
-        // 与 HermesHttpClient 一致的 host 白名单守卫。
-        if (!config.isUnsafeBaseUrlOverriddenForTest()) {
-            io.github.easy4j.hermes.util.EndpointGuard.require(config.getBaseUrl());
-        }
+        // 与 HermesHttpClient 一致，构造期按显式策略再次校验。
+        config.requireBaseUrl();
         this.config = Objects.requireNonNull(config, "config");
         this.mapper = Objects.isNull(objectMapper) ? new ObjectMapper()
                 .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false) : objectMapper;
