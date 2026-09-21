@@ -532,4 +532,59 @@ class SseLifecycleContractTest {
         }
     }
 
+
+    @Test
+    void slowConsumerDoesNotBlockIndependentSubscriptionWhenHttpConcurrencyIsOne() throws Exception {
+        try (MockWebServer server = new MockWebServer()) {
+            server.enqueue(new MockResponse()
+                    .setResponseCode(200)
+                    .setHeader("Content-Type", "text/event-stream")
+                    .setBody("id: a-1\ndata: {\"delta\":\"slow\"}\n\ndata: [DONE]\n\n"));
+            server.enqueue(new MockResponse()
+                    .setResponseCode(200)
+                    .setHeader("Content-Type", "text/event-stream")
+                    .setBody("id: b-1\ndata: {\"delta\":\"fast\"}\n\ndata: [DONE]\n\n"));
+            server.start();
+
+            HermesHttpClientConfig config = new HermesHttpClientConfig()
+                    .setEndpointPolicy(io.github.easy4j.hermes.security.EndpointPolicy
+                            .trustedLocal("127.0.0.1", server.getPort()))
+                    .setBaseUrl("http://127.0.0.1:" + server.getPort());
+            config.setMaxRequests(1);
+            config.setMaxRequestsPerHost(1);
+            config.setStreamCorePoolSize(2);
+            config.setStreamMaxPoolSize(2);
+            config.setStreamQueueCapacity(8);
+            config.setStreamReconnectMaxAttempts(0);
+
+            CountDownLatch slowStarted = new CountDownLatch(1);
+            CountDownLatch releaseSlow = new CountDownLatch(1);
+            CountDownLatch fastReceived = new CountDownLatch(1);
+
+            try (HermesSseClient sse = new HermesSseClient(config, null, null)) {
+                SseSubscription slow = sse.subscribeRunEvents("run-slow", event -> {
+                    slowStarted.countDown();
+                    try {
+                        releaseSlow.await(2, TimeUnit.SECONDS);
+                    } catch (InterruptedException interrupted) {
+                        Thread.currentThread().interrupt();
+                    }
+                });
+                assertTrue(slowStarted.await(3, TimeUnit.SECONDS));
+
+                SseSubscription fast = sse.subscribeRunEvents("run-fast",
+                        event -> fastReceived.countDown());
+
+                try {
+                    assertTrue(fastReceived.await(750, TimeUnit.MILLISECONDS),
+                            "slow consumer must not occupy the network callback lane for another subscription");
+                } finally {
+                    releaseSlow.countDown();
+                    slow.close();
+                    fast.close();
+                }
+            }
+        }
+    }
+
 }
