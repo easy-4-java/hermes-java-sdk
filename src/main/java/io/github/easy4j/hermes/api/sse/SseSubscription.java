@@ -2,6 +2,7 @@ package io.github.easy4j.hermes.api.sse;
 
 import java.util.Objects;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicReference;
 
 /**
  * <p>可取消的 Hermes SSE 订阅句柄。</p>
@@ -21,6 +22,8 @@ public final class SseSubscription implements AutoCloseable {
      * 首次取消订阅时执行的底层清理动作。
      */
     private final Runnable cancellation;
+    private final AtomicReference<SseContinuityStatus> continuityStatus =
+            new AtomicReference<>(SseContinuityStatus.INITIAL);
 
     /**
      * <p>创建 SseSubscription 实例。</p>
@@ -58,6 +61,16 @@ public final class SseSubscription implements AutoCloseable {
      */
     public boolean isActive() {
         return active.get();
+    }
+
+    /** Returns the current evidence level for event continuity across reattachment. */
+    public SseContinuityStatus getContinuityStatus() {
+        return continuityStatus.get();
+    }
+
+    /** Marks that this subscription has reattached without verified replay continuity. */
+    public void markContinuityUnverified() {
+        continuityStatus.compareAndSet(SseContinuityStatus.INITIAL, SseContinuityStatus.UNVERIFIED);
     }
 
     /**
