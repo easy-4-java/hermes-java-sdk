@@ -22,6 +22,7 @@ public final class SseSubscription implements AutoCloseable {
      * 首次取消订阅时执行的底层清理动作。
      */
     private final Runnable cancellation;
+    private final AtomicReference<Throwable> terminalError = new AtomicReference<>();
     private final AtomicReference<SseContinuityStatus> continuityStatus =
             new AtomicReference<>(SseContinuityStatus.INITIAL);
 
@@ -66,6 +67,18 @@ public final class SseSubscription implements AutoCloseable {
     /** Returns the current evidence level for event continuity across reattachment. */
     public SseContinuityStatus getContinuityStatus() {
         return continuityStatus.get();
+    }
+
+    /** Returns the terminal observation error, or null when none has been recorded. */
+    public Throwable getTerminalError() {
+        return terminalError.get();
+    }
+
+    /** Records the first terminal observation error without replacing an earlier cause. */
+    public void recordTerminalError(Throwable error) {
+        if (error != null) {
+            terminalError.compareAndSet(null, error);
+        }
     }
 
     /** Marks that this subscription has reattached without verified replay continuity. */
