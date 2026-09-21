@@ -1,6 +1,7 @@
 package io.github.easy4j.hermes.api.sse;
 
 import io.github.easy4j.hermes.HermesHttpClientConfig;
+import io.github.easy4j.hermes.api.HermesChatClient;
 import io.github.easy4j.hermes.api.HermesSseClient;
 import io.github.easy4j.hermes.api.model.ChatRequest;
 import okhttp3.MediaType;
@@ -22,6 +23,7 @@ import okhttp3.extension.logging.HttpLogLevel;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -223,6 +225,77 @@ class SseLifecycleContractTest {
             assertTrue(failure.get() instanceof SseProtocolException);
             assertFalse(subscription.isActive());
             assertEquals(0, sse.activeSubscriptionCount());
+        }
+    }
+
+    @Test
+    void eofWithoutTerminalFailsStreamingChatButKeepsPartialContent() throws Exception {
+        try (MockWebServer server = new MockWebServer()) {
+            server.enqueue(new MockResponse()
+                    .setResponseCode(200)
+                    .setHeader("Content-Type", "text/event-stream")
+                    .setBody("data: {\"choices\":[{\"delta\":{\"content\":\"partial\"}}]}\n\n"));
+            server.start();
+
+            HermesHttpClientConfig config = new HermesHttpClientConfig()
+                    .setEndpointPolicy(io.github.easy4j.hermes.security.EndpointPolicy
+                            .trustedLocal("127.0.0.1", server.getPort()))
+                    .setBaseUrl("http://127.0.0.1:" + server.getPort());
+
+            ChatRequest request = new ChatRequest();
+            request.setMessages(Collections.singletonList(
+                    new ChatRequest.Message("user", "hello")));
+
+            try (HermesChatClient chat = new HermesChatClient(config)) {
+                StreamingChatResponse stream = chat.chatCompletionStream(request);
+                ExecutionException failure = assertThrows(ExecutionException.class,
+                        () -> stream.get(3, TimeUnit.SECONDS));
+                assertTrue(failure.getCause() instanceof SseStreamInterruptedException);
+                assertEquals("partial", stream.getAccumulatedContent());
+                assertEquals(1, server.getRequestCount());
+            }
+        }
+    }
+
+    @Test
+    void doneThenEofCompletesExactlyOnceWithoutReplay() throws Exception {
+        try (MockWebServer server = new MockWebServer()) {
+            server.enqueue(new MockResponse()
+                    .setResponseCode(200)
+                    .setHeader("Content-Type", "text/event-stream")
+                    .setBody("data: [DONE]\n\n"));
+            server.start();
+
+            HermesHttpClientConfig config = new HermesHttpClientConfig()
+                    .setEndpointPolicy(io.github.easy4j.hermes.security.EndpointPolicy
+                            .trustedLocal("127.0.0.1", server.getPort()))
+                    .setBaseUrl("http://127.0.0.1:" + server.getPort());
+            ChatRequest request = new ChatRequest();
+            request.setMessages(Collections.singletonList(
+                    new ChatRequest.Message("user", "hello")));
+
+            try (HermesSseClient sse = new HermesSseClient(config, null, null)) {
+                CountDownLatch completed = new CountDownLatch(1);
+                AtomicInteger completionCalls = new AtomicInteger();
+                AtomicReference<Throwable> failure = new AtomicReference<>();
+                SseSubscription subscription = sse.subscribeChat(request,
+                        ignored -> { },
+                        () -> {
+                            completionCalls.incrementAndGet();
+                            completed.countDown();
+                        },
+                        failure::set);
+
+                assertTrue(completed.await(3, TimeUnit.SECONDS));
+                long deadline = System.nanoTime() + TimeUnit.MILLISECONDS.toNanos(250);
+                while (subscription.isActive() && System.nanoTime() < deadline) {
+                    Thread.yield();
+                }
+                assertFalse(subscription.isActive());
+                assertEquals(1, completionCalls.get());
+                assertEquals(null, failure.get());
+                assertEquals(1, server.getRequestCount());
+            }
         }
     }
 
