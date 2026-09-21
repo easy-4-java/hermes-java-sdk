@@ -181,6 +181,52 @@ class SseLifecycleContractTest {
     }
 
     @Test
+    void oversizedFrameFailsBeforeBusinessDelivery() throws Exception {
+        StringBuilder payload = new StringBuilder("{\"delta\":\"");
+        for (int i = 0; i < 128; i++) {
+            payload.append('x');
+        }
+        payload.append("\"}");
+
+        OkHttpClient client = new OkHttpClient.Builder().addInterceptor(chain -> {
+            String body = "data: " + payload + "\n\n";
+            return new Response.Builder()
+                    .request(chain.request())
+                    .protocol(Protocol.HTTP_1_1)
+                    .code(200)
+                    .message("OK")
+                    .body(ResponseBody.create(body, MediaType.get("text/event-stream")))
+                    .build();
+        }).build();
+
+        HermesHttpClientConfig config = new HermesHttpClientConfig();
+        config.markUnsafeBaseUrlOverriddenForTest(true);
+        config.setStreamMaxEventBytes(32);
+
+        ChatRequest request = new ChatRequest();
+        request.setMessages(Collections.singletonList(new ChatRequest.Message("user", "hello")));
+        AtomicInteger consumerCalls = new AtomicInteger();
+
+        try (HermesSseClient sse = new HermesSseClient(config, null, client)) {
+            CountDownLatch failed = new CountDownLatch(1);
+            AtomicReference<Throwable> failure = new AtomicReference<>();
+            SseSubscription subscription = sse.subscribeChat(request,
+                    ignored -> consumerCalls.incrementAndGet(),
+                    () -> { },
+                    error -> {
+                        failure.set(error);
+                        failed.countDown();
+                    });
+
+            assertTrue(failed.await(3, TimeUnit.SECONDS));
+            assertEquals(0, consumerCalls.get());
+            assertTrue(failure.get() instanceof SseProtocolException);
+            assertFalse(subscription.isActive());
+            assertEquals(0, sse.activeSubscriptionCount());
+        }
+    }
+
+    @Test
     void sessionDisconnectDoesNotReplayOriginalPost() throws Exception {
         try (MockWebServer server = new MockWebServer()) {
             server.enqueue(new MockResponse()
