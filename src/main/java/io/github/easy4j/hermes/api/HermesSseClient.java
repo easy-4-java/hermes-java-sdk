@@ -5,6 +5,7 @@ import io.github.easy4j.hermes.HermesHttpClientConfig;
 import io.github.easy4j.hermes.HermesOkHttpClientFactory;
 import io.github.easy4j.hermes.api.model.ChatRequest;
 import io.github.easy4j.hermes.api.sse.EndpointEventDecoder;
+import io.github.easy4j.hermes.api.sse.OrderedEventDispatcher;
 import io.github.easy4j.hermes.api.sse.SseConsumerException;
 import io.github.easy4j.hermes.api.sse.SseEvent;
 import io.github.easy4j.hermes.api.sse.SseFrame;
@@ -238,7 +239,7 @@ public class HermesSseClient implements AutoCloseable {
                                   Runnable onComplete, Consumer<Throwable> onError,
                                   RequestSemantics semantics, String label) {
         Objects.requireNonNull(consumer, "consumer");
-        SubscriptionState subscription = new SubscriptionState();
+        SubscriptionState subscription = new SubscriptionState(label);
         activeSubscriptions.add(subscription);
         Consumer<Throwable> trackedOnError = error -> {
             subscription.handle.recordTerminalError(error);
@@ -287,8 +288,10 @@ public class HermesSseClient implements AutoCloseable {
                 public void onEvent(EventSource eventSource, String id, String type, String data) {
                     if (SSE_DONE_MARKER.equals(data)) {
                         terminalSignal.set(true);
-                        onComplete.run();
-                        finish(subscription);
+                        dispatchControl(subscription, () -> {
+                            onComplete.run();
+                            finish(subscription);
+                        }, onError);
                         return;
                     }
                     if (data == null || data.isEmpty()) {
@@ -300,8 +303,10 @@ public class HermesSseClient implements AutoCloseable {
                         SseProtocolException failure = new SseProtocolException(frame,
                                 "Hermes SSE frame exceeds configured limit: " + frameBytes + " bytes");
                         terminalSignal.set(true);
-                        finish(subscription);
-                        onError.accept(failure);
+                        dispatchControl(subscription, () -> {
+                            onError.accept(failure);
+                            finish(subscription);
+                        }, onError);
                         return;
                     }
 
@@ -319,19 +324,30 @@ public class HermesSseClient implements AutoCloseable {
                     }
 
                     try {
-                        consumer.accept(event);
-                    } catch (Exception error) {
-                        Throwable failure = error instanceof SseQueueOverflowException
-                                ? error : new SseConsumerException(frame, error);
-                        if (config.getDebug().allows(HttpLogLevel.BODY)) {
-                            log.debug("Hermes SSE consumer failed: label={}, data={}", label, truncate(data), error);
-                        } else {
-                            debug(HttpLogLevel.BASIC, "Hermes SSE consumer failed: label={}, dataLength={}, error={}",
-                                    label, data.length(), error.getMessage());
-                        }
+                        subscription.dispatcher.dispatch(() -> {
+                            if (!subscription.handle.isActive()) {
+                                return;
+                            }
+                            try {
+                                consumer.accept(event);
+                            } catch (Exception error) {
+                                Throwable failure = error instanceof SseQueueOverflowException
+                                        ? error : new SseConsumerException(frame, error);
+                                if (config.getDebug().allows(HttpLogLevel.BODY)) {
+                                    log.debug("Hermes SSE consumer failed: label={}, data={}", label, truncate(data), error);
+                                } else {
+                                    debug(HttpLogLevel.BASIC, "Hermes SSE consumer failed: label={}, dataLength={}, error={}",
+                                            label, data.length(), error.getMessage());
+                                }
+                                terminalSignal.set(true);
+                                onError.accept(failure);
+                                finish(subscription);
+                            }
+                        });
+                    } catch (SseQueueOverflowException overflow) {
                         terminalSignal.set(true);
+                        onError.accept(overflow);
                         finish(subscription);
-                        onError.accept(failure);
                     }
                 }
 
@@ -351,12 +367,15 @@ public class HermesSseClient implements AutoCloseable {
                         return;
                     }
                     if (semantics.isObservationReattachAllowed() && subscription.handle.isActive()) {
-                        scheduleReconnect(subscription, requestFactory, consumer, onComplete,
-                                onError, semantics, label, new IOException("SSE stream closed"));
+                        dispatchControl(subscription, () -> scheduleReconnect(
+                                subscription, requestFactory, consumer, onComplete,
+                                onError, semantics, label, new IOException("SSE stream closed")), onError);
                     } else {
-                        onError.accept(new io.github.easy4j.hermes.api.sse.SseStreamInterruptedException(
-                                "Hermes SSE stream closed before a verified terminal marker: " + label));
-                        finish(subscription);
+                        dispatchControl(subscription, () -> {
+                            onError.accept(new io.github.easy4j.hermes.api.sse.SseStreamInterruptedException(
+                                    "Hermes SSE stream closed before a verified terminal marker: " + label));
+                            finish(subscription);
+                        }, onError);
                     }
                 }
 
@@ -380,11 +399,14 @@ public class HermesSseClient implements AutoCloseable {
                     Throwable failure = Objects.nonNull(error) ? error
                             : new HermesHttpException(Objects.nonNull(response) ? response.code() : -1, "");
                     if (semantics.isObservationReattachAllowed() && subscription.handle.isActive()) {
-                        scheduleReconnect(subscription, requestFactory, consumer, onComplete,
-                                onError, semantics, label, failure);
+                        dispatchControl(subscription, () -> scheduleReconnect(
+                                subscription, requestFactory, consumer, onComplete,
+                                onError, semantics, label, failure), onError);
                     } else {
-                        onError.accept(failure);
-                        finish(subscription);
+                        dispatchControl(subscription, () -> {
+                            onError.accept(failure);
+                            finish(subscription);
+                        }, onError);
                     }
                 }
             });
@@ -398,6 +420,24 @@ public class HermesSseClient implements AutoCloseable {
                         onError, semantics, label, error);
             } else {
                 onError.accept(error);
+                finish(subscription);
+            }
+        }
+    }
+
+    private void dispatchControl(SubscriptionState subscription, Runnable task,
+                                 Consumer<Throwable> onError) {
+        if (!subscription.handle.isActive()) {
+            return;
+        }
+        try {
+            subscription.dispatcher.dispatch(task);
+        } catch (SseQueueOverflowException overflow) {
+            onError.accept(overflow);
+            finish(subscription);
+        } catch (IllegalStateException closed) {
+            if (subscription.handle.isActive()) {
+                onError.accept(closed);
                 finish(subscription);
             }
         }
@@ -560,6 +600,8 @@ public class HermesSseClient implements AutoCloseable {
      * @since 1.0.0
      */
     private final class SubscriptionState {
+        private final OrderedEventDispatcher dispatcher;
+
         /**
          * 当前连续重连尝试次数。
          */
@@ -577,6 +619,10 @@ public class HermesSseClient implements AutoCloseable {
          */
         private final SseSubscription handle = new SseSubscription(this::cancel);
 
+        private SubscriptionState(String label) {
+            this.dispatcher = new OrderedEventDispatcher(label, config.getStreamQueueCapacity());
+        }
+
         private void cancel() {
             EventSource source = sourceRef.getAndSet(null);
             if (Objects.nonNull(source)) {
@@ -586,6 +632,7 @@ public class HermesSseClient implements AutoCloseable {
             if (Objects.nonNull(retry)) {
                 retry.cancel(false);
             }
+            dispatcher.close();
             activeSubscriptions.remove(this);
         }
     }
