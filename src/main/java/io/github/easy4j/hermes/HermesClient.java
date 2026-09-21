@@ -1101,6 +1101,12 @@ public class HermesClient implements AutoCloseable {
         if (!isHttpEnabled()) {
             throw new IllegalStateException("Hermes HTTP client is disabled");
         }
+        if (ownedHttpClient == null
+                && (!sharedHttpClient.interceptors().isEmpty()
+                || !sharedHttpClient.networkInterceptors().isEmpty())) {
+            throw new IllegalStateException(
+                    "Cannot prove profile isolation for an externally managed OkHttpClient with interceptors");
+        }
         String profileId = normalizeProfileId(binding.getProfileId());
         String cacheKey = config.getHttp().getBaseUrl() + "|" + profileId + "|" + binding.getCredentialIdentity();
         return profileClients.computeIfAbsent(cacheKey, ignored -> createProfileClient(binding, profileId));
