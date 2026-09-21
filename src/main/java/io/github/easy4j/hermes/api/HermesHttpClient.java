@@ -822,7 +822,15 @@ public class HermesHttpClient implements AutoCloseable {
                                                HttpCallCancellation cancellation) {
         Request.Builder builder = authedRequest(url(path));
         if (headers != null) {
-            headers.forEach((k, v) -> { if (k != null && v != null) builder.header(k, v); });
+            headers.forEach((k, v) -> {
+                if (k == null || v == null) return;
+                String normalized = k.trim().toLowerCase(java.util.Locale.ROOT);
+                if ("authorization".equals(normalized) || "host".equals(normalized)
+                        || "cookie".equals(normalized) || "proxy-authorization".equals(normalized)) {
+                    throw new IllegalArgumentException("Protected identity header cannot be overridden: " + k);
+                }
+                builder.header(k, v);
+            });
         }
         Request request = builder.post(RequestBody.create(toJson(body), JSON)).build();
         return executeAsync(request, type, cancellation);
