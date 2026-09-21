@@ -495,4 +495,41 @@ class SseLifecycleContractTest {
         }
     }
 
+
+    @Test
+    void saturatedQueueFailsExplicitlyWithoutDroppingOldestEvent() throws Exception {
+        try (MockWebServer server = new MockWebServer()) {
+            server.enqueue(new MockResponse()
+                    .setResponseCode(200)
+                    .setHeader("Content-Type", "text/event-stream")
+                    .setBody("id: evt-1\ndata: {\"delta\":\"first\"}\n\n"
+                            + "id: evt-2\ndata: {\"delta\":\"second\"}\n\n"
+                            + "data: [DONE]\n\n"));
+            server.start();
+
+            HermesHttpClientConfig config = new HermesHttpClientConfig()
+                    .setEndpointPolicy(io.github.easy4j.hermes.security.EndpointPolicy
+                            .trustedLocal("127.0.0.1", server.getPort()))
+                    .setBaseUrl("http://127.0.0.1:" + server.getPort());
+            config.setStreamEventQueueCapacity(1);
+            config.setStreamReconnectMaxAttempts(0);
+
+            try (HermesSseClient sse = new HermesSseClient(config, null, null);
+                 SseQueueSubscription queued = sse.subscribeRunEventsQueue("run-overflow")) {
+                long deadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(3);
+                while (queued.getSubscription().isActive() && System.nanoTime() < deadline) {
+                    Thread.yield();
+                }
+
+                assertFalse(queued.getSubscription().isActive());
+                assertTrue(queued.getSubscription().getTerminalError()
+                                instanceof SseQueueOverflowException,
+                        "queue saturation must be reported explicitly");
+                assertEquals(1, queued.getQueue().size());
+                assertEquals("evt-1", queued.getQueue().peek().getId(),
+                        "overflow must not silently discard the oldest undelivered event");
+            }
+        }
+    }
+
 }
