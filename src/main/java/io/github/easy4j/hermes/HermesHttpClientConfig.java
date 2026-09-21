@@ -146,6 +146,9 @@ public class HermesHttpClientConfig {
      */
     private int streamEventQueueCapacity = 1_024;
 
+    /** 单个 SSE data 帧允许的最大 UTF-8 字节数。 */
+    private int streamMaxEventBytes = 1_048_576;
+
     /**
      * SSE 连接异常关闭后的最大重连次数。
      */
