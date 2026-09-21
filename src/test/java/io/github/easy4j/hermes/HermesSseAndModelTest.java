@@ -229,7 +229,7 @@ class HermesSseAndModelTest {
     }
 
     @Test
-    void shouldKeepLatestQueueEventAndExposeSubscriptionLifecycle() throws Exception {
+    void shouldFailQueueOverflowWithoutDroppingOldestEventAndExposeSubscriptionLifecycle() throws Exception {
         try (MockWebServer server = new MockWebServer()) {
             server.enqueue(new MockResponse().setResponseCode(200)
                     .setHeader("Content-Type", "text/event-stream")
@@ -250,8 +250,10 @@ class HermesSseAndModelTest {
                 }
                 SseEvent event = queueSubscription.getQueue().poll(3, TimeUnit.SECONDS);
                 assertNotNull(event);
-                assertEquals("latest", event.deltaText());
+                assertEquals("first", event.deltaText());
                 assertNotNull(queueSubscription.getSubscription());
+                assertTrue(queueSubscription.getSubscription().getTerminalError()
+                        instanceof io.github.easy4j.hermes.api.sse.SseQueueOverflowException);
             }
 
             server.enqueue(new MockResponse().setResponseCode(500).setBody("session failure"));
