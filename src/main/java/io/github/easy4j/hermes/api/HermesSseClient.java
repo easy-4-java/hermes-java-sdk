@@ -9,6 +9,7 @@ import io.github.easy4j.hermes.api.sse.EndpointEventDecoder;
 import io.github.easy4j.hermes.api.sse.SseConsumerException;
 import io.github.easy4j.hermes.api.sse.SseEvent;
 import io.github.easy4j.hermes.api.sse.SseFrame;
+import io.github.easy4j.hermes.api.sse.SseProtocolException;
 import io.github.easy4j.hermes.api.sse.SseQueueSubscription;
 import io.github.easy4j.hermes.api.sse.SseSubscription;
 import io.github.easy4j.hermes.exception.HermesHttpException;
@@ -24,6 +25,7 @@ import okhttp3.sse.EventSources;
 import okhttp3.extension.logging.HttpLogLevel;
 
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.util.Collections;
 import java.util.Map;
 import java.util.Objects;
@@ -288,6 +290,16 @@ public class HermesSseClient implements AutoCloseable {
                         return;
                     }
                     SseFrame frame = new SseFrame(id, type, data, System.currentTimeMillis());
+                    int frameBytes = data.getBytes(StandardCharsets.UTF_8).length;
+                    if (frameBytes > Math.max(1, config.getStreamMaxEventBytes())) {
+                        SseProtocolException failure = new SseProtocolException(frame,
+                                "Hermes SSE frame exceeds configured limit: " + frameBytes + " bytes");
+                        terminalSignal.set(true);
+                        finish(subscription);
+                        onError.accept(failure);
+                        return;
+                    }
+
                     SseEvent event;
                     try {
                         event = eventDecoder.decode(frame);
