@@ -404,6 +404,7 @@ public class HermesSseClient implements AutoCloseable {
             return;
         }
         int attempt = subscription.reconnectAttempts.incrementAndGet();
+        subscription.handle.markContinuityUnverified();
         if (attempt > Math.max(0, config.getStreamReconnectMaxAttempts())) {
             log.warn("Hermes SSE reconnect exhausted: label={}, attempts={}, error={}",
                     label, attempt - 1, cause.getMessage());
