@@ -12,6 +12,7 @@ import io.github.easy4j.hermes.api.sse.SseProtocolException;
 import io.github.easy4j.hermes.api.sse.SseQueueSubscription;
 import io.github.easy4j.hermes.api.sse.SseSubscription;
 import io.github.easy4j.hermes.exception.HermesHttpException;
+import io.github.easy4j.hermes.transport.RequestSemantics;
 import lombok.extern.slf4j.Slf4j;
 import okhttp3.MediaType;
 import okhttp3.OkHttpClient;
@@ -180,7 +181,7 @@ public class HermesSseClient implements AutoCloseable {
                                          Consumer<Throwable> onError) {
         String url = config.getBaseUrl() + PATH_CHAT_COMPLETIONS;
         return start(() -> buildPostSseRequest(url, request, headers), consumer,
-                onComplete, onError, false, "chat");
+                onComplete, onError, RequestSemantics.AGENT_CREATE, "chat");
     }
 
     /**
@@ -195,7 +196,7 @@ public class HermesSseClient implements AutoCloseable {
         String url = config.getBaseUrl() + PATH_RUNS + "/" + HermesHttpClient.encodePathSegment(runId) + "/events";
         return start(() -> buildGetSseRequest(url), consumer, () -> { },
                 error -> log.warn("Hermes run SSE stopped: runId={}, error={}", runId, error.getMessage()),
-                true, "run:" + runId);
+                RequestSemantics.OBSERVE, "run:" + runId);
     }
 
     /**
@@ -229,22 +230,22 @@ public class HermesSseClient implements AutoCloseable {
         return start(() -> buildPostSseRequest(url, Collections.singletonMap("input", input), null),
                 consumer, () -> { },
                 error -> log.warn("Hermes session SSE stopped: sessionId={}, error={}",
-                        sessionId, error.getMessage()), false, "session:" + sessionId);
+                        sessionId, error.getMessage()), RequestSemantics.AGENT_CREATE, "session:" + sessionId);
     }
 
     private SseSubscription start(RequestFactory requestFactory, Consumer<SseEvent> consumer,
                                   Runnable onComplete, Consumer<Throwable> onError,
-                                  boolean reconnect, String label) {
+                                  RequestSemantics semantics, String label) {
         Objects.requireNonNull(consumer, "consumer");
         SubscriptionState subscription = new SubscriptionState();
         activeSubscriptions.add(subscription);
-        connect(subscription, requestFactory, consumer, onComplete, onError, reconnect, label);
+        connect(subscription, requestFactory, consumer, onComplete, onError, semantics, label);
         return subscription.handle;
     }
 
     private void connect(SubscriptionState subscription, RequestFactory requestFactory,
                          Consumer<SseEvent> consumer, Runnable onComplete,
-                         Consumer<Throwable> onError, boolean reconnect, String label) {
+                         Consumer<Throwable> onError, RequestSemantics semantics, String label) {
         if (!subscription.handle.isActive()) {
             finish(subscription);
             return;
@@ -343,9 +344,9 @@ public class HermesSseClient implements AutoCloseable {
                         finish(subscription);
                         return;
                     }
-                    if (reconnect && subscription.handle.isActive()) {
+                    if (semantics.isObservationReattachAllowed() && subscription.handle.isActive()) {
                         scheduleReconnect(subscription, requestFactory, consumer, onComplete,
-                                onError, label, new IOException("SSE stream closed"));
+                                onError, semantics, label, new IOException("SSE stream closed"));
                     } else {
                         onError.accept(new io.github.easy4j.hermes.api.sse.SseStreamInterruptedException(
                                 "Hermes SSE stream closed before a verified terminal marker: " + label));
@@ -372,9 +373,9 @@ public class HermesSseClient implements AutoCloseable {
                     }
                     Throwable failure = Objects.nonNull(error) ? error
                             : new HermesHttpException(Objects.nonNull(response) ? response.code() : -1, "");
-                    if (reconnect && subscription.handle.isActive()) {
+                    if (semantics.isObservationReattachAllowed() && subscription.handle.isActive()) {
                         scheduleReconnect(subscription, requestFactory, consumer, onComplete,
-                                onError, label, failure);
+                                onError, semantics, label, failure);
                     } else {
                         onError.accept(failure);
                         finish(subscription);
@@ -386,9 +387,9 @@ public class HermesSseClient implements AutoCloseable {
                 source.cancel();
             }
         } catch (Exception error) {
-            if (reconnect && subscription.handle.isActive()) {
+            if (semantics.isObservationReattachAllowed() && subscription.handle.isActive()) {
                 scheduleReconnect(subscription, requestFactory, consumer, onComplete,
-                        onError, label, error);
+                        onError, semantics, label, error);
             } else {
                 onError.accept(error);
                 finish(subscription);
@@ -398,7 +399,8 @@ public class HermesSseClient implements AutoCloseable {
 
     private void scheduleReconnect(SubscriptionState subscription, RequestFactory requestFactory,
                                    Consumer<SseEvent> consumer, Runnable onComplete,
-                                   Consumer<Throwable> onError, String label, Throwable cause) {
+                                   Consumer<Throwable> onError, RequestSemantics semantics,
+                                   String label, Throwable cause) {
         if (!subscription.handle.isActive() || reconnectScheduler.isShutdown()) {
             finish(subscription);
             return;
@@ -419,7 +421,7 @@ public class HermesSseClient implements AutoCloseable {
         ScheduledFuture<?> future;
         try {
             future = reconnectScheduler.schedule(
-                    () -> connect(subscription, requestFactory, consumer, onComplete, onError, true, label),
+                    () -> connect(subscription, requestFactory, consumer, onComplete, onError, semantics, label),
                     delay, TimeUnit.MILLISECONDS);
         } catch (java.util.concurrent.RejectedExecutionException ignored) {
             finish(subscription);
