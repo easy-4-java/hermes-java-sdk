@@ -1,4 +1,5 @@
 package io.github.easy4j.hermes;
+import io.github.easy4j.hermes.security.ProfileCredentialResolver;
 import lombok.Data;
 
 /**
@@ -38,4 +39,7 @@ public class HermesClientConfig {
      * 本地 Hermes CLI 客户端。
      */
     private final HermesCliConfig cli = new HermesCliConfig(debug);
+
+    /** 命名 Profile 的凭据绑定解析器；为空时命名 Profile 必须显式提供绑定。 */
+    private ProfileCredentialResolver profileCredentialResolver;
 }
