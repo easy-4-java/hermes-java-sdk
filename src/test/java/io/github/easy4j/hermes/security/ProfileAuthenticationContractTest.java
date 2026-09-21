@@ -4,7 +4,13 @@ import io.github.easy4j.hermes.HermesClient;
 import io.github.easy4j.hermes.HermesClientConfig;
 import io.github.easy4j.hermes.HermesCliConfig;
 import io.github.easy4j.hermes.HermesHttpClientConfig;
+import io.github.easy4j.hermes.HermesOkHttpClientFactory;
 import io.github.easy4j.hermes.api.model.ChatRequest;
+import okhttp3.MediaType;
+import okhttp3.OkHttpClient;
+import okhttp3.Protocol;
+import okhttp3.Response;
+import okhttp3.ResponseBody;
 import okhttp3.mockwebserver.MockResponse;
 import okhttp3.mockwebserver.MockWebServer;
 import okhttp3.mockwebserver.RecordedRequest;
@@ -125,6 +131,35 @@ class ProfileAuthenticationContractTest {
     void credentialSnapshotDoesNotExposeSecretInToString() {
         CredentialSnapshot snapshot = CredentialSnapshot.of("super-secret-token", "generation-a");
         assertFalse(snapshot.toString().contains("super-secret-token"));
+    }
+
+    @Test
+    void statefulExternalInterceptorIsRejectedForIsolatedProfiles() {
+        OkHttpClient external = new OkHttpClient.Builder()
+                .addInterceptor(chain -> new Response.Builder()
+                        .request(chain.request())
+                        .protocol(Protocol.HTTP_1_1)
+                        .code(200)
+                        .message("OK")
+                        .body(ResponseBody.create(
+                                "{\"status\":\"ok\"}",
+                                MediaType.get("application/json")))
+                        .build())
+                .build();
+
+        HermesHttpClientConfig http = new HermesHttpClientConfig();
+        http.markUnsafeBaseUrlOverriddenForTest(true);
+        http.setBaseUrl("http://127.0.0.1:8642");
+
+        ProfileBinding binding = ProfileBinding.of(
+                "team-a", "credential-a",
+                identity -> CredentialSnapshot.of("profile-token", "1"));
+
+        try (HermesClient root = new HermesClient(http, disabledCli(), external)) {
+            assertThrows(IllegalStateException.class, () -> root.forProfile(binding));
+        } finally {
+            HermesOkHttpClientFactory.shutdown(external);
+        }
     }
 
     @Test
