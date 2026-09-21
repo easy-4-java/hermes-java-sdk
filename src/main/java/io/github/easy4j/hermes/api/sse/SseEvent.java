@@ -19,6 +19,9 @@ import java.util.Map;
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class SseEvent {
 
+    /** SSE id 字段；服务端未提供时保持 null。 */
+    private String id;
+
     /**
      * SSE event 字段。
      */
@@ -27,6 +30,21 @@ public class SseEvent {
      * 协议数据集合或 SSE 原始数据。
      */
     private String data;
+
+    /** 本地接收时间，不作为服务端事件身份。 */
+    private long receivedAtEpochMillis;
+
+    /**
+     * 从已保留的原始 SSE 帧创建兼容事件视图。
+     */
+    public static SseEvent fromFrame(SseFrame frame) {
+        SseEvent event = new SseEvent();
+        event.setId(frame.getId());
+        event.setEvent(frame.getEvent());
+        event.setData(frame.getData());
+        event.setReceivedAtEpochMillis(frame.getReceivedAtEpochMillis());
+        return event;
+    }
 
     /**
      * <p>将 SSE data 解析为键值映射。</p>
