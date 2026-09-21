@@ -363,4 +363,87 @@ class SseLifecycleContractTest {
         }
     }
 
+
+    @Test
+    void runReattachWithoutCursorMarksContinuityUnverifiedAndDoesNotCreateRun() throws Exception {
+        try (MockWebServer server = new MockWebServer()) {
+            server.enqueue(new MockResponse()
+                    .setResponseCode(200)
+                    .setHeader("Content-Type", "text/event-stream")
+                    .setBody("id: evt-a\ndata: {\"delta\":\"first\"}\n\n"));
+            server.enqueue(new MockResponse()
+                    .setResponseCode(200)
+                    .setHeader("Content-Type", "text/event-stream")
+                    .setBody("id: evt-b\ndata: {\"delta\":\"second\"}\n\ndata: [DONE]\n\n"));
+            server.start();
+
+            HermesHttpClientConfig config = new HermesHttpClientConfig()
+                    .setEndpointPolicy(io.github.easy4j.hermes.security.EndpointPolicy
+                            .trustedLocal("127.0.0.1", server.getPort()))
+                    .setBaseUrl("http://127.0.0.1:" + server.getPort());
+            config.setStreamReconnectMaxAttempts(1);
+            config.setStreamReconnectInitialDelayMillis(1);
+            config.setStreamReconnectMaxDelayMillis(1);
+
+            try (HermesSseClient sse = new HermesSseClient(config, null, null)) {
+                SseSubscription subscription = sse.subscribeRunEvents("run-existing", ignored -> { });
+
+                assertNotNull(server.takeRequest(3, TimeUnit.SECONDS));
+                assertNotNull(server.takeRequest(3, TimeUnit.SECONDS));
+
+                long deadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(3);
+                while (subscription.isActive() && System.nanoTime() < deadline) {
+                    Thread.yield();
+                }
+
+                assertFalse(subscription.isActive());
+                assertEquals(SseContinuityStatus.UNVERIFIED, subscription.getContinuityStatus());
+                assertEquals(2, server.getRequestCount());
+            }
+        }
+    }
+
+    @Test
+    void repeatedTextWithDifferentServerEventIdsIsPreservedAcrossReattach() throws Exception {
+        try (MockWebServer server = new MockWebServer()) {
+            server.enqueue(new MockResponse()
+                    .setResponseCode(200)
+                    .setHeader("Content-Type", "text/event-stream")
+                    .setBody("id: evt-1\ndata: {\"delta\":\"same\"}\n\n"));
+            server.enqueue(new MockResponse()
+                    .setResponseCode(200)
+                    .setHeader("Content-Type", "text/event-stream")
+                    .setBody("id: evt-2\ndata: {\"delta\":\"same\"}\n\ndata: [DONE]\n\n"));
+            server.start();
+
+            HermesHttpClientConfig config = new HermesHttpClientConfig()
+                    .setEndpointPolicy(io.github.easy4j.hermes.security.EndpointPolicy
+                            .trustedLocal("127.0.0.1", server.getPort()))
+                    .setBaseUrl("http://127.0.0.1:" + server.getPort());
+            config.setStreamReconnectMaxAttempts(1);
+            config.setStreamReconnectInitialDelayMillis(1);
+            config.setStreamReconnectMaxDelayMillis(1);
+
+            java.util.List<SseEvent> received =
+                    java.util.Collections.synchronizedList(new java.util.ArrayList<SseEvent>());
+
+            try (HermesSseClient sse = new HermesSseClient(config, null, null)) {
+                SseSubscription subscription = sse.subscribeRunEvents("run-existing", received::add);
+
+                long deadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(3);
+                while (subscription.isActive() && System.nanoTime() < deadline) {
+                    Thread.yield();
+                }
+
+                assertFalse(subscription.isActive());
+                assertEquals(2, received.size());
+                assertEquals("same", received.get(0).deltaText());
+                assertEquals("same", received.get(1).deltaText());
+                assertEquals("evt-1", received.get(0).getId());
+                assertEquals("evt-2", received.get(1).getId());
+                assertEquals(SseContinuityStatus.UNVERIFIED, subscription.getContinuityStatus());
+            }
+        }
+    }
+
 }
