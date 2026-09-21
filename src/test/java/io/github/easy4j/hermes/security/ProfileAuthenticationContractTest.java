@@ -7,6 +7,7 @@ import io.github.easy4j.hermes.HermesHttpClientConfig;
 import io.github.easy4j.hermes.HermesOkHttpClientFactory;
 import io.github.easy4j.hermes.exception.HermesHttpException;
 import io.github.easy4j.hermes.api.model.ChatRequest;
+import okhttp3.Cache;
 import okhttp3.Cookie;
 import okhttp3.CookieJar;
 import okhttp3.HttpUrl;
@@ -21,8 +22,16 @@ import okhttp3.mockwebserver.RecordedRequest;
 import okhttp3.mockwebserver.SocketPolicy;
 import org.junit.jupiter.api.Test;
 
+import java.io.File;
+import java.nio.file.Files;
 import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.List;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -48,17 +57,35 @@ class ProfileAuthenticationContractTest {
                         "team-b", "credential-b",
                         identity -> CredentialSnapshot.of("token-b", "generation-b"));
 
-                root.forProfile(teamA).health();
-                root.forProfile(teamB).health();
+                HermesClient clientA = root.forProfile(teamA);
+                HermesClient clientB = root.forProfile(teamB);
+                ExecutorService executor = Executors.newFixedThreadPool(2);
+                CountDownLatch start = new CountDownLatch(1);
+                try {
+                    Future<?> a = executor.submit(() -> {
+                        await(start);
+                        clientA.health();
+                    });
+                    Future<?> b = executor.submit(() -> {
+                        await(start);
+                        clientB.health();
+                    });
+                    start.countDown();
+                    a.get(3, TimeUnit.SECONDS);
+                    b.get(3, TimeUnit.SECONDS);
+                } finally {
+                    executor.shutdownNow();
+                }
 
                 RecordedRequest first = server.takeRequest(3, TimeUnit.SECONDS);
                 RecordedRequest second = server.takeRequest(3, TimeUnit.SECONDS);
                 assertNotNull(first);
                 assertNotNull(second);
-                assertEquals("/p/team-a/health", first.getPath());
-                assertEquals("Bearer token-a", first.getHeader("Authorization"));
-                assertEquals("/p/team-b/health", second.getPath());
-                assertEquals("Bearer token-b", second.getHeader("Authorization"));
+                Map<String, String> authByPath = new HashMap<>();
+                authByPath.put(first.getPath(), first.getHeader("Authorization"));
+                authByPath.put(second.getPath(), second.getHeader("Authorization"));
+                assertEquals("Bearer token-a", authByPath.get("/p/team-a/health"));
+                assertEquals("Bearer token-b", authByPath.get("/p/team-b/health"));
             }
         }
     }
@@ -169,6 +196,28 @@ class ProfileAuthenticationContractTest {
     }
 
     @Test
+    void externalCacheIsRejectedForIsolatedProfiles() throws Exception {
+        File directory = Files.createTempDirectory("hermes-profile-cache").toFile();
+        Cache cache = new Cache(directory, 1024L);
+        OkHttpClient external = new OkHttpClient.Builder().cache(cache).build();
+        HermesHttpClientConfig http = new HermesHttpClientConfig();
+        http.markUnsafeBaseUrlOverriddenForTest(true);
+        http.setBaseUrl("http://127.0.0.1:8642");
+
+        ProfileBinding binding = ProfileBinding.of(
+                "team-a", "credential-a",
+                identity -> CredentialSnapshot.of("profile-token", "1"));
+
+        try (HermesClient root = new HermesClient(http, disabledCli(), external)) {
+            assertThrows(IllegalStateException.class, () -> root.forProfile(binding));
+        } finally {
+            cache.close();
+            HermesOkHttpClientFactory.shutdown(external);
+            deleteRecursively(directory);
+        }
+    }
+
+    @Test
     void externalCookieJarIsRejectedForIsolatedProfiles() {
         CookieJar statefulJar = new CookieJar() {
             @Override
@@ -247,6 +296,32 @@ class ProfileAuthenticationContractTest {
                 assertEquals(0, server.getRequestCount(),
                         "identity override must be rejected before network I/O");
             }
+        }
+    }
+
+    private static void await(CountDownLatch latch) {
+        try {
+            if (!latch.await(3, TimeUnit.SECONDS)) {
+                throw new AssertionError("timed out waiting for concurrent profile start");
+            }
+        } catch (InterruptedException error) {
+            Thread.currentThread().interrupt();
+            throw new AssertionError(error);
+        }
+    }
+
+    private static void deleteRecursively(File file) {
+        if (file == null || !file.exists()) {
+            return;
+        }
+        File[] children = file.listFiles();
+        if (children != null) {
+            for (File child : children) {
+                deleteRecursively(child);
+            }
+        }
+        if (!file.delete() && file.exists()) {
+            file.deleteOnExit();
         }
     }
 
