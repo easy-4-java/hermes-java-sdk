@@ -5,7 +5,11 @@ import io.github.easy4j.hermes.HermesClientConfig;
 import io.github.easy4j.hermes.HermesCliConfig;
 import io.github.easy4j.hermes.HermesHttpClientConfig;
 import io.github.easy4j.hermes.HermesOkHttpClientFactory;
+import io.github.easy4j.hermes.exception.HermesHttpException;
 import io.github.easy4j.hermes.api.model.ChatRequest;
+import okhttp3.Cookie;
+import okhttp3.CookieJar;
+import okhttp3.HttpUrl;
 import okhttp3.MediaType;
 import okhttp3.OkHttpClient;
 import okhttp3.Protocol;
@@ -14,9 +18,11 @@ import okhttp3.ResponseBody;
 import okhttp3.mockwebserver.MockResponse;
 import okhttp3.mockwebserver.MockWebServer;
 import okhttp3.mockwebserver.RecordedRequest;
+import okhttp3.mockwebserver.SocketPolicy;
 import org.junit.jupiter.api.Test;
 
 import java.util.Collections;
+import java.util.List;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -131,6 +137,63 @@ class ProfileAuthenticationContractTest {
     void credentialSnapshotDoesNotExposeSecretInToString() {
         CredentialSnapshot snapshot = CredentialSnapshot.of("super-secret-token", "generation-a");
         assertFalse(snapshot.toString().contains("super-secret-token"));
+    }
+
+    @Test
+    void credentialRotationAfterLostWriteDoesNotResubmitUnderNewIdentity() throws Exception {
+        try (MockWebServer server = new MockWebServer()) {
+            server.enqueue(new MockResponse().setSocketPolicy(SocketPolicy.DISCONNECT_AFTER_REQUEST));
+            server.start();
+
+            AtomicReference<CredentialSnapshot> credential =
+                    new AtomicReference<>(CredentialSnapshot.of("token-a", "generation-a"));
+            ProfileBinding binding = ProfileBinding.of(
+                    "team-a", "credential-a", identity -> credential.get());
+
+            try (HermesClient root = new HermesClient(http(server), disabledCli())) {
+                HermesClient profile = root.forProfile(binding);
+                ChatRequest request = new ChatRequest();
+                request.setMessages(Collections.singletonList(
+                        new ChatRequest.Message("user", "side-effecting request")));
+
+                assertThrows(HermesHttpException.class, () -> profile.chatCompletion(request));
+                credential.set(CredentialSnapshot.of("token-b", "generation-b"));
+
+                RecordedRequest accepted = server.takeRequest(3, TimeUnit.SECONDS);
+                assertNotNull(accepted);
+                assertEquals("Bearer token-a", accepted.getHeader("Authorization"));
+                assertEquals(1, server.getRequestCount(),
+                        "an outcome-unknown write must not be recreated under rotated credentials");
+            }
+        }
+    }
+
+    @Test
+    void externalCookieJarIsRejectedForIsolatedProfiles() {
+        CookieJar statefulJar = new CookieJar() {
+            @Override
+            public void saveFromResponse(HttpUrl url, List<Cookie> cookies) {
+            }
+
+            @Override
+            public List<Cookie> loadForRequest(HttpUrl url) {
+                return Collections.emptyList();
+            }
+        };
+        OkHttpClient external = new OkHttpClient.Builder().cookieJar(statefulJar).build();
+        HermesHttpClientConfig http = new HermesHttpClientConfig();
+        http.markUnsafeBaseUrlOverriddenForTest(true);
+        http.setBaseUrl("http://127.0.0.1:8642");
+
+        ProfileBinding binding = ProfileBinding.of(
+                "team-a", "credential-a",
+                identity -> CredentialSnapshot.of("profile-token", "1"));
+
+        try (HermesClient root = new HermesClient(http, disabledCli(), external)) {
+            assertThrows(IllegalStateException.class, () -> root.forProfile(binding));
+        } finally {
+            HermesOkHttpClientFactory.shutdown(external);
+        }
     }
 
     @Test
