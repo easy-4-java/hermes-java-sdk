@@ -5,7 +5,10 @@ import tools.jackson.databind.json.JsonMapper;
 import io.github.easy4j.hermes.HermesHttpClientConfig;
 import io.github.easy4j.hermes.HermesOkHttpClientFactory;
 import io.github.easy4j.hermes.api.model.ChatRequest;
+import io.github.easy4j.hermes.api.sse.EndpointEventDecoder;
+import io.github.easy4j.hermes.api.sse.SseConsumerException;
 import io.github.easy4j.hermes.api.sse.SseEvent;
+import io.github.easy4j.hermes.api.sse.SseFrame;
 import io.github.easy4j.hermes.api.sse.SseQueueSubscription;
 import io.github.easy4j.hermes.api.sse.SseSubscription;
 import io.github.easy4j.hermes.exception.HermesHttpException;
@@ -75,6 +78,8 @@ public class HermesSseClient implements AutoCloseable {
      * SSE 事件反序列化使用的 ObjectMapper。
      */
     private final ObjectMapper mapper;
+    /** 将保留的原始帧转换为当前兼容事件视图。 */
+    private final EndpointEventDecoder<SseEvent> eventDecoder;
     /**
      * 执行 HTTP 请求的 OkHttpClient。
      */
@@ -116,6 +121,10 @@ public class HermesSseClient implements AutoCloseable {
         config.requireBaseUrl();
         this.config = Objects.requireNonNull(config, "config");
         this.mapper = Objects.isNull(objectMapper) ? JsonMapper.builder().disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES).build() : objectMapper;
+        this.eventDecoder = frame -> {
+            this.mapper.readTree(frame.getData());
+            return SseEvent.fromFrame(frame);
+        };
         this.ownsHttpClient = Objects.isNull(httpClient);
         this.ownsDispatcher = Objects.nonNull(httpClient);
         OkHttpClient baseClient = this.ownsHttpClient ? HermesOkHttpClientFactory.create(config) : httpClient;
@@ -278,8 +287,10 @@ public class HermesSseClient implements AutoCloseable {
                     if (data == null || data.isEmpty()) {
                         return;
                     }
+                    SseFrame frame = new SseFrame(id, type, data, System.currentTimeMillis());
+                    SseEvent event;
                     try {
-                        mapper.readTree(data);
+                        event = eventDecoder.decode(frame);
                     } catch (Exception error) {
                         if (config.getDebug().allows(HttpLogLevel.BODY)) {
                             log.debug("Hermes SSE parse failed: label={}, data={}", label, truncate(data), error);
@@ -290,18 +301,19 @@ public class HermesSseClient implements AutoCloseable {
                         return;
                     }
 
-                    SseEvent event = new SseEvent();
-                    event.setEvent(type);
-                    event.setData(data);
                     try {
                         consumer.accept(event);
                     } catch (Exception error) {
+                        SseConsumerException failure = new SseConsumerException(frame, error);
                         if (config.getDebug().allows(HttpLogLevel.BODY)) {
                             log.debug("Hermes SSE consumer failed: label={}, data={}", label, truncate(data), error);
                         } else {
                             debug(HttpLogLevel.BASIC, "Hermes SSE consumer failed: label={}, dataLength={}, error={}",
                                     label, data.length(), error.getMessage());
                         }
+                        terminalSignal.set(true);
+                        finish(subscription);
+                        onError.accept(failure);
                     }
                 }
 
