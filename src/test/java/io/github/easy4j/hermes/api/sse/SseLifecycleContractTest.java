@@ -446,4 +446,53 @@ class SseLifecycleContractTest {
         }
     }
 
+
+    @Test
+    void chatTransportFailureDoesNotReplayWithoutVerifiedIdempotency() throws Exception {
+        try (MockWebServer server = new MockWebServer()) {
+            server.enqueue(new MockResponse()
+                    .setResponseCode(500)
+                    .setBody("failure"));
+            server.enqueue(new MockResponse()
+                    .setResponseCode(200)
+                    .setHeader("Content-Type", "text/event-stream")
+                    .setBody("data: [DONE]\n\n"));
+            server.start();
+
+            HermesHttpClientConfig config = new HermesHttpClientConfig()
+                    .setEndpointPolicy(io.github.easy4j.hermes.security.EndpointPolicy
+                            .trustedLocal("127.0.0.1", server.getPort()))
+                    .setBaseUrl("http://127.0.0.1:" + server.getPort());
+            config.setStreamReconnectMaxAttempts(3);
+            config.setStreamReconnectInitialDelayMillis(1);
+            config.setStreamReconnectMaxDelayMillis(1);
+
+            ChatRequest request = new ChatRequest();
+            request.setMessages(Collections.singletonList(
+                    new ChatRequest.Message("user", "hello")));
+
+            try (HermesSseClient sse = new HermesSseClient(config, null, null)) {
+                CountDownLatch failed = new CountDownLatch(1);
+                AtomicReference<Throwable> failure = new AtomicReference<>();
+                SseSubscription subscription = sse.subscribeChat(
+                        request, ignored -> { }, () -> { }, error -> {
+                            failure.set(error);
+                            failed.countDown();
+                        });
+
+                assertTrue(failed.await(3, TimeUnit.SECONDS));
+                assertNotNull(failure.get());
+
+                long deadline = System.nanoTime() + TimeUnit.MILLISECONDS.toNanos(250);
+                while (server.getRequestCount() < 2 && System.nanoTime() < deadline) {
+                    Thread.yield();
+                }
+
+                assertFalse(subscription.isActive());
+                assertEquals(1, server.getRequestCount(),
+                        "agent-creation writes must not replay without verified idempotency");
+            }
+        }
+    }
+
 }
