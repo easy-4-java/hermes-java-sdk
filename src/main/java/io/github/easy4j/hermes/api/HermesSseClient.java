@@ -311,11 +311,8 @@ public class HermesSseClient implements AutoCloseable {
                                     label, data.length(), error.getMessage());
                         }
                         terminalSignal.set(true);
-                        try {
-                            onError.accept(failure);
-                        } finally {
-                            finish(subscription);
-                        }
+                        finish(subscription);
+                        onError.accept(failure);
                     }
                 }
 
