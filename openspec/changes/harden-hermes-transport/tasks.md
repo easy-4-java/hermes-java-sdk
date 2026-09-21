@@ -77,9 +77,11 @@ Java 8/17/21 三分支同契约；不以重连重做 Agent；不借用根 Profil
 
 - `src/test/java/io/github/easy4j/hermes/security/ProfileAuthenticationContractTest.java`
 
-- [ ] 3.1 **H-102** 新增 `ProfileAuthenticationContractTest` 六个场景并使用两个不同假密钥；运行该类，验证根凭据借用、覆盖头与轮换行为有可复现断言。
-- [ ] 3.2 **H-102** 实现每次请求凭据解析、非秘密身份缓存键和保护头校验；运行 `mvn -B -Dtest=ProfileAuthenticationContractTest test`，验证并发请求无身份串用。
-- [ ] 3.3 **H-102** 覆盖外部有状态 interceptor、CookieJar、缓存与 resolver 缺失；运行同一类并审核日志，验证拒绝或隔离策略明确、密钥不入缓存键/输出。
+- [x] 3.1 **H-102** 新增 `ProfileAuthenticationContractTest` 六个场景并使用两个不同假密钥；运行该类，验证根凭据借用、覆盖头与轮换行为有可复现断言。
+- [x] 3.2 **H-102** 实现每次请求凭据解析、非秘密身份缓存键和保护头校验；运行 `mvn -B -Dtest=ProfileAuthenticationContractTest test`，验证并发请求无身份串用。
+- [x] 3.3 **H-102** 覆盖外部有状态 interceptor、CookieJar、缓存与 resolver 缺失；运行同一类并审核日志，验证拒绝或隔离策略明确、密钥不入缓存键/输出。
+**H-102 验证证据（2026-09-21）：** `feature/1.0.x` GitHub Actions run `35547188300`（JDK 8）、`feature/2.0.x` run `35547090448`（JDK 17）、`feature/3.0.x` run `35547191193`（JDK 21）均完成 `mvn clean verify` 且 conclusion=success；`ProfileAuthenticationContractTest` 覆盖并发独立身份、resolver 缺失、每请求轮换、结果未知写不重放、受保护 Header、external interceptor/CookieJar/Cache 隔离和秘密脱敏。
+
 
 ## 4. SSE 原始帧及端点解码
 
