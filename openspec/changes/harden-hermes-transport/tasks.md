@@ -99,9 +99,11 @@ Java 8/17/21 三分支同契约；不以重连重做 Agent；不借用根 Profil
 
 - `src/test/java/io/github/easy4j/hermes/api/sse/SseLifecycleContractTest.java`
 
-- [ ] 4.1 **H-103** 在 `SseLifecycleContractTest` 新增 SE-001/002 场景：标准 chunk、多行 data、UTF-8 分片、回调抛错；运行 `mvn -B -Dtest=SseLifecycleContractTest test` 并保留修复前失败原因。
-- [ ] 4.2 **H-103** 实现 raw frame→端点 decoder→类型化事件与旧 SseEvent 适配；运行该测试，验证无需额外 JSON data 包装、无伪造服务端 ID。
-- [ ] 4.3 **H-103** 分离解析/网络/回调/业务错误并核对帧大小保护；重跑对应场景和超大帧边界，验证消费者异常不会伪装成解析错误且资源仍释放。
+- [x] 4.1 **H-103** 在 `SseLifecycleContractTest` 新增 SE-001/002 场景：标准 chunk、多行 data、UTF-8 分片、回调抛错；运行 `mvn -B -Dtest=SseLifecycleContractTest test` 并保留修复前失败原因。
+- [x] 4.2 **H-103** 实现 raw frame→端点 decoder→类型化事件与旧 SseEvent 适配；运行该测试，验证无需额外 JSON data 包装、无伪造服务端 ID。
+- [x] 4.3 **H-103** 分离解析/网络/回调/业务错误并核对帧大小保护；重跑对应场景和超大帧边界，验证消费者异常不会伪装成解析错误且资源仍释放。
+**H-103 验证证据（2026-09-21）：** `feature/1.0.x` run `35547852973`（JDK 8）、`feature/2.0.x` run `35547748447`（JDK 17）、`feature/3.0.x` run `35547856445`（JDK 21）均完成完整 `mvn clean verify` 且 conclusion=success；`SseLifecycleContractTest` 覆盖标准 chunk、CRLF/多行 data、注释、UTF-8 单字节 chunk、服务端事件 ID/raw data、未知事件、consumer-error 分类与 oversized-frame protocol failure。
+
 
 ## 5. 终态、幂等重试及重新附着
 
