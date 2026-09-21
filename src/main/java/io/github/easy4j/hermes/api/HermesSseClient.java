@@ -347,7 +347,8 @@ public class HermesSseClient implements AutoCloseable {
                         scheduleReconnect(subscription, requestFactory, consumer, onComplete,
                                 onError, label, new IOException("SSE stream closed"));
                     } else {
-                        onComplete.run();
+                        onError.accept(new io.github.easy4j.hermes.api.sse.SseStreamInterruptedException(
+                                "Hermes SSE stream closed before a verified terminal marker: " + label));
                         finish(subscription);
                     }
                 }
