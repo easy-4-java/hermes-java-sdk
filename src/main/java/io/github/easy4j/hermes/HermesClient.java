@@ -1104,7 +1104,8 @@ public class HermesClient implements AutoCloseable {
         if (ownedHttpClient == null
                 && (!sharedHttpClient.interceptors().isEmpty()
                 || !sharedHttpClient.networkInterceptors().isEmpty()
-                || sharedHttpClient.cookieJar() != okhttp3.CookieJar.NO_COOKIES)) {
+                || sharedHttpClient.cookieJar() != okhttp3.CookieJar.NO_COOKIES
+                || sharedHttpClient.cache() != null)) {
             throw new IllegalStateException(
                     "Cannot prove profile isolation for an externally managed OkHttpClient with identity state");
         }
