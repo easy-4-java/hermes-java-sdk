@@ -9,6 +9,7 @@ import io.github.easy4j.hermes.api.sse.SseConsumerException;
 import io.github.easy4j.hermes.api.sse.SseEvent;
 import io.github.easy4j.hermes.api.sse.SseFrame;
 import io.github.easy4j.hermes.api.sse.SseProtocolException;
+import io.github.easy4j.hermes.api.sse.SseQueueOverflowException;
 import io.github.easy4j.hermes.api.sse.SseQueueSubscription;
 import io.github.easy4j.hermes.api.sse.SseSubscription;
 import io.github.easy4j.hermes.exception.HermesHttpException;
@@ -211,7 +212,7 @@ public class HermesSseClient implements AutoCloseable {
     public SseQueueSubscription subscribeRunEventsQueue(String runId) {
         BlockingQueue<SseEvent> queue = new ArrayBlockingQueue<>(
                 Math.max(1, config.getStreamEventQueueCapacity()));
-        SseSubscription subscription = subscribeRunEvents(runId, event -> offerLatest(queue, event));
+        SseSubscription subscription = subscribeRunEvents(runId, event -> offerOrFail(queue, event));
         return new SseQueueSubscription(queue, subscription);
     }
 
@@ -239,7 +240,11 @@ public class HermesSseClient implements AutoCloseable {
         Objects.requireNonNull(consumer, "consumer");
         SubscriptionState subscription = new SubscriptionState();
         activeSubscriptions.add(subscription);
-        connect(subscription, requestFactory, consumer, onComplete, onError, semantics, label);
+        Consumer<Throwable> trackedOnError = error -> {
+            subscription.handle.recordTerminalError(error);
+            onError.accept(error);
+        };
+        connect(subscription, requestFactory, consumer, onComplete, trackedOnError, semantics, label);
         return subscription.handle;
     }
 
@@ -316,7 +321,8 @@ public class HermesSseClient implements AutoCloseable {
                     try {
                         consumer.accept(event);
                     } catch (Exception error) {
-                        SseConsumerException failure = new SseConsumerException(frame, error);
+                        Throwable failure = error instanceof SseQueueOverflowException
+                                ? error : new SseConsumerException(frame, error);
                         if (config.getDebug().allows(HttpLogLevel.BODY)) {
                             log.debug("Hermes SSE consumer failed: label={}, data={}", label, truncate(data), error);
                         } else {
@@ -443,12 +449,10 @@ public class HermesSseClient implements AutoCloseable {
         return Math.min(maximum, bounded + ThreadLocalRandom.current().nextLong(jitterBound));
     }
 
-    private void offerLatest(BlockingQueue<SseEvent> queue, SseEvent event) {
+    private void offerOrFail(BlockingQueue<SseEvent> queue, SseEvent event) {
         if (!queue.offer(event)) {
-            // 容量耗尽时淘汰最旧事件并保留最新状态，确保事件缓存具有固定内存上限。
-            queue.poll();
-            queue.offer(event);
-            log.warn("Hermes SSE event queue is full; discarded oldest event");
+            throw new SseQueueOverflowException(
+                    "Hermes SSE event queue is full; refusing to discard an undelivered event");
         }
     }
 
