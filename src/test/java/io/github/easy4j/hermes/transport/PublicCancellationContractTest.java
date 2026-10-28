@@ -27,7 +27,7 @@ class PublicCancellationContractTest {
             server.enqueue(new MockResponse()
                     .setResponseCode(200)
                     .setHeader("Content-Type", "application/json")
-                    .setBodyDelay(5, TimeUnit.SECONDS)
+                    .setBodyDelay(2, TimeUnit.SECONDS)
                     .setBody("{\"id\":\"chat-id\",\"choices\":[]}"));
 
             HermesHttpClientConfig config = new HermesHttpClientConfig();
